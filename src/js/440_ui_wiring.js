@@ -9,11 +9,11 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
     const open = () => { if (busy || d.classList.contains('lock')) return sfx.play('deny'); sfx.play('ui'); storesOpen({ mode: 'fit', slot: s }); }; d.querySelector('.si').onclick = open; d.querySelector('.sn').onclick = open; d.querySelector('.sx').onclick = () => { sfx.play('ui'); fitPart(s, null); };
   }
   { const d = document.createElement('div'); d.className = 'slot sk'; d.innerHTML = `<label>HEAT SINKS</label><button class="si">${iconSvg('gear.sink', 26)}</button><div class="sn" id="sinkN"></div><span><button id="sinkDn">−</button><button id="sinkUp">+</button></span>`; $('slots').appendChild(d); $('sinkDn').onclick = () => fitSinks(-1); $('sinkUp').onclick = () => fitSinks(1); d.querySelector('.si').onclick = () => fitSinks(1); }
-  PAINTS.forEach((p, i) => { const b = document.createElement('button'); b.style.background = `linear-gradient(135deg,#${p.pri.toString(16).padStart(6, '0')} 60%,#${p.acc.toString(16).padStart(6, '0')} 60%)`; b.title = p.n; b.onclick = () => { sfx.play('ui'); paintMech(i); saveCO(); }; $('paints').appendChild(b); });
+  PAINTS.forEach((p, i) => { const b = document.createElement('button'); b.style.background = `linear-gradient(135deg,#${p.pri.toString(16).padStart(6, '0')} 60%,#${p.acc.toString(16).padStart(6, '0')} 60%)`; b.title = p.n; b.onclick = () => { sfx.play('ui'); if (!busy && i !== player.cfg.paint) tal('y.paint'); paintMech(i); saveCO(); }; $('paints').appendChild(b); });
   for (const [n] of STATS) { const d = document.createElement('div'); d.className = 'st'; d.innerHTML = `<span>${n}</span><i><b></b></i><em></em>`; $('stats').appendChild(d); statEl.push(d); }
   $('mechName').onclick = () => {
     const c = player.cfg; if (busy || !bayParts(c) || $('mechName').firstChild.tagName === 'INPUT') return; const i = document.createElement('input'); i.value = c.name; i.maxLength = 14; $('mechName').textContent = ''; $('mechName').appendChild(i); i.focus(); i.select();
-    let fin = false; const done = ok => { if (fin) return; fin = true; if (ok) { c.name = cleanName(i.value, c.name, 14); mechName = bayTitle(); yardChanged(); } i.remove(); refreshUI(); }; i.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') done(true); if (e.code === 'Escape') done(false); }; i.onblur = () => done(true);
+    let fin = false; const done = ok => { if (fin) return; fin = true; if (ok) { const was = c.name; c.name = cleanName(i.value, c.name, 14); if (c.name !== was) tal('y.name'); mechName = bayTitle(); yardChanged(); } i.remove(); refreshUI(); }; i.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') done(true); if (e.code === 'Escape') done(false); }; i.onblur = () => done(true);
   };
   refreshUI = () => {
     const cfg = player.cfg, c = CO.active, rd = mechReady(cfg, c && c.biome, c), st = rd.st, any = bayParts(cfg) > 0;
@@ -38,7 +38,7 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
   };
   $('btnStores').onclick = () => { sfx.play('ui'); storesOpen({ mode: 'inv' }); }; $('btnSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
   $('btnSpin').onclick = e => { spin = !spin; e.target.classList.toggle('on', spin); sfx.play('ui'); };
-  $('btnTest').onclick = () => { sfx.play('ui'); systemsTest().then(() => refreshUI()); refreshUI(); };
+  $('btnTest').onclick = () => { sfx.play('ui'); if (!busy) tal('y.test'); systemsTest().then(() => refreshUI()); refreshUI(); };
   $('btnDeploy').onclick = deploy;
   /* pointer lock, with a free-mouse fallback if the browser refuses it twice (e.g. sandboxed frames) */
   let lockFail = 0, failT = 0;
@@ -57,10 +57,10 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
     if (uiModal()) return; if (mode === 'field' && commHold && locked && e.code !== 'Escape') { e.preventDefault(); return commHoldKey(e); }
     if (mode === 'field' && mapKey(e)) return; keys[e.code] = true; if (mode !== 'field') return; if (e.code === 'Space' || e.code === 'Tab') e.preventDefault();
     if (e.code.startsWith('Digit')) commKey(+e.code[5] - 1);
-    if (e.code === 'KeyR' && locked && CO.kit > 0 && !P.dead && (P.armor < P.max * .98 || Object.keys(P.lost).length)) { CO.kit--; P.armor = Math.min(P.max, P.armor + P.max * .4); const n = zoneMend(); msg(`REPAIR KIT USED${n ? ` — ${n} COMPONENT${n > 1 ? 'S' : ''} BACK ON LINE` : ''} — ${CO.kit} LEFT`, 2.5); sfx.play('ok'); }
+    if (e.code === 'KeyR' && locked && CO.kit > 0 && !P.dead && (P.armor < P.max * .98 || Object.keys(P.lost).length)) { CO.kit--; tal('s.kit'); tal('d.kit', Math.min(P.max, P.armor + P.max * .4) - P.armor); P.armor = Math.min(P.max, P.armor + P.max * .4); const n = zoneMend(); msg(`REPAIR KIT USED${n ? ` — ${n} COMPONENT${n > 1 ? 'S' : ''} BACK ON LINE` : ''} — ${CO.kit} LEFT`, 2.5); sfx.play('ok'); }
     if (e.code === 'KeyB' && locked && !e.repeat) sunCall();
-    if (e.code === 'KeyV' && locked && !P.dead && invN('gear.cool') > 0 && P.heat > 20) { invAdd('gear.cool', -1); P.heat = Math.max(0, P.heat - 60); msg(`COOLANT FLUSH — ${invN('gear.cool')} LEFT`, 2.5); sfx.play('steam'); }
-    if (e.code === 'KeyC') P.cam = 1 - P.cam; if (e.code === 'KeyX') P.center = true; if (e.code === 'KeyH') withdrawKey(); if (e.code === 'Escape' && soft) { soft = false; setLock(false); }
+    if (e.code === 'KeyV' && locked && !P.dead && invN('gear.cool') > 0 && P.heat > 20) { invAdd('gear.cool', -1); tal('h.flush'); P.heat = Math.max(0, P.heat - 60); msg(`COOLANT FLUSH — ${invN('gear.cool')} LEFT`, 2.5); sfx.play('steam'); }
+    if (e.code === 'KeyC') { P.cam = 1 - P.cam; tal('s.cam'); } if (e.code === 'KeyX') P.center = true; if (e.code === 'KeyH') withdrawKey(); if (e.code === 'Escape' && soft) { soft = false; setLock(false); }
   });
   addEventListener('keyup', e => keys[e.code] = false); addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   const resize = () => { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); POST.size(w, h); for (const c of [HG.camera, FD.camera, HQ.camera, BAR.camera, BRF.camera]) { c.aspect = w / h; c.updateProjectionMatrix(); } const u = renderer.domElement.height * .95; for (const f of [HG.fx, FD.fx]) f.spark.mat.uniforms.uS.value = f.smoke.mat.uniforms.uS.value = u; FD.fx.wx.mat.uniforms.uS.value = u; };

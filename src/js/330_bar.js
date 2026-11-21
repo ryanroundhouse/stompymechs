@@ -218,14 +218,14 @@ const barTold = key => { BARSV.told[key] = now(); BAR.dirty = true; saveCO(); };
 const barFresh = key => !BAR_SRC[key].paid && now() - (BARSV.told[key] ?? -99) >= 10;   /* everyone has one story in them every ten hours; after that it takes a drink */
 function barTell(key, ch, H, back, lead) {
   const r = barRumour(key); if (!r) return dlg(ch, pick(['Nothing about that board I have not already told you.', 'That is all I have. Ask me after the board turns over.']), back, H);
-  barTold(key); dlg(ch, `${lead}\n\n${r.head} ${r.s}\n\n${barFoot(r)}`, back, H);
+  barTold(key); tal('b.rum'); dlg(ch, `${lead}\n\n${r.head} ${r.s}\n\n${barFoot(r)}`, back, H);
 }
 function talkKeep() {
   const k = BARC.keep, H = BAR.P.keep, back = [['Something else', talkKeep], ['Thanks, Mother', dlgClose]], fresh = barFresh('keep'), has = barRumour('keep', true), R = barRoster();
-  const pour = (cost, d, line) => () => { if (!spend(cost)) return dlg(k, 'Not on the slate. Not for you, not for anyone.', back, H); barBuzzAdd(d); sfx.play(d > 0 ? 'glass' : 'ui'); dlg(k, line, back, H); };
+  const pour = (cost, d, line) => () => { if (!spend(cost, 'bar')) return dlg(k, 'Not on the slate. Not for you, not for anyone.', back, H); tal('b.drink'); barBuzzAdd(d); sfx.play(d > 0 ? 'glass' : 'ui'); dlg(k, line, back, H); };
   dlg(k, pick(['Commander. The usual, or are you here to listen?', 'Sit anywhere that is not already bleeding.', 'Upstairs you sign their contracts. Down here you buy the rounds.']), [
-    [!has ? 'What are people saying? (nothing new)' : fresh ? 'What are people saying?' : `Buy a drink and ask what people are saying — ${fmt(150)}`, () => { if (!fresh) { if (!spend(150)) return dlg(k, 'Not on the slate.', back, H); barBuzzAdd(.12); sfx.play('glass'); } barTell('keep', k, H, back, pick(['You did not hear it from me.', 'Three people told me this tonight, which means one person started it.', 'Loadmasters talk when they drink. I only pour.'])); }, !has],
-    [`Stand the house a round — ${fmt(900)}`, () => { if (!spend(900)) return dlg(k, 'A round for this room costs more than you are carrying.', back, H); BARSV.told = {}; barBuzzAdd(.12); sfx.play('glass'); BAR.dirty = true; saveCO(); dlg(k, 'That buys you a room full of friends for about an hour. Strand and Banerjee will talk to you again now — ask around.', back, H); }],
+    [!has ? 'What are people saying? (nothing new)' : fresh ? 'What are people saying?' : `Buy a drink and ask what people are saying — ${fmt(150)}`, () => { if (!fresh) { if (!spend(150, 'bar')) return dlg(k, 'Not on the slate.', back, H); tal('b.drink'); barBuzzAdd(.12); sfx.play('glass'); } barTell('keep', k, H, back, pick(['You did not hear it from me.', 'Three people told me this tonight, which means one person started it.', 'Loadmasters talk when they drink. I only pour.'])); }, !has],
+    [`Stand the house a round — ${fmt(900)}`, () => { if (!spend(900, 'bar')) return dlg(k, 'A round for this room costs more than you are carrying.', back, H); tal('b.round'); tal('b.drink'); BARSV.told = {}; barBuzzAdd(.12); sfx.play('glass'); BAR.dirty = true; saveCO(); dlg(k, 'That buys you a room full of friends for about an hour. Strand and Banerjee will talk to you again now — ask around.', back, H); }],
     [`Something strong — ${fmt(150)}`, pour(150, .16, pick(['Reactor coolant, the regulars call it. It is not, quite.', 'There. Do not operate heavy machinery. I am told you own some.']))],
     [`Black coffee — ${fmt(50)}`, pour(50, -.22, 'On the house rate. Drink it slowly and stop looking at Ballast.')],
     ['Who is in tonight?', () => dlg(k, `${R.map(p => `${p.ch.first} — ${BSK[p.sk][0].toLowerCase()}, flies ${/^[AEIOU]/.test(p.cfg.name) ? 'an' : 'a'} ${p.cfg.name}`).join('. ')}. All four fly for money; the better the pilot and the bigger the machine, the more of it.\nBallast will drink you under her table for a stake, and Vise will take your arm off for the same. Strand loads the dropships, Banerjee listens to bands she should not, and Calloway in the booth knows every contact on your board.`, back)],
@@ -239,7 +239,7 @@ function talkSrc(key) {
     broker: { hi: ['Calloway. I introduce people who need something broken to people who break things. Information is extra.', 'Commander. I know who is behind every name on your board. That knowledge has a price, like everything in here.'], ask: '', buy: 'Pay for a name: who am I dealing with on the board?', lead: ['Since you are paying.', 'This one is worth the fee.'], chat: ['I do not drink. I invoice.', 'Rumour is free and worth it. What I sell is who signs, who stalls and who does not pay.'] },
   }[key];
   dlg(ch, pick(T.hi), [
-    [!has ? `${T.ask || T.buy} (nothing new)` : fresh ? T.ask : `${T.buy} — ${fmt(S.cost)}`, () => { if (!fresh) { if (!spend(S.cost)) return dlg(ch, key === 'broker' ? 'Then we have nothing to discuss tonight.' : 'Next time, then.', back, H); if (!S.paid) sfx.play('glass'); } barTell(key, ch, H, back, pick(T.lead)); }, !has],
+    [!has ? `${T.ask || T.buy} (nothing new)` : fresh ? T.ask : `${T.buy} — ${fmt(S.cost)}`, () => { if (!fresh) { if (!spend(S.cost, 'bar')) return dlg(ch, key === 'broker' ? 'Then we have nothing to discuss tonight.' : 'Next time, then.', back, H); if (!S.paid) sfx.play('glass'); } barTell(key, ch, H, back, pick(T.lead)); }, !has],
     ['Just talk', () => dlg(ch, pick(T.chat), back, H)],
     ['Leave', dlgClose]], H);
 }
@@ -249,7 +249,7 @@ function talkBarPilot(p) {
   if (p.until > now()) return dlg(ch, 'Still being patched up after the last drop with you. Ask me in a couple of days.', bye, H);
   if (CO.wing && CO.wing.p === p) return dlg(ch, 'I am already on your ticket. Changed your mind?', [['Stand down — I fly without you', () => { const flat = !CO.wing.share; wingRelease(); dlg(ch, flat ? 'Your call. I am keeping half the retainer.' : 'Your call.', bye, H); }], ['No. Be ready', dlgClose]], H);
   if (CO.wing) return dlg(ch, `You already have ${CO.wing.ch.first} on your ticket. A dropship carries two machines, not three.`, [[`Release ${CO.wing.ch.first} and talk terms`, () => { wingRelease(); talkBarPilot(p); }], ['Leave it as it is', dlgClose]], H);
-  const hire = share => { if (!share && !spend(fee)) return dlg(ch, 'Come back when you can cover the retainer.', back, H); CO.wing = { p, ch, mech: 0, cfg: p.cfg, skill: p.skill, hpK: p.hpK, share: share ? p.share : 0, paid: share ? 0 : fee }; CO.dirty = BAR.dirty = true; saveCO(); sfx.play('ok'); dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will have the ${c.name} on the lifter when you launch.` : `Paid up front. The ${c.name} will be on your wing at launch.`, bye, H); };
+  const hire = share => { if (!share && !spend(fee, 'pilot')) return dlg(ch, 'Come back when you can cover the retainer.', back, H); tal('q.hire'); CO.wing = { p, ch, mech: 0, cfg: p.cfg, skill: p.skill, hpK: p.hpK, share: share ? p.share : 0, paid: share ? 0 : fee }; CO.dirty = BAR.dirty = true; saveCO(); sfx.play('ok'); dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will have the ${c.name} on the lifter when you launch.` : `Paid up front. The ${c.name} will be on your wing at launch.`, bye, H); };
   const line = [['Two drops in a simulator and one that counted. I am cheap, and I do what I am told.', 'Everyone starts somewhere. I would like to start somewhere that pays.'], ['I show up, I shoot what you point at, I go home. The rate is the rate.', 'Nothing fancy. I have brought the machine back every time so far.'], ['Nine seasons. I have flown for three of the factions on your board and against all five.', 'I know when to push and when to walk backwards shooting. That is what you are paying for.'], ['I do not miss much, and I do not come cheap. You have seen the numbers.', 'Pick the hard contract. With me on your wing it is not.'], ['You know the callsign. That is what the retainer is for.', 'I choose my commanders. Tonight I am thirsty enough to choose you.']][p.sk][p.seed % 2];
   const wn = k => c[k] ? (k === 'back' ? PARTS.back[c.back].name : PARTS.arm[c[k]].name) : 'nothing';
   dlg({ ...ch, role: `${ch.role} · ${S[0]}` }, `${line}\n\n${sheet}`, [
@@ -296,7 +296,7 @@ function barSync() {
 function barRelax(on) {
   if (on === BAR.relax || (on && (BAR.game || mode !== 'bar'))) return; BAR.relax = on; $('barUI').classList.toggle('chill', on);
   if (on) { dlgClose(); BAR.rest0 = now(); barCam.focus = { pos: V3(-8.45, 1.2, 2.4), look: V3(1, 1.05, -2.6) }; sfx.play('ui'); }
-  else { barCam.focus = null; if (now() - BAR.rest0 >= 4 && barBuzz() < .25) BARSV.rested = true; saveCO(); }
+  else { barCam.focus = null; tal('b.rest', Math.max(0, now() - BAR.rest0)); if (now() - BAR.rest0 >= 4 && barBuzz() < .25) BARSV.rested = true; saveCO(); }
   BAR.dirty = true; barStat();
 }
 

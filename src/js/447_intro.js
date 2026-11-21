@@ -268,11 +268,11 @@ function introOpen() {
   const c = FD.camera; INTROV.keep = { fov: c.fov, pos: P.pos.clone(), shake: P.shake, kills: P.kills, loot: YARD.loot.slice(), k: FD.k };
   Object.assign(INTROV, { st: 1, t: 0, a0: -1, shot: -1, prev: mode, wt: 0, go: -1, warm: 0, blk: 1, end: 0, stall: 0, au: -1, hold: false });
   if (!INTROV.fl.length) INTROV.fl = [new THREE.PointLight(0xffa050, 0, 190, 1.5), new THREE.PointLight(0xffa050, 0, 190, 1.5)]; FD.scene.add(...INTROV.fl);
-  mode = 'intro'; sfx.hush(true); sfx.trim(.55); dlgClose(); fieldScale(1); document.body.classList.add('intro'); const el = $('intro'); el.className = 'ovl'; $('inBlk').style.opacity = 1; POST.scene = FD.scene; POST.camera = c; return true;
+  tal('t.intro'); TALLY.off = true; mode = 'intro'; sfx.hush(true); sfx.trim(.55); dlgClose(); fieldScale(1); document.body.classList.add('intro'); const el = $('intro'); el.className = 'ovl'; $('inBlk').style.opacity = 1; POST.scene = FD.scene; POST.camera = c; return true;
 }
 /* hand everything back as it was found */
 function introEnd() {
-  if (!INTROV.st) return; const K = INTROV.keep, c = FD.camera; INTROV.st = 0; INTROV.shot = -1; INTROV.S = null; music.introStop(); sfx.hush(false); sfx.trim(1);
+  if (!INTROV.st) return; const K = INTROV.keep, c = FD.camera; INTROV.st = 0; TALLY.off = false; talBy = null; INTROV.shot = -1; INTROV.S = null; music.introStop(); sfx.hush(false); sfx.trim(1);
   clearField(); clearEnv(); EV.home = false; EV.key = ''; MAPV.key = ''; fieldScale(K.k); FD.scene.remove(...INTROV.fl); FD.lamp.intensity = 0;
   for (const f of [FD.fx.spark, FD.fx.smoke, FD.fx.wx]) { f.life.fill(0); f.siz.fill(0); f.update(0); } $('msg').style.opacity = 0; msgT = 0;
   c.fov = K.fov; c.updateProjectionMatrix(); P.pos.copy(K.pos); P.shake = K.shake; P.kills = K.kills; YARD.loot = K.loot; dispatchEvent(new Event('resize'));   /* the resize puts the particles back to the game's lens */

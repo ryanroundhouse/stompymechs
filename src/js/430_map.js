@@ -20,7 +20,7 @@ function mapBake() {
   g.putImageData(im, 0, 0); MAPV.step = step;
 }
 function mapOpen() {
-  if (mode !== 'field' || MAPV.open || P.dead || P.leaving) return; MAPV.open = true; mapBake(); MAPV.cx = P.pos.x; MAPV.cz = P.pos.z; MAPV.mx = -1;
+  if (mode !== 'field' || MAPV.open || P.dead || P.leaving) return; MAPV.open = true; tal('s.map'); mapBake(); MAPV.cx = P.pos.x; MAPV.cz = P.pos.z; MAPV.mx = -1;
   $('pause').classList.add('hid'); $('mapUI').classList.remove('hid'); sfx.play('comm'); if (locked && fieldUnlock) fieldUnlock(); mapSide(); mapLoop();
 }
 /* resume = true goes straight back to the fight; false drops to the pause menu */

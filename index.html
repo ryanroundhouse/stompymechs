@@ -394,6 +394,13 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 #intro.run #inSkip{animation:inSkip 5s ease-out forwards}
 @keyframes inPulse{50%{opacity:.4}}
 @keyframes inSkip{0%{opacity:0}14%{opacity:1}72%{opacity:1}100%{opacity:0}}
+
+.tlyQ{display:flex;gap:12px;align-items:center;position:sticky;top:0;z-index:2;background:rgba(9,11,13,.97);padding-bottom:8px}.tlyQ input{flex:1;padding:8px 10px;letter-spacing:.14em;text-transform:uppercase}.tlyQ input:focus{border-color:var(--am)}.tlyQ span{color:#8b8474;font-size:10px;letter-spacing:.12em;white-space:nowrap}
+.tlyC{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:2px}.tlyC button{padding:4px 8px;font-size:9.5px;letter-spacing:.14em}
+.tlyG{display:grid;grid-template-columns:1fr 1fr;gap:0 26px}.tlyG div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0}.tlyG span{color:#b9b2a2;letter-spacing:.06em}.tlyG b{color:#fff;font-weight:400;white-space:nowrap;font-variant-numeric:tabular-nums}.tlyG .z span,.tlyG .z b{color:#5f5a50}
+.tlyW>div{display:grid;grid-template-columns:1fr 74px 84px 150px 84px 56px;gap:0 10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0;text-align:right;color:#fff;font-variant-numeric:tabular-nums}.tlyW>div>span:first-child{text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
+.tlyW .hd{color:#8b8474;font-size:9.5px;letter-spacing:.14em}.tlyW b{font-weight:400;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tlyW small{color:#7d776a;font-size:9px;letter-spacing:.12em}.tlyW svg{flex:none}
+.tlyW .ac{position:relative;height:14px;background:rgba(127,231,255,.08);border:1px solid rgba(127,231,255,.2)}.tlyW .ac i{position:absolute;left:0;top:0;bottom:0;background:rgba(127,231,255,.38)}.tlyW .ac em{position:relative;font-style:normal;font-size:10px;line-height:12px;padding-right:5px;display:block}
 </style>
 </head>
 <body>
@@ -2849,7 +2856,7 @@ function saveBlob() {
     ledger: { cb: Math.round(CO.cb), day: CO.day, hour: +CO.hour.toFixed(2), rep: { ...CO.rep }, done: CO.done, fails: CO.fails, seed: CO.seed, ...rivSave() },
     inventory: { ...YARD.inv }, bays: YARD.bays.map(b => ({ ...b })), activeBay: YARD.act, market: { rot: YARD.shop.rot, stock: YARD.shop.stock.map(e => ({ ...e })), mechs: YARD.shop.mechs ? YARD.shop.mechs.map(e => ({ ...e })) : undefined, mrot: YARD.shop.mrot },
     board: CO.board.filter(c => !c.story).map(c => ({ ...c })), active: CO.active && !CO.active.story ? CO.active.id : null, news: CO.news.slice(0, 9),
-    pilots: PILOTS.map(p => ({ fee: p.fee, until: p.until, hag: !!p.hag })), wing: CO.wing ? { i: PILOTS.indexOf(CO.wing.p), share: CO.wing.share, s: CO.wing.p.seed || 0, paid: CO.wing.paid || 0 } : null, bar: barSave(), story: storySave(), tut: tutSave(),
+    pilots: PILOTS.map(p => ({ fee: p.fee, until: p.until, hag: !!p.hag })), wing: CO.wing ? { i: PILOTS.indexOf(CO.wing.p), share: CO.wing.share, s: CO.wing.p.seed || 0, paid: CO.wing.paid || 0 } : null, bar: barSave(), story: storySave(), tut: tutSave(), stats: talSave(),
   };
 }
 /* returns a reason string if the document is not one of ours */
@@ -2902,6 +2909,219 @@ const tutSave = () => ({ lock: TUT.lock, hints: TUT.hints, seen: { ...TUT.seen }
 /* the news line a locked board opens with, and the one it is replaced by when the lock comes off */
 const TUT_WIRE = () => `${YARD.name} has a hangar, a charter and one third-hand mech. Nobody is hiring yet.`, TUT_OPEN = () => `${YARD.name} mercenary company is open for contracts.`;
 tutApply(BOOT);
+/* ============ THE RECORD: EVERYTHING THE COMPANY HAS DONE, COUNTED ============ */
+/* One flat table of numbers under short dotted keys (TALLY.n), saved with the company under `stats` (talSave, talApply). Wherever something happens the game calls
+   tal(key, n) for a count or a sum, talMax / talMin for a best. Nothing is counted while the opening plays (TALLY.off): its machines are nobody's.
+   What a number is called and how it is written out is TAL_DEF, further down; talRows() turns the table into the rows that SETTINGS · STATS lists and that the
+   boards in the bay, on the deck and behind the bar stream (345_stat_boards.js). A new stat is a tal() call where the thing happens and a line in TAL_DEF.
+   The table has no prototype, like RIV: its keys come out of save files. */
+const TALLY = { n: Object.create(null), day: 1, off: false, sk: 0, mk: 0, mkT: -9, f: { x: 0, z: 0, hd: 0, jet: false, t: 0, m: '' } };
+function tal(k, n = 1) { if (!TALLY.off) TALLY.n[k] = (TALLY.n[k] || 0) + n; }
+function talMax(k, v) { if (!TALLY.off && !(TALLY.n[k] >= v)) TALLY.n[k] = v; }
+function talMin(k, v) { if (!TALLY.off && !(TALLY.n[k] <= v)) TALLY.n[k] = v; }
+const talN = k => TALLY.n[k] || 0;
+
+/* ---- whose round is this? While a shot is being fired or is landing, talBy says who is answerable for it: the item key of one of the player's own weapons
+   ('arm.las', 'back.rak'), 'ally' for a wingman or anything else on our side, or null. fire() and fireFrom() set it, a projectile carries it (s.by) and
+   updateShots puts it back while the round lands, so damage() and killEnt() can read it without being told. talHit is raised by a round that found something ---- */
+let talBy = null, talHit = 0;
+const talMine = b => !!b && b.indexOf('.') > 0;
+/* the player pulled a trigger */
+function talPull(by, w) { tal('g.p'); tal('w.' + by + '.p'); if (w.heat) tal('h.w', w.heat); }
+/* one round left one of the player's muzzles · and one of them connected */
+function talShot(by) { tal('g.s'); tal('w.' + by + '.s'); }
+function talLand(by) { tal('g.h'); tal('w.' + by + '.h'); }
+/* damage() on something that is not ours: d is what got past its shield, sh what the shield took */
+function talDealt(e, d, sh) {
+  const by = talBy; if (!talMine(by)) return; talHit = 1; if (sh) tal('g.sh', sh); if (d <= 0) return;
+  tal('g.d', d); tal('w.' + by + '.d', d); talMax('g.big', d);
+}
+/* killEnt(): who died, and by whose hand */
+function talKill(e, owner) {
+  if (TALLY.off) return;
+  if (e.team === 0) { if (owner !== 0) { tal('a.lost'); if (MS.on && e === MS.wing) tal('a.wing'); } return; }
+  if (owner === 4) return tal('k.riv'); if (owner !== 0) return;
+  const by = talBy; if (by === 'ally') return tal('k.ally'); if (e.team !== 1) return tal('k.neut');
+  tal('k.n'); talMax('k.best', ++TALLY.sk); tal('k.' + e.kind); const v = typeof e.vk === 'string' ? e.vk : e.sk; if (v) tal(`k.v.${e.kind}.${v}`);
+  if (talMine(by)) { tal('w.' + by + '.k'); talMax('k.far', Math.hypot(e.pos.x - P.pos.x, e.pos.z - P.pos.z)); } else tal('k.oth'); if (e.ej) tal('k.ej'); if (e.burnK) tal('k.burn');
+  if (e.mech) { tal('k.c.' + mechStats(e.mech.cfg).cls); const n = String(e.mech.cfg.name || '').replace(/[^A-Z0-9 \-]/g, '').slice(0, 16); if (n) tal('k.m.' + n); if (e.named) tal('k.named'); }
+  if (e.rv && RIV[e.rv]) tal('k.r.' + e.rv); else if (MS.on && MS.c && FAC[MS.c.foe]) tal('k.f.' + MS.c.foe);
+  if (P.air) tal('k.air'); if (P.heat > HEAT_WARN) tal('k.hot'); if (P.armor < P.max * .2) tal('k.low');
+  if (T - TALLY.mkT < 3) { if (++TALLY.mk === 2) tal('k.x2'); else if (TALLY.mk === 3) tal('k.x3'); } else TALLY.mk = 1; TALLY.mkT = T;
+}
+
+/* ---- a sortie: what is counted as it starts, every frame it is flown, and when the books are settled ---- */
+function talSortie(c) {
+  const F = TALLY.f; TALLY.sk = 0; TALLY.mk = 0; TALLY.mkT = -9; F.x = P.pos.x; F.z = P.pos.z; F.hd = P.yaw + P.twist; F.jet = false; F.t = 0; talBy = null;
+  if (!c) return tal('pg.n');
+  tal('s.n'); tal('s.ty.' + (c.story ? 'story' : c.type)); tal('s.bi.' + c.biome); tal('s.h.' + EV.tod.key); tal('s.c.' + player.stats.cls); if (CO.wing) tal('s.wing'); if (c.cap) tal('s.cap');
+  if (c.cok === 'joint') tal('s.co'); else if (c.cok === 'sub') tal('s.sub');
+}
+/* once a frame from updateField, so only while the sortie is really being flown */
+function talField(dt, sprint, jet, dyaw, ground, wade) {
+  if (TALLY.off) return; const N = TALLY.n, F = TALLY.f, add = (k, v) => { N[k] = (N[k] || 0) + v; };
+  const d = Math.hypot(P.pos.x - F.x, P.pos.z - F.z), hd = P.yaw + P.twist; F.x = P.pos.x; F.z = P.pos.z;
+  /* anything over six metres in a frame was not walked: a script or a test put her there */
+  if (d > 0 && d < 6) { if (P.air) add('m.fly', d); else { add('m.dist', d); if (player.cfg.legs) add('m.l.' + player.cfg.legs, d); if (sprint) add('m.spr', d); if (P.v < 0) add('m.back', d); } const sp = d / dt * 3.6; if (dt > .004 && sp < 400 && !(N['m.top'] >= sp)) N['m.top'] = sp; }
+  add('m.twist', Math.abs(angDiff(F.hd, hd))); F.hd = hd; if (dyaw) add('m.turn', Math.abs(dyaw));
+  if (P.dead) return; F.t += dt; add(MS.on ? 's.t' : 'pg.t', dt); add('t.b.' + EV.key, dt);
+  if (sprint) { add('m.sprT', dt); add('h.s', SPRINT_K.heat * (player.stats.fx === 'boost' ? .67 : 1) * dt); }
+  if (jet) { add('m.jetT', dt); add('h.j', 5 * dt); if (!F.jet && !P.air) add('m.jump', 1); } F.jet = jet;
+  if (P.air) { add('m.airT', dt); const h = P.pos.y - ground; if (!(N['m.high'] >= h)) N['m.high'] = h; }
+  if (wade) add('m.wade', dt); if (P.heat > HEAT_WARN) add('h.hotT', dt); if (P.shut > 0) add('h.shutT', dt); if (P.burnT > 0) add('d.fireT', dt);
+}
+/* settle(): the contract is over and D is the debrief */
+function talSettle(c, ok, D, own) {
+  /* a sortie lost on the company's own account (the shakedown) is no failure on the books, so it is none here */
+  const t = TALLY.f.t || 0; if (ok) tal('s.won'); else if (!own) { tal('s.lost'); if (MS.abort) tal('s.quit'); } if (P.dead) tal('s.dead'); talMax('s.long', t);
+  if (ok) {
+    tal('s.tw.' + (c.story ? 'story' : c.type)); tal('s.d.' + clamp(c.diff | 0, 1, 5)); if (t > 1) talMin('s.fast', t); if (c.story) tal(STORY[c.story].main ? 's.camp' : 's.ch');
+    const a = clamp(P.armor / P.max, 0, 1); if (a > .999 && !Object.keys(P.lost || {}).length) tal('s.clean'); else if (a < .1) tal('s.thin');
+  }
+  tal('s.obj', MS.obj.filter(o => o.st === 1).length); tal('s.bonus', MS.bonus.filter(b => b[1] > 0).length);
+  tal('cr.net', D.total); if (D.total > 0) talMax('cr.best', D.total); else if (D.total < 0) talMax('cr.worst', -D.total);
+}
+/* a room and how long was spent in it, once a frame from the main loop */
+function talFrame(dt, m, held) {
+  if (TALLY.off) return; const N = TALLY.n, k = m === 'field' ? (held ? 't.hold' : 't.field') : 't.' + m; N[k] = (N[k] || 0) + dt;
+  if (m !== TALLY.f.m) { TALLY.f.m = m; if (m === 'bar') tal('b.visit'); else if (m === 'hq') tal('q.visit'); if (!(N['cr.peak'] >= CO.cb)) N['cr.peak'] = CO.cb; }
+}
+
+/* ---- the save: every number, cut to two places. A save from before any of this was counted starts its record on the day it is loaded, with what the ledger and
+   the bar already knew carried over ---- */
+function talSave() { const n = {}; for (const k in TALLY.n) { const v = TALLY.n[k]; if (v) n[k] = Number.isInteger(v) ? v : +v.toFixed(2); } return { day: TALLY.day, n }; }
+function talApply(s) {
+  const N = TALLY.n = Object.create(null), R = s && s.v === 2 && s.stats && typeof s.stats === 'object' ? s.stats : null, L = (s && s.ledger) || {}, day = Math.max(1, L.day | 0);
+  TALLY.sk = 0; TALLY.day = day;
+  if (R && R.n && typeof R.n === 'object') {
+    let left = 4000; for (const k in R.n) { const v = R.n[k]; if (!--left) break; if (typeof v === 'number' && isFinite(v) && /^[a-z$][\w.$ \-]{0,47}$/i.test(k)) N[k] = clamp(v, -1e15, 1e15); }
+    TALLY.day = clamp(R.day | 0, 1, day);
+  } else if (s) {
+    const won = Math.max(0, L.done | 0), lost = Math.max(0, L.fails | 0), w = (s.bar && s.bar.wins) || {};
+    if (won) N['s.won'] = won; if (lost) N['s.lost'] = lost; if (won + lost) N['s.n'] = won + lost;
+    for (const [k, g] of [['drink', 'b.gd'], ['arm', 'b.ga']]) { const v = clamp(w[k] | 0, 0, 999); if (v) N[g + '.w'] = N[g + '.n'] = v; }
+  }
+  N['t.sess'] = (N['t.sess'] || 0) + 1;   /* loading a company is opening it */
+}
+talApply(BOOT);
+
+/* ---- what each number is called. A section is [title, rows]; a row is [key | function of the table, label, format, 1 if it is shown at nothing].
+   Formats: n a count · m metres · t seconds · c credits · p a share · d points of armour · s kph · h heat · r radians, written as turns · x metres to one place ---- */
+const TAL_F = {
+  n: v => Math.round(v).toLocaleString('en-US'), d: v => Math.round(v).toLocaleString('en-US'), h: v => Math.round(v).toLocaleString('en-US'),
+  m: v => v >= 10000 ? (v / 1000).toFixed(1) + ' km' : Math.round(v).toLocaleString('en-US') + ' m', x: v => v.toFixed(1) + ' m',
+  t: v => { v = Math.round(v); const h = Math.floor(v / 3600), m = Math.floor(v % 3600 / 60), s = v % 60; return h ? `${h} h ${String(m).padStart(2, '0')} m` : m ? `${m} m ${String(s).padStart(2, '0')} s` : s + ' s'; },
+  c: v => fmt(v), p: v => (v * 100).toFixed(1) + '%', s: v => Math.round(v) + ' kph', r: v => Math.round(v / TAU).toLocaleString('en-US') + ' turns',
+};
+const talSum = (N, pre) => { let s = 0; for (const k in N) if (k.startsWith(pre)) s += N[k]; return s; };
+const talRate = (a, b) => N => (N[b] || 0) > 0 ? (N[a] || 0) / N[b] : null;
+const TAL_DEF = [
+  ['CONTRACTS', [
+    ['s.n', 'SORTIES FLOWN ON CONTRACT', 'n', 1], ['s.won', 'CONTRACTS WON', 'n', 1], ['s.lost', 'CONTRACTS LOST', 'n', 1], ['s.quit', 'CONTRACTS ABANDONED', 'n'],
+    [N => (N['s.won'] || 0) + (N['s.lost'] || 0) ? (N['s.won'] || 0) / ((N['s.won'] || 0) + (N['s.lost'] || 0)) : null, 'CONTRACT WIN RATE', 'p'],
+    ['s.t', 'TIME ON CONTRACT', 't', 1], ['s.long', 'LONGEST SORTIE', 't'], ['s.fast', 'FASTEST WIN', 't'], ['s.clean', 'WINS WITHOUT A SCRATCH', 'n'], ['s.thin', 'WINS ON UNDER A TENTH OF HER ARMOUR', 'n'],
+    ['s.dead', 'MACHINES SHOT OUT FROM UNDER YOU', 'n', 1], ['s.wing', 'SORTIES WITH A WINGMAN', 'n'], ['s.co', 'SORTIES BESIDE ANOTHER COMPANY', 'n'], ['s.sub', 'SUBCONTRACTS FLOWN', 'n'], ['s.cap', 'WEIGHT-LIMITED CONTRACTS FLOWN', 'n'],
+    ['s.c.LIGHT', 'SORTIES IN A LIGHT MACHINE', 'n'], ['s.c.MEDIUM', 'SORTIES IN A MEDIUM MACHINE', 'n'], ['s.c.HEAVY', 'SORTIES IN A HEAVY MACHINE', 'n'], ['s.c.ASSAULT', 'SORTIES IN AN ASSAULT MACHINE', 'n'],
+    ['s.ch', 'STORY CHAPTERS WON', 'n'], ['s.camp', 'CAMPAIGN CHAPTERS WON', 'n'], ['s.obj', 'OBJECTIVES COMPLETED', 'n'], ['s.bonus', 'BONUSES EARNED', 'n'],
+    ['c.heard', 'RADIO MESSAGES HEARD', 'n'], ['c.ans', 'QUESTIONS ANSWERED ON THE RADIO', 'n'], ['c.tmo', 'QUESTIONS LEFT TO ANSWER THEMSELVES', 'n'], ['s.lance', 'SKY LANCE STRIKES CALLED', 'n'], ['s.map', 'TIMES THE MAP WAS OPENED', 'n'], ['s.cam', 'CHANGES OF CAMERA', 'n'],
+  ]],
+  ['PROVING GROUND', [['pg.n', 'PROVING GROUND SESSIONS', 'n'], ['pg.w', 'PROVING GROUND WAVES CLEARED', 'n'], ['pg.best', 'HIGHEST PROVING GROUND WAVE', 'n'], ['pg.t', 'TIME ON THE PROVING GROUND', 't']]],
+  ['GUNNERY', [
+    ['g.p', 'TRIGGER PULLS', 'n', 1], ['g.s', 'ROUNDS FIRED', 'n', 1], ['g.h', 'ROUNDS ON TARGET', 'n', 1], [talRate('g.h', 'g.s'), 'ACCURACY, ALL WEAPONS', 'p'],
+    ['g.d', 'DAMAGE DEALT', 'd', 1], [talRate('g.d', 'g.h'), 'DAMAGE PER ROUND THAT LANDED', 'x1'], ['g.big', 'HARDEST SINGLE HIT LANDED', 'd'], ['g.burn', 'DAMAGE DONE BY FIRES YOU STARTED', 'd'], ['g.sh', 'DAMAGE SOAKED UP BY ENEMY SHIELDS', 'd'], ['k.far', 'LONGEST KILL', 'm'],
+  ]],
+  ['KILLS', [
+    ['k.n', 'KILLS', 'n', 1], ['k.mech', 'MECHS DESTROYED', 'n', 1], ['k.c.LIGHT', 'LIGHT MECHS DESTROYED', 'n'], ['k.c.MEDIUM', 'MEDIUM MECHS DESTROYED', 'n'], ['k.c.HEAVY', 'HEAVY MECHS DESTROYED', 'n'], ['k.c.ASSAULT', 'ASSAULT MECHS DESTROYED', 'n'],
+    ['k.tank', 'TANKS AND CRAWLERS BLOWN UP', 'n', 1], ['k.drone', 'AIRCRAFT SHOT DOWN', 'n', 1], ['k.turret', 'TURRETS AND GUN MOUNTS SILENCED', 'n', 1], ['k.struct', 'STRUCTURES LEVELLED', 'n', 1], ['k.ship', 'CAPITAL SHIPS BROUGHT DOWN', 'n'], ['k.truck', 'HAULERS AND LAND TRAINS STOPPED', 'n'],
+    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
+    ['k.best', 'MOST KILLS IN ONE SORTIE', 'n'], ['k.x2', 'DOUBLE KILLS', 'n'], ['k.x3', 'TRIPLE KILLS', 'n'], ['k.air', 'KILLS MADE IN MID-AIR', 'n'], ['k.hot', 'KILLS MADE ABOVE 80 HEAT', 'n'], ['k.low', 'KILLS ON YOUR LAST FIFTH OF ARMOUR', 'n'],
+    [N => (N['k.n'] || 0) / Math.max(1, N['s.n'] || 0) || null, 'KILLS PER SORTIE', 'x1'], ['k.ally', 'KILLS BY YOUR WINGMEN AND ALLIES', 'n'], ['k.riv', 'KILLS BY COMPANIES FLYING WITH YOU', 'n'],
+    [N => talSum(N, 'z.') || null, 'COMPONENTS SHOT OFF', 'n'], [N => (N['z.armL'] || 0) + (N['z.armR'] || 0) || null, 'ARMS SHOT OFF', 'n'], ['z.legs', 'LEGS SHOT OUT', 'n'], ['z.head', 'COCKPITS HIT', 'n'], ['z.back', 'BACK UNITS SHOT OFF', 'n'],
+  ]],
+  ['DAMAGE TAKEN', [
+    ['d.h', 'TIMES HIT', 'n', 1], ['d.n', 'ARMOUR LOST', 'd', 1], ['d.big', 'HARDEST HIT TAKEN', 'd'], ['d.sh', 'DAMAGE SOAKED UP BY YOUR SHIELD', 'd'], ['e.s', 'ROUNDS FIRED BY THE OPPOSITION', 'n'],
+    [N => talSum(N, 'd.z.') || null, 'COMPONENTS LOST', 'n'], [N => (N['d.z.armL'] || 0) + (N['d.z.armR'] || 0) || null, 'ARMS LOST', 'n'], ['d.z.legs', 'TIMES YOUR LEGS WERE CRIPPLED', 'n'], ['d.z.head', 'COCKPIT HITS TAKEN', 'n'], ['d.z.back', 'BACK UNITS LOST', 'n'],
+    ['d.fireT', 'TIME ON FIRE', 't'], ['d.burn', 'ARMOUR LOST TO FIRE', 'd'], ['d.stun', 'ION HITS TAKEN', 'n'], ['d.lava', 'ARMOUR LOST TO LAVA', 'd'], ['s.kit', 'FIELD REPAIR KITS USED', 'n'], ['d.kit', 'ARMOUR PUT BACK BY KITS', 'd'], ['d.mend', 'COMPONENTS BROUGHT BACK BY A KIT', 'n'],
+    ['a.lost', 'ALLIED UNITS LOST', 'n'], ['a.wing', 'WINGMEN SHOT DOWN', 'n'],
+  ]],
+  ['MOVEMENT', [
+    ['m.step', 'STEPS TAKEN', 'n', 1], ['m.dist', 'DISTANCE COVERED ON THE GROUND', 'm', 1], [N => (N['m.step'] || 0) > 0 ? Math.max(0, (N['m.dist'] || 0) - (N['m.l.trk'] || 0) - (N['m.l.hov'] || 0)) / N['m.step'] : null, 'AVERAGE STRIDE', 'x'], ['m.spr', 'DISTANCE SPRINTED', 'm'], ['m.back', 'DISTANCE WALKED BACKWARDS', 'm'], ['m.fly', 'DISTANCE FLOWN', 'm'],
+    ['m.sprT', 'TIME SPRINTING', 't'], ['m.jump', 'JUMPS', 'n', 1], ['m.airT', 'TIME IN THE AIR', 't'], ['m.jetT', 'TIME ON THE JETS', 't'], ['m.high', 'HIGHEST JUMP', 'x'], ['m.land', 'HARD LANDINGS', 'n'], ['m.top', 'TOP SPEED', 's'],
+    ['m.twist', 'TORSO TWISTED', 'r'], ['m.turn', 'LEGS TURNED', 'r'], ['m.wade', 'TIME WADING', 't'], ['m.lava', 'TIME STANDING IN LAVA', 't'],
+  ]],
+  ['HEAT', [
+    ['h.shut', 'REACTOR SHUTDOWNS', 'n', 1], ['h.warn', 'HEAT WARNINGS', 'n', 1], [N => (N['h.w'] || 0) + (N['h.s'] || 0) + (N['h.j'] || 0) || null, 'HEAT GENERATED', 'h'], ['h.w', 'HEAT FROM WEAPONS', 'h'], ['h.s', 'HEAT FROM SPRINTING', 'h'], ['h.j', 'HEAT FROM THE JETS', 'h'],
+    ['h.hotT', 'TIME ABOVE 80 HEAT', 't'], ['h.shutT', 'TIME SHUT DOWN', 't'], ['h.flush', 'COOLANT FLUSHES', 'n'], ['h.ion', 'HEAT FROM ION HITS', 'h'], ['h.fire', 'HEAT FROM BEING ON FIRE', 'h'], ['h.lava', 'HEAT FROM STANDING IN LAVA', 'h'],
+  ]],
+  ['MONEY', [
+    ['cr.fee', 'CONTRACT FEES EARNED', 'c', 1], ['cr.bonus', 'BONUSES PAID TO YOU', 'c'], ['cr.scrap', 'BATTLEFIELD SCRAP SOLD', 'c'], ['cr.rep', 'REPAIR AND REBUILD BILLS', 'c', 1], ['cr.share', 'PAID TO WINGMEN IN SHARES', 'c'], ['cr.net', 'NET FROM CONTRACTS', 'c'],
+    ['cr.best', 'BIGGEST PAYDAY', 'c'], ['cr.worst', 'WORST DAY', 'c'], ['cr.peak', 'MOST EVER IN THE BANK', 'c'], ['cr.sell', 'FROM SELLING PARTS', 'c'], ['cr.won', 'WON AT THE TABLES', 'c'],
+    [N => talSum(N, 'cr.o.') || null, 'SPENT, ALL TOLD', 'c'], ['cr.o.market', 'SPENT AT THE MARKET', 'c'], ['cr.o.mech', 'SPENT ON WHOLE MACHINES', 'c'], ['cr.o.pilot', 'RETAINERS PAID TO PILOTS', 'c'], ['cr.o.intel', 'SPENT ON INTELLIGENCE', 'c'],
+    ['cr.o.bar', 'SPENT OVER THE BAR', 'c'], ['cr.o.stake', 'STAKED AT THE TABLES', 'c'], ['cr.o.gift', 'GIFTS TO OTHER COMPANIES', 'c'], ['cr.o.misc', 'SPENT ON EVERYTHING ELSE', 'c'],
+  ]],
+  ['THE YARD', [
+    ['y.fit', 'PARTS FITTED', 'n', 1], ['y.strip', 'PARTS TAKEN OFF', 'n'], ['y.sink', 'HEAT SINKS FITTED', 'n'], ['y.bay', 'TIMES A BAY WAS BROUGHT TO THE STAND', 'n'], ['y.paint', 'PAINT JOBS', 'n'], ['y.name', 'MACHINES RENAMED', 'n'], ['y.test', 'SYSTEMS TESTS RUN', 'n'],
+    ['y.buy', 'ITEMS BOUGHT', 'n'], ['y.sell', 'ITEMS SOLD', 'n'], ['y.mech', 'MACHINES BOUGHT WHOLE', 'n'], ['y.salv', 'PIECES OF SALVAGE TAKEN', 'n', 1], ['y.left', 'PIECES OF SALVAGE LEFT BEHIND', 'n'], ['y.launch', 'LAUNCHES', 'n'],
+  ]],
+  ['THE DECK', [
+    ['q.visit', 'VISITS TO THE COMMAND DECK', 'n'], ['q.acc', 'CONTRACTS SIGNED', 'n', 1], ['q.drop', 'CONTRACTS TORN UP', 'n'], ['q.hag', 'TIMES YOU HAGGLED', 'n'], ['q.hagW', 'HAGGLES WON', 'n'], ['q.intel', 'PIECES OF INTELLIGENCE BOUGHT', 'n'],
+    ['q.hire', 'PILOTS HIRED', 'n'], ['q.talk', 'THINGS SAID TO YOU', 'n'], ['q.brf', 'BRIEFINGS SAT THROUGH', 'n'], ['q.gift', 'GIFTS SENT TO OTHER COMPANIES', 'n'],
+  ]],
+  ['THE BAR', [
+    ['b.visit', 'VISITS TO THE LAST ROUND', 'n'], ['b.drink', 'DRINKS BOUGHT', 'n', 1], ['b.round', 'ROUNDS STOOD FOR THE HOUSE', 'n'], ['b.rum', 'RUMOURS HEARD', 'n'], ['b.rest', 'HOURS SPENT IN A CHAIR', 'n'],
+    ['b.gd.n', 'DRINKING CONTESTS', 'n'], ['b.gd.w', 'DRINKING CONTESTS WON', 'n'], ['b.ga.n', 'ARM WRESTLES', 'n'], ['b.ga.w', 'ARM WRESTLES WON', 'n'], ['b.glass', 'GLASSES EMPTIED AT THE TABLE', 'n'],
+  ]],
+  ['TIME', [
+    [N => talSum(N, 't.') - talSum(N, 't.b.') - (N['t.sess'] || 0) - (N['t.intro'] || 0) || null, 'TIME PLAYED', 't'], ['t.hangar', 'TIME IN THE MECH BAY', 't'], ['t.hq', 'TIME ON THE COMMAND DECK', 't'], ['t.bar', 'TIME IN THE BAR', 't'], ['t.brief', 'TIME IN THE BRIEFING ROOM', 't'],
+    ['t.field', 'TIME AT THE CONTROLS', 't'], ['t.hold', 'TIME WITH A SORTIE ON HOLD', 't'], ['t.sess', 'TIMES THE GAME WAS OPENED', 'n'], ['t.intro', 'TIMES THE OPENING WAS WATCHED', 'n'], [() => CO.day, 'SECTOR DAYS IN BUSINESS', 'n'],
+  ]],
+];
+TAL_F.x1 = v => v.toFixed(1);
+/* what a vehicle is called when there is more than one of them on the list */
+const TAL_UNIT = {
+  'drone.hunter': 'HUNTER DRONES', 'drone.scr': 'SCREAMERS', 'drone.shr': 'SHRIKE GUNSHIPS', 'drone.vul': 'VULTURE BOMBERS', 'drone.hrp': 'HARPIES',
+  'tank.striker': 'STRIKER TANKS', 'tank.dingo': 'DINGO SCOUTS', 'tank.mam': 'MAMMOTHS', 'tank.hail': 'HAILSTORMS', 'tank.fur': 'FURNACES', 'tank.pike': 'PIKES', 'tank.worm': 'CRAWLER SEGMENTS',
+  'turret.sentry': 'SENTRY TURRETS', 'turret.hydra': 'HYDRA BATTERIES', 'turret.prism': 'PRISM TOWERS', 'turret.bas': 'BASILISK MORTARS', 'turret.sub': 'SHIP\'S GUNS AND ENGINES',
+  'struct.gen': 'REACTORS', 'struct.fuel': 'FUEL TANKS', 'struct.comm': 'UPLINK TOWERS', 'struct.bunker': 'COMMAND BUNKERS', 'struct.depot': 'SUPPLY DEPOTS', 'struct.arty': 'SIEGE GUNS', 'struct.fab': 'ASSEMBLY PLANTS', 'struct.hq': 'FIELD HEADQUARTERS', 'struct.hab': 'HAB BLOCKS', 'struct.wreck': 'CRASHED DROPSHIPS',
+  'ship.lev': 'LEVIATHANS', 'ship.hive': 'HIVE CARRIERS',
+};
+/* a weapon's line: what was fired, what landed, what it did */
+function talWeps() {
+  const N = TALLY.n, out = [];
+  for (const cat of ['arm', 'back']) for (const id in PARTS[cat]) {
+    const w = PARTS[cat][id].weapon, k = `w.${cat}.${id}.`; if (!w || !(N[k + 's'] || N[k + 'p'])) continue; const s = N[k + 's'] || 0, h = N[k + 'h'] || 0;
+    out.push({ key: cat + '.' + id, name: w.name, cls: WCLASS[w.type] || '', p: N[k + 'p'] || 0, s, h, acc: s ? Math.min(1, h / s) : 0, d: N[k + 'd'] || 0, k: N[k + 'k'] || 0 });
+  }
+  return out.sort((a, b) => b.s - a.s || b.p - a.p);
+}
+/* the record as rows: { g section, l label, v the value written out, z true at nothing }. talRows() is what stands at more than nothing; talRows(1) adds the lines
+   TAL_DEF marks as worth showing at nothing (a new company's boards); talRows(2) is the book in SETTINGS: every line TAL_DEF has, and no weapon by name, which
+   has a table of its own there */
+function talRows(all) {
+  const N = TALLY.n, out = [], book = all === 2, put = (g, l, v, f, show) => { const z = !v; if (z && !(all && show)) return; out.push({ g, l, v: v == null ? '—' : (TAL_F[f] || TAL_F.n)(v || 0), z }); };
+  for (const [g, rows] of TAL_DEF) {
+    for (const [k, l, f, show] of rows) put(g, l, typeof k === 'function' ? k(N) : N[k] || 0, f, book || show);
+    if (g === 'CONTRACTS') {
+      for (const k in TYPES) put(g, `${TYPES[k].name.toUpperCase()} CONTRACTS FLOWN`, N['s.ty.' + k], 'n'); put(g, 'STORY CHAPTERS FLOWN', N['s.ty.story'], 'n');
+      for (const k in TYPES) put(g, `${TYPES[k].name.toUpperCase()} CONTRACTS WON`, N['s.tw.' + k], 'n');
+      for (let d = 1; d <= 5; d++) put(g, `CONTRACTS WON AT ${'◆'.repeat(d)}`, N['s.d.' + d], 'n');
+      for (const k in BIOMES) put(g, `SORTIES · ${BIOMES[k].name}`, N['s.bi.' + k], 'n'); for (const k in TOD) put(g, `SORTIES FLOWN AT ${TOD[k].name.toUpperCase()}`, N['s.h.' + k], 'n');
+      for (const k in BIOMES) put(g, `TIME UNDER FIRE · ${BIOMES[k].name}`, N['t.b.' + k], 't');
+    }
+    if (g === 'GUNNERY') {
+      const C = {}; for (const w of talWeps()) { const c = C[w.cls] || (C[w.cls] = { s: 0, h: 0, d: 0 }); c.s += w.s; c.h += w.h; c.d += w.d; }
+      for (const c in C) if (c && C[c].s) { put(g, `${c} ROUNDS FIRED`, C[c].s, 'n'); put(g, `${c} ACCURACY`, Math.min(1, C[c].h / C[c].s), 'p'); put(g, `${c} DAMAGE`, C[c].d, 'd'); }
+      if (!book) for (const w of talWeps()) { put(g, `${w.name} · ROUNDS FIRED`, w.s, 'n'); if (w.s) put(g, `${w.name} · ACCURACY`, w.acc, 'p'); put(g, `${w.name} · DAMAGE`, w.d, 'd'); put(g, `${w.name} · KILLS`, w.k, 'n'); }
+    }
+    if (g === 'MOVEMENT') for (const k in PARTS.legs) put(g, `DISTANCE ON ${PARTS.legs[k].name}`, N['m.l.' + k], 'm');
+    if (g === 'KILLS') {
+      for (const k in N) if (k.startsWith('k.v.')) put(g, (TAL_UNIT[k.slice(4)] || k.slice(4).toUpperCase()) + ' DESTROYED', N[k], 'n');
+      for (const k in N) if (k.startsWith('k.m.')) put(g, `${k.slice(4)} · DESTROYED`, N[k], 'n');
+      for (const k in FAC) put(g, `${FAC[k].short} UNITS DESTROYED`, N['k.f.' + k], 'n'); for (const k of RIVS) put(g, `${RIV[k].short} MACHINES DESTROYED`, N['k.r.' + k], 'n');
+    }
+  }
+  return out;
+}
 /* ============ ICONOGRAPHY: ONE GLYPH PER COMPONENT, COLOURED BY CATEGORY; THE COMPANY EMBLEM ============ */
 /* 48-unit line art. class f = solid, h = tinted fill, d = dimmed, t = thin */
 const GLYPH = {
@@ -3336,18 +3556,18 @@ async function swapLegsBare(id) {
 async function fitPart(slot, id) {
   const cfg = player.cfg; id = id || null; if (busy || mode !== 'hangar' || cfg[slot] === id) return false;
   if (id && (!invN(CAT[slot] + '.' + id) || (!cfg.torso && slot !== 'legs' && slot !== 'torso'))) { sfx.play('deny'); return false; }
-  busy = true; setStatus(id ? `FITTING ${SLOT_LABEL[slot]} — ${PARTS[CAT[slot]][id].name}` : `REMOVING ${SLOT_LABEL[slot]} — RETURNED TO STORES`, true); refreshUI();
+  busy = true; if (id) tal('y.fit'); if (cfg[slot]) tal('y.strip'); setStatus(id ? `FITTING ${SLOT_LABEL[slot]} — ${PARTS[CAT[slot]][id].name}` : `REMOVING ${SLOT_LABEL[slot]} — RETURNED TO STORES`, true); refreshUI();
   await indexTable(); await (slot !== 'legs' ? swapUpper(slot, id) : cfg.torso ? swapLegs(id) : swapLegsBare(id));
   setGang(1); busy = false; mechName = bayTitle(); setStatus('STAND READY — ' + mechName); yardChanged(); refreshUI(); return true;
 }
 function fitSinks(d) {
   const c = player.cfg, T = PARTS.torso[c.torso]; if (busy || !T) return; const n = clamp(c.sinks + d, 0, T.sinks);
   if (n === c.sinks || (d > 0 && !invN('gear.sink'))) return sfx.play('deny');
-  invAdd('gear.sink', c.sinks - n); c.sinks = n; player.stats = mechStats(c); sfx.play('weld'); const b = player.slotBox('torso'); sparks(HG.fx, b.getCenter(V3()).setY(b.max.y - .4), 18, 6); yardChanged(); refreshUI();
+  invAdd('gear.sink', c.sinks - n); if (n > c.sinks) tal('y.sink', n - c.sinks); c.sinks = n; player.stats = mechStats(c); sfx.play('weld'); const b = player.slotBox('torso'); sparks(HG.fx, b.getCenter(V3()).setY(b.max.y - .4), 18, 6); yardChanged(); refreshUI();
 }
 /* bring another bay's machine to the assembly stand: the lift takes this one below deck and raises the other */
 async function switchBay(i) {
-  if (busy || mode !== 'hangar' || i === YARD.act) return; busy = true; const to = YARD.bays[i], has = bayParts(to) > 0;
+  if (busy || mode !== 'hangar' || i === YARD.act) return; busy = true; tal('y.bay'); const to = YARD.bays[i], has = bayParts(to) > 0;
   setStatus(has ? `LIFT CYCLE — RETRIEVING ${to.name || 'UNIT'} FROM BAY ${i + 1}` : `LIFT CYCLE — BAY ${i + 1} IS EMPTY`, true); refreshUI();
   await indexTable(); let D = player.height + 2; steamRing(); sfx.play('servoDn');
   await tween(1.6, k => { player.root.position.y = MECH_Y - k * D; HG.lift.position.y = .1 - k * D; }, ease.in);
@@ -4009,20 +4229,20 @@ function zoneBreak(e, k, owner) {
   if (arm) S.userData.pitch.visible = false; else if (k === 'back') S.visible = false; else if (k === 'head') S.rotation.set(-.25, 0, .4);
   FD.tick.push(dt => { if (e.dead || !zGone(e, k)) return false; if (Math.random() < dt * 9) { zoneW(m, z, _zc); FD.fx.smoke.emit(_zc.x, _zc.y, _zc.z, rand(-1, 1), rand(2, 4), rand(-1, 1), rand(1.2, 2.4), rand(1.5, 2.6), .1, .1, .1, .45, -.2, .3, 2); if (Math.random() < .3) sparks(FD.fx, _zc, 3, 5); } return true; });
   if (me) {
-    P.lost[k] = true; P.shake += .5; const w = arm || k === 'back' ? wepOf(k) : null; sfx.play('deny'); POST.kick();
+    P.lost[k] = true; tal('d.z.' + k); P.shake += .5; const w = arm || k === 'back' ? wepOf(k) : null; sfx.play('deny'); POST.kick();
     if (k === 'legs') msg('LEGS CRIPPLED — SHE CAN BARELY WALK', 3.5); else if (k === 'head') msg('COCKPIT HIT — SENSORS DOWN', 3.5);
     else { msg(`${ZONE_N[k]} DESTROYED${w ? ' — ' + w.name + ' OFFLINE' : ''}`, 3.5); if (k === 'back') { const s2 = mechStats({ ...player.cfg, back: null }), o = player.stats; player.stats = { ...o, jets: false, fx: '', cool: s2.cool, sensor: s2.sensor, speed: o.fx === 'boost' ? o.speed / 1.12 : o.speed }; P.sh = P.shMax = 0; PE.ecm = false; player.setJets(false); } }
     return buildWepHud();
   }
-  if (owner === 0) msg(`${e.name} — ${ZONE_N[k]} DESTROYED`, 2.2);
+  if (owner === 0) { msg(`${e.name} — ${ZONE_N[k]} DESTROYED`, 2.2); if (talBy !== 'ally') tal('z.' + k); }
   if (k === 'head') e.skill *= .45; else if (k === 'legs') e.legless = true; else if (k === 'back') { e.sh = e.shMax = 0; e.ecm = false; }
   e.rng = mechRng(e);
   /* an ordinary pilot with nothing left to shoot gets out. Anybody with a name stays in the seat: the script they belong to decides what becomes of them */
-  if ((arm || k === 'back') && e.team === 1 && !e.named && !e.ej && !mechArmed(e)) { e.pacify = true; e.ej = { t: 1.3, by: owner }; }
+  if ((arm || k === 'back') && e.team === 1 && !e.named && !e.ej && !mechArmed(e)) { e.pacify = true; e.ej = { t: 1.3, by: owner, w: talBy }; }
 }
 /* a field repair kit puts the player's wrecked parts back in service at half strength */
 function zoneMend() {
-  let n = 0; for (const k in P.zones) { const s = P.zones[k]; if (s.hp > 0) continue; n++; s.hp = s.max * .5; const S = player.slot[k]; if (!S) continue; if (S.userData.pitch) S.userData.pitch.visible = true; S.visible = true; if (k === 'head') S.rotation.set(0, 0, 0); }
+  let n = 0; for (const k in P.zones) { const s = P.zones[k]; if (s.hp > 0) continue; n++; tal('d.mend'); s.hp = s.max * .5; const S = player.slot[k]; if (!S) continue; if (S.userData.pitch) S.userData.pitch.visible = true; S.visible = true; if (k === 'head') S.rotation.set(0, 0, 0); }
   if (n) { P.lost = {}; player.stats = mechStats(player.cfg); P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; PE.ecm = player.stats.fx === 'ecm'; buildWepHud(); }
   return n;
 }
@@ -4060,28 +4280,28 @@ function shFlash(e) {
 function damage(e, dmg, at, owner, zone) {
   if (e === PE) {
     if (P.dead || MS.over) return; let d = dmg * .24;
-    if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
+    if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); tal('d.sh', a); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
     if (zone && P.zones) d *= zoneTake(PE, zone, d, owner);
-    P.armor -= d; P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
+    P.armor -= d; tal('d.h'); tal('d.n', d); talMax('d.big', d); P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
   }
   if (e.dead || e.inv) return; let d = dmg * (e.team === 0 ? .5 : 1); e.alert = true; if (owner === 0) e.hitP = 6;
-  if (e.sh > 0) { const a = Math.min(e.sh, d); e.sh -= a; d -= a; shFlash(e); } if (e.shMax) e.shT = 5; if (d <= .001) return;
+  let sh = 0; if (e.sh > 0) { sh = Math.min(e.sh, d); e.sh -= sh; d -= sh; shFlash(e); } if (e.shMax) e.shT = 5; if (owner === 0 && talBy) talDealt(e, d, sh); if (d <= .001) return;
   if (zone && e.zones && e.team === 1 && !e.nz) d *= zoneTake(e, zone, d, owner);
   e.hp -= d; if (at) sparks(FD.fx, at, 8, 7); if (e.hp <= 0) killEnt(e, owner);
 }
 function splash(at, r, dmg, owner) { for (const e of targetsOf(owner)) { if (e.dead) continue; const d = entGap(e, at); if (d < r) damage(e, dmg * (1 - Math.max(0, d) / r), null, owner, zoneAt(e, at)); } }
 /* an ion bolt or a maul stalls a machine: nothing moves and nothing fires until it clears. The player gets a spike of heat and a fire control that has to start again */
 function stunEnt(e, secs, owner) {
-  if (e === PE) { if (P.dead) return; P.heat = Math.min(99, P.heat + secs * 12); for (const k in P.cd) P.cd[k] = Math.max(P.cd[k], secs * .7); P.shake += .3; msg('ION HIT — FIRE CONTROL RESETTING', 1.8); return; }
+  if (e === PE) { if (P.dead) return; tal('d.stun'); tal('h.ion', Math.min(99, P.heat + secs * 12) - P.heat); P.heat = Math.min(99, P.heat + secs * 12); for (const k in P.cd) P.cd[k] = Math.max(P.cd[k], secs * .7); P.shake += .3; msg('ION HIT — FIRE CONTROL RESETTING', 1.8); return; }
   if (e.dead || e.inv || e.kind === 'struct' || e.stunCd > 0) return; e.stun = Math.max(e.stun || 0, secs * (e.big ? .4 : 1)); e.stunCd = e.stun + 3;
 }
-function burnEnt(e, dps, owner) { if (e === PE) { P.burnD = P.burnT > 0 ? Math.max(P.burnD, dps) : dps; P.burnT = 2.5; } else if (!e.dead && !e.inv) { e.burnD = e.burnT > 0 ? Math.max(e.burnD, dps) : dps; e.burnT = 2.5; e.burnO = owner; } }
+function burnEnt(e, dps, owner) { if (e === PE) { P.burnD = P.burnT > 0 ? Math.max(P.burnD, dps) : dps; P.burnT = 2.5; } else if (!e.dead && !e.inv) { e.burnD = e.burnT > 0 ? Math.max(e.burnD, dps) : dps; e.burnT = 2.5; e.burnO = owner; e.burnW = talBy; } }
 /* every unit's turn in the frame goes through here: what is burning burns, shields come back, the stalled stay stalled, and a pilot with no guns leaves */
 function entTick(e, dt, t) {
-  if (e.burnT > 0) { e.burnT -= dt; if (!e.inv) e.hp -= e.burnD * dt * (e.team === 0 ? .5 : 1); if (Math.random() < dt * 16) FD.fx.spark.emit(e.pos.x + rand(-e.r, e.r) * .6, e.pos.y + e.cy + rand(-e.r, e.r) * .5, e.pos.z + rand(-e.r, e.r) * .6, rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.4), 5, 2, .4, .8, -2, .6, 1.5); if (e.hp <= 0) return killEnt(e, e.burnO ?? 0); }
+  if (e.burnT > 0) { e.burnT -= dt; if (!e.inv) { const bd = e.burnD * dt * (e.team === 0 ? .5 : 1); e.hp -= bd; if (e.burnO === 0 && talMine(e.burnW)) { tal('g.d', bd); tal('g.burn', bd); tal('w.' + e.burnW + '.d', bd); } } if (Math.random() < dt * 16) FD.fx.spark.emit(e.pos.x + rand(-e.r, e.r) * .6, e.pos.y + e.cy + rand(-e.r, e.r) * .5, e.pos.z + rand(-e.r, e.r) * .6, rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.4), 5, 2, .4, .8, -2, .6, 1.5); if (e.hp <= 0) { talBy = e.burnW || null; e.burnK = 1; killEnt(e, e.burnO ?? 0); talBy = null; return; } }
   if (e.shMax && (e.shT = (e.shT || 0) - dt) < 0 && e.sh < e.shMax) e.sh = Math.min(e.shMax, e.sh + e.shMax * .25 * dt);
   if (e.stunCd > 0) e.stunCd -= dt;
-  if (e.ej) { if ((e.ej.t -= dt) <= 0) { _zc.copy(e.pos); _zc.y += e.mech.height; for (let i = 0; i < 14; i++) FD.fx.spark.emit(_zc.x, _zc.y, _zc.z, rand(-2, 2), rand(24, 44), rand(-2, 2), rand(.5, 1), rand(.6, 1.2), 5, 4, 2, 1, 6, .3); if (e.ej.by === 0) msg(`${e.name} DISARMED — PILOT EJECTS`, 2.6); return killEnt(e, e.ej.by); } }
+  if (e.ej) { if ((e.ej.t -= dt) <= 0) { _zc.copy(e.pos); _zc.y += e.mech.height; for (let i = 0; i < 14; i++) FD.fx.spark.emit(_zc.x, _zc.y, _zc.z, rand(-2, 2), rand(24, 44), rand(-2, 2), rand(.5, 1), rand(.6, 1.2), 5, 4, 2, 1, 6, .3); if (e.ej.by === 0) msg(`${e.name} DISARMED — PILOT EJECTS`, 2.6); talBy = e.ej.w || null; killEnt(e, e.ej.by); talBy = null; return; } }
   if (e.stun > 0) { e.stun -= dt; if (Math.random() < dt * 10) { _zc.copy(e.pos); _zc.y += e.cy; sparks(FD.fx, _zc, 3, 6, 2, 3.4, 6); } if (e.mech) { e.mech.gait.amt = damp(e.mech.gait.amt, 0, 6, dt); e.mech.gait.turn = 0; e.mech.update(dt); } return; }
   e.update(dt, t);
 }
@@ -4107,7 +4327,9 @@ function flameJet(O, D, w, owner) {
   }
 }
 function emitShot(o, d, w, owner, lock, glow, aim) {
-  const t = w.type, foe = owner === 1, O = o.clone(), D = d.clone();
+  const t = w.type, foe = owner === 1, O = o.clone(), D = d.clone(), by = talBy, mine = talMine(by); if (mine) { talShot(by); talHit = 0; } else if (foe) tal('e.s');
+  if (t === 'arc') { arcShot(O, D, w, owner); if (mine && talHit) talLand(by); return; }
+  if (t === 'flame') { flameJet(O, D, w, owner); if (mine && talHit) talLand(by); return; }
   if (t === 'laser' || t === 'rail' || t === 'beam') {
     const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), rail = t === 'rail', hue = rail ? WEP_HUE.rail : glow, bw = (w.bw || (rail ? .28 : .2)) * 3, bl = w.bl || (rail ? .5 : .14), held = t === 'beam';
     /* a white-hot line inside a wide soft one, a flare at the muzzle, and light at both ends */
@@ -4117,10 +4339,8 @@ function emitShot(o, d, w, owner, lock, glow, aim) {
     { const c = _c2.setHex(hue); for (let i = 0; i < (held ? 1 : rail ? 7 : 3); i++) FD.fx.spark.emit(end.x, end.y, end.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), rand(.08, .16), rand(1.2, 2.4) * (rail ? 1.6 : 1), c.r * 4 + 1.5, c.g * 4 + 1.5, c.b * 4 + 1.5, .9, 0, 0, .7); }
     if (h.ent) damage(h.ent, w.dmg, end, owner, h.zone); else if (h.t < w.range) { sparks(FD.fx, end, held ? 3 : 10, 6); if (!held) puff(FD.fx, end, 2, 1.5, .4, .3); if (!held || Math.random() < .12) scarAt(end, rail ? 1.5 : .8, held ? .5 : .8); }
     if (rail) for (let k = 0; k < h.t; k += 5) FD.fx.spark.emit(O.x + D.x * k, O.y + D.y * k, O.z + D.z * k, rand(-.4, .4), rand(-.4, .4), rand(-.4, .4), rand(.4, .9), .5, 1.5, 2.6, 5, .7, 0, 0, 1);
-    return;
+    if (mine && talHit) talLand(by); return;
   }
-  if (t === 'arc') return arcShot(O, D, w, owner);
-  if (t === 'flame') return flameJet(O, D, w, owner);
   const S1 = geoC.s1 || (geoC.s1 = new THREE.SphereGeometry(1, 12, 8)), big = w.big || 1, vel = D.clone().multiplyScalar(w.speed); let m, life = w.life || 3, arm = .25;
   if (t === 'plasma') { m = new THREE.Mesh(GEO.ball, foe ? SM.eplasma : SM.plasma); m.scale.setScalar((w.big || .75) * 1.7); }
   else if (t === 'ion') { m = new THREE.Mesh(GEO.ball, SM.ion); m.scale.set(.55 * big, .55 * big, 3 * big); }
@@ -4135,33 +4355,36 @@ function emitShot(o, d, w, owner, lock, glow, aim) {
   else { m = new THREE.Mesh(GEO.tube, t === 'bolt' ? SM.bolt : foe ? SM.etracer : SM.tracer); const k = w.small ? .6 : big; m.scale.set(.4 * k, .4 * k, (t === 'flak' ? 2.2 : 5.5) * (w.small ? .7 : Math.sqrt(big))); if (!w.life && t === 'flak') life = .9; }
   m.position.copy(O); m.lookAt(_p.copy(O).add(vel)); FD.scene.add(m);
   const hue = t === 'plasma' ? (foe ? 0xff5a3a : 0x66e0ff) : t === 'bolt' ? 0xff3a2a : WEP_HUE[t] || (foe ? 0xff6a3a : 0xffb060);
-  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w, hue });
+  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w, hue, by });
   sparks(FD.fx, O, w.small ? 2 : 5, 3, 5, 3.4, 1.4); muzzleAt(O, D, hue, w.small ? 30 : clamp(36 + w.dmg * 2.2, 40, 150), w.small ? .6 : Math.min(1.8, .8 + w.dmg / 60));
 }
 /* things that hit rather than shoot. A saw bites every tick it is held against something; anything else swings, and lands a third of a second later on whatever is still in reach */
 function meleeHit(mech, u, w, owner, aim) {
   /* the blow goes where the pilot is looking, not where the torso happens to point: from a chase camera off one shoulder those are thirty degrees apart at arm's length */
-  const me = mech === player, pos = mech.root.position, ax = aim.x - pos.x, az = aim.z - pos.z, al = Math.hypot(ax, az) || 1, fx = ax / al, fz = az / al;
+  const me = mech === player, by = talBy, pos = mech.root.position, ax = aim.x - pos.x, az = aim.z - pos.z, al = Math.hypot(ax, az) || 1, fx = ax / al, fz = az / al;
   const strike = () => {
     if (mech.off || (me && P.dead)) return; const cosA = Math.cos(w.arc || .7), got = []; u.muzzle.getWorldPosition(_o); const at0 = _o.clone();
     for (const e of targetsOf(owner)) { if (e.dead) continue; const dx = e.pos.x - pos.x, dz = e.pos.z - pos.z, d = Math.hypot(dx, dz); if (d - e.r > w.range || Math.abs(e.pos.y + e.cy - pos.y - mech.chestY) > 16 || (dx * fx + dz * fz) / (d || 1) < cosA) continue; got.push([d, e]); }
-    got.sort((p, q) => p[0] - q[0]); if (!w.sweep) got.length = Math.min(got.length, 1);
+    got.sort((p, q) => p[0] - q[0]); if (!w.sweep) got.length = Math.min(got.length, 1); talBy = by; talHit = 0; if (me) talShot(by);
     for (const [, e] of got) {
       const at = e.pos.clone(); at.y += e.cy; at.lerp(at0, Math.min(1, e.r / (at.distanceTo(at0) || 1))); const z = zoneAt(e, at0);
       if (w.grind) sparks(FD.fx, at, 5, 9, 5, 3.4, 1.2); else { sparks(FD.fx, at, 30, 13); puff(FD.fx, at, 4, 2, .4, .4); if (me || at.distanceTo(P.pos) < 200) sfx.play('punch', me ? 1 : .6); if (me) P.shake += .35; }
       damage(e, w.dmg, at, owner, z); if (w.stun) stunEnt(e, w.stun, owner); if (w.burn) burnEnt(e, w.burn, owner);
     }
+    if (me && talHit) talLand(by); talBy = null;
   };
   if (w.grind) return strike(); u.swing = 1; let t = .32 * 2.2 / (u.swingK || 2.2); FD.tick.push(dt => { if ((t -= dt) > 0) return true; strike(); return false; });
 }
 function fire(mech, slot, w, aim, owner, lock) {
   const S = mech.slot[slot], u = slot === 'back' ? null : S.userData, mz = u ? [u.muzzle] : S.userData.muzzles, glow = mech.mats.glow.emissive.getHex(), me = mech === player, held = w.type === 'beam' || w.type === 'flame' || w.grind;
+  talBy = me ? (slot === 'back' ? 'back.' : 'arm.') + mech.cfg[slot] : owner === 0 ? 'ally' : null; if (me) talPull(talBy, w);
   if (u) { u.fireT = held ? .25 : .4; if (w.type !== 'melee') u.recoil = held ? .12 : 1; }
   if (w.type === 'melee') meleeHit(mech, u, w, owner, aim);
   else for (let i = 0; i < (w.salvo || 1); i++) {
     mz[i % mz.length].getWorldPosition(_o); _d.copy(aim).sub(_o).normalize(); const sp = w.spread || 0; if (sp) _d.add(_v.set(rand(-sp, sp), rand(-sp, sp), rand(-sp, sp))).normalize();
     emitShot(_o, _d, w, owner, lock, glow, aim);
   }
+  talBy = null;
   if (me || mech.root.position.distanceTo(P.pos) < 260) sfx.play(w.snd || (w.grind ? 'saw' : SND[w.type]) || 'laser', me ? 1 : .4);
 }
 function updateShots(dt) {
@@ -4180,12 +4403,12 @@ function updateShots(dt) {
       for (const e of targetsOf(s.owner)) { if (e.dead) continue; if (entIn(e, p)) { hit = e; break; } }
       if (!hit && inSolid(p)) boom = true;
     }
-    if (!hit && !boom) continue;
+    if (!hit && !boom) continue; talBy = s.by; talHit = 0;
     const bl = w.blast ?? (s.t === 'missile' ? 6 : s.t === 'plasma' ? 9 : 0);
     if (bl) { explode(FD.fx, p, clamp(bl / 7, .45, 2.6)); splash(p, bl, s.dmg, s.owner); if (hit && w.stun) stunEnt(hit, w.stun, s.owner); const dd = p.distanceTo(P.pos); if (dd < 220) sfx.play('boom', clamp(bl / 12, .3, 1.1)); if (bl > 10 && dd < 120) P.shake += (1 - dd / 120) * .5; }
     else if (hit) { if (s.t === 'ion') sparks(FD.fx, p, 16, 9, 2, 3.4, 6); flashAt(p, s.hue, clamp(24 + s.dmg * 2, 30, 120), 50, .1); damage(hit, s.dmg, p, s.owner, zoneAt(hit, p)); if (w.stun) stunEnt(hit, w.stun, s.owner); }
     else if (s.life > 0) { sparks(FD.fx, p, 4, 5); puff(FD.fx, p, 1, 1.2, .45, .3); flashAt(p, s.hue, 30, 40, .08); if (!w.small && Math.random() < .35) scarAt(p, .7, .4); }
-    FD.scene.remove(s.m); FD.shots.splice(i, 1);
+    if (talHit && talMine(s.by)) talLand(s.by); talBy = null; FD.scene.remove(s.m); FD.shots.splice(i, 1);
   }
   for (let i = FD.beams.length - 1; i >= 0; i--) { const b = FD.beams[i]; b.life -= dt; const k = Math.max(0, b.life / b.max); b.m.scale.x = b.m.scale.y = b.w * k; if (b.life <= 0) { FD.scene.remove(b.m); if (!b.m.material.userData.keep) b.m.material.dispose(); FD.beams.splice(i, 1); } }
 }
@@ -4216,7 +4439,7 @@ function drive(e, want, spd, dt, rad, turnRate) {
   return turn;
 }
 function killEnt(e, owner) {
-  if (e.dead) return; e.dead = true; e.by = owner; if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
+  if (e.dead) return; e.dead = true; e.by = owner; talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
   explode(FD.fx, at, big ? 2.4 : 1.2); sfx.play('boom', big ? 1.2 : .7); FD.ents.splice(FD.ents.indexOf(e), 1);
   if (e.blast) { explode(FD.fx, at, 3.4); splash(at, e.blast, 70, 0); splash(at, e.blast, 70, 1); }
   if (e.onKill) e.onKill(e, owner);
@@ -4229,8 +4452,9 @@ function killEnt(e, owner) {
 }
 /* drones, turrets, tanks and ships have no Mech: they fire any weapon from a point, at a point */
 function fireFrom(o, aim, w, e) {
-  _d.copy(aim).sub(o).normalize(); const O = o.clone().addScaledVector(_d, w.off ?? 2), D0 = _d.clone(), sp = w.spread || 0, owner = e.rv && e.team === 0 ? 4 : e.team, A = aim.clone();
+  _d.copy(aim).sub(o).normalize(); const O = o.clone().addScaledVector(_d, w.off ?? 2), D0 = _d.clone(), sp = w.spread || 0, owner = e.rv && e.team === 0 ? 4 : e.team, A = aim.clone(); talBy = owner === 0 ? 'ally' : null;
   for (let i = 0; i < (w.salvo || 1); i++) { const D = D0.clone(); if (sp) D.add(_v.set(rand(-sp, sp), rand(-sp, sp), rand(-sp, sp))).normalize(); emitShot(O, D, w, owner, e.tgt || null, e.team === 1 ? 0xff3a2a : 0x7fe7ff, A); }
+  talBy = null;
   if (o.distanceTo(P.pos) < 220) sfx.play(w.snd || SND[w.type] || 'laser', .3);
 }
 /* ============ EVERYTHING THAT IS NOT A MECH: FIVE THINGS THAT FLY, SIX THAT DRIVE, FOUR THAT SIT STILL AND SHOOT ============
@@ -4796,21 +5020,22 @@ function updateField(dt, t) {
   if (!P.air && heightAt(nx, nz) - heightAt(P.pos.x, P.pos.z) > Math.abs(step) * 1.2 + .02) P.v *= .6; else { P.pos.x = nx; P.pos.z = nz; }
   collide(P.pos, player.radius * .65);
   const ground = floorAt(P.pos); let jet = false; if (!P.air && P.pos.y - ground > 2.5) P.air = true;
+  talField(dt, sprint, ctl && K.Space && st.jets && P.fuel > 0, dyaw, ground, wade);
   if (ctl && K.Space && st.jets && P.fuel > 0) {
     jet = true; P.vy = Math.min(P.vy + 46 * dt, 14); P.fuel -= dt * .4; P.air = true; P.heat += 5 * dt; P.stepT -= dt; if (P.stepT < 0) { sfx.play('jet'); P.stepT = .16; }
     for (const f of player.slot.back.userData.flames) { f.getWorldPosition(_v); FD.fx.spark.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(-14, -8), rand(-1, 1), rand(.15, .35), rand(.7, 1.3), 1.2, 2.6, 5, .7, 0, 1); }
   } else P.fuel = Math.min(1, P.fuel + dt * (P.air ? .04 : .2));
-  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
+  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
   else P.pos.y = damp(P.pos.y, ground, 14, dt);
   /* heat + shutdown */
   P.heat = Math.max(0, P.heat - st.cool * FD.coolK * (P.coolK || 1) * dt * (P.shut > 0 ? 2 : sprint ? SPRINT_K.shed : 1));
   if (P.buzz && !P.dead) { P.twist += (Math.sin(t * .83) + Math.sin(t * 1.37 + 1)) * .055 * P.buzz * dt; P.pitch = clamp(P.pitch + Math.sin(t * 1.1 + 2) * .04 * P.buzz * dt, -.38, .5); }
-  if (EV.wl != null && !P.air && !P.dead && P.pos.y < EV.wl - .6) { if (EV.B.liq === 'lava') { P.heat += 26 * dt; P.armor -= 5 * dt; if (Math.random() < .3) { _v.copy(P.pos); _v.y = EV.wl; sparks(FD.fx, _v, 2, 5, 5, 1.6, .3); } if (P.armor <= 0) playerLost(); } else P.heat = Math.max(0, P.heat - 9 * dt); }
+  if (EV.wl != null && !P.air && !P.dead && P.pos.y < EV.wl - .6) { if (EV.B.liq === 'lava') { P.heat += 26 * dt; P.armor -= 5 * dt; tal('m.lava', dt); tal('d.lava', 5 * dt); tal('h.lava', 26 * dt); if (Math.random() < .3) { _v.copy(P.pos); _v.y = EV.wl; sparks(FD.fx, _v, 2, 5, 5, 1.6, .3); } if (P.armor <= 0) playerLost(); } else P.heat = Math.max(0, P.heat - 9 * dt); }
   if (P.shMax && (P.shT -= dt) < 0 && P.sh < P.shMax) P.sh = Math.min(P.shMax, P.sh + P.shMax * .2 * dt);
-  if (P.burnT > 0 && !P.dead) { P.burnT -= dt; P.heat += P.burnD * 2 * dt; P.armor -= P.burnD * .24 * dt; if (Math.random() < dt * 12) { _v.copy(P.pos); _v.y += player.chestY * rand(.4, 1.1); FD.fx.spark.emit(_v.x + rand(-2, 2), _v.y, _v.z + rand(-2, 2), rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.2), 5, 2, .4, .8, -2, .6, 1.5); } if (P.armor <= 0) playerLost(); }
+  if (P.burnT > 0 && !P.dead) { P.burnT -= dt; P.heat += P.burnD * 2 * dt; P.armor -= P.burnD * .24 * dt; tal('h.fire', P.burnD * 2 * dt); tal('d.burn', P.burnD * .24 * dt); if (Math.random() < dt * 12) { _v.copy(P.pos); _v.y += player.chestY * rand(.4, 1.1); FD.fx.spark.emit(_v.x + rand(-2, 2), _v.y, _v.z + rand(-2, 2), rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.2), 5, 2, .4, .8, -2, .6, 1.5); } if (P.armor <= 0) playerLost(); }
   player.gait.sag = damp(player.gait.sag, P.lost.legs ? 1 : 0, 2.5, dt);
-  if (P.heat > HEAT_WARN && P.heat < 100 && !P.hw && P.shut <= 0 && !P.dead) { P.hw = true; msg('HEAT CRITICAL — EASE OFF', 2.5); sfx.play('deny'); } if (P.heat < HEAT_WARN - 25) P.hw = false;
-  if (P.heat >= 100 && P.shut <= 0 && !P.dead) { P.shut = 3.5; msg('REACTOR SHUTDOWN — VENTING HEAT', 3.4); sfx.play('deny'); sfx.play('steam'); }
+  if (P.heat > HEAT_WARN && P.heat < 100 && !P.hw && P.shut <= 0 && !P.dead) { P.hw = true; tal('h.warn'); msg('HEAT CRITICAL — EASE OFF', 2.5); sfx.play('deny'); } if (P.heat < HEAT_WARN - 25) P.hw = false;
+  if (P.heat >= 100 && P.shut <= 0 && !P.dead) { P.shut = 3.5; tal('h.shut'); msg('REACTOR SHUTDOWN — VENTING HEAT', 3.4); sfx.play('deny'); sfx.play('steam'); }
   if (P.shut > 0) { P.shut -= dt; if (Math.random() < .5) { _v.copy(P.pos); _v.y += player.chestY; puff(FD.fx, _v, 1, 2.5, .85, .3, 4, 2); } }
   /* drive the mech */
   const R = player.root; R.position.copy(P.pos); if (!P.dead) R.rotation.set(0, P.yaw, 0); player.twist = P.twist; player.pitch = P.shut > 0 ? -.3 : P.pitch;
@@ -4835,7 +5060,7 @@ function updateField(dt, t) {
   }
   retarget(); fieldUnits(dt, t);
   updateMission(dt); fieldFx(dt, t);
-  if (!MS.on && !P.dead && !FD.ents.some(e => e.team === 1)) { P.waveT += dt; if (P.waveT > 4) { P.waveT = 0; if (P.wave) { P.armor = Math.min(P.max, P.armor + P.max * .3); } spawnWave(P.wave + 1); } }
+  if (!MS.on && !P.dead && !FD.ents.some(e => e.team === 1)) { P.waveT += dt; if (P.waveT > 4) { P.waveT = 0; if (P.wave) { P.armor = Math.min(P.max, P.armor + P.max * .3); tal('pg.w'); } spawnWave(P.wave + 1); talMax('pg.best', P.wave); } }
   if (FD.beacon) M.redGlow.emissiveIntensity = Math.sin(t * 4) > .6 ? 6 : 1.5;
   FD.fx.spark.update(dt); FD.fx.smoke.update(dt);
   /* HUD */
@@ -4898,7 +5123,7 @@ const commQ = []; let commCur = null, commHold = false, commSel = -1, commMv = 0
 function comm(who, text, opts, tmo = 18, def = 0, chat = false) { const k = MS.k; text = coTxt(text); return new Promise(res => commQ.push({ who, text, opts, tmo, def, res, k, chat, qt: MS.t })); }
 function commFree() { commHold = false; cutEnd(); $('commDim').classList.add('hid'); $('comm').classList.remove('hold'); }
 function commReset() { commQ.length = 0; commCur = null; commFree(); $('comm').classList.add('hid'); vox.stop(); }
-function commDone(i) { const c = commCur; if (!c) return; commCur = null; vox.stop(); $('comm').classList.add('hid'); if (c.opts) MS.log.push(`${c.who.last || c.who.name}: "${c.opts[i]}"`); if (c.k === MS.k && !MS.over) c.res(i); }
+function commDone(i) { const c = commCur; if (!c) return; commCur = null; vox.stop(); $('comm').classList.add('hid'); if (c.opts) { MS.log.push(`${c.who.last || c.who.name}: "${c.opts[i]}"`); tal(c.tmoD ? 'c.tmo' : 'c.ans'); } if (c.k === MS.k && !MS.over) c.res(i); }
 function commKey(n) { const c = commCur; if (c && c.opts && n >= 0 && n < c.opts.length && c.t > .5) { sfx.play('ui'); commDone(n); } }
 function commMark(i) { if (i === commSel) return; commSel = i; [...$('commOpts').children].forEach((d, j) => d.classList.toggle('on', j === i)); }
 function commMove(d) { const c = commCur; if (!c || !c.opts || c.t < .45) return; commMark(commSel < 0 ? (d > 0 ? 0 : c.opts.length - 1) : clamp(commSel + d, 0, c.opts.length - 1)); sfx.play('ui'); }
@@ -4917,7 +5142,7 @@ function updateComm(dt) {
   if (!commCur) {
     if (CUT.live && CUT.back) return; const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
     c.hold = !c.chat && CFG.hold > (c.opts ? 0 : 1) && MS.on && !MS.over && !P.dead; c.auto = false; c.cut = null; cutPick(c); if (CUT.live && !c.cut) { commQ.unshift(c); return; }   // the camera is out and this line is about something else: bring it home first
-    commCur = c; c.t = 0; commSel = -1; commMv = 0;
+    commCur = c; c.t = 0; commSel = -1; commMv = 0; if (!c.chat) tal('c.heard');
     const vd = vox.say(c.who, c.text, 'radio'); c.dur = c.opts ? c.tmo : Math.max(clamp(2.4 + c.text.length * .045, 3.2, 8.5), vd + .7);
     drawFace($('commFace'), c.who); $('commWho').textContent = `${c.who.name} · ${c.who.role}`; $('commWho').style.color = c.who.col;
     $('commOpts').innerHTML = c.opts ? c.opts.map((o, i) => `<div data-i="${i}"><b>${i + 1}</b>${o}</div>`).join('') : c.hold ? '<div class="go" data-i="0"><b>SPACE</b>CONTINUE</div>' : '';
@@ -4926,7 +5151,7 @@ function updateComm(dt) {
     commHold = c.hold; if (c.hold) P.md = [false, false, false]; if (c.cut) cutGo(c);
   }
   const c = commCur; c.t += dt; $('commTxt').textContent = c.text.slice(0, Math.floor(c.t * (c.hold ? 110 : 70))); $('commBar').style.width = c.opts && !c.hold ? (1 - c.t / c.dur) * 100 + '%' : '0%';
-  if ((!c.hold || c.auto) && c.t >= c.dur) commDone(c.def);
+  if ((!c.hold || c.auto) && c.t >= c.dur) { c.tmoD = true; commDone(c.def); }
 }
 /* ---- the comm camera. When a line comes from somebody who is out there on the field, the view leaves your machine and goes to theirs while they speak. When it comes from somebody who is not —
    the XO, the client, an enemy commander somewhere over the hill — and it is about a thing that has just happened, the view goes to that thing instead. The sortie is held throughout and stays
@@ -5920,19 +6145,19 @@ TWISTS.works = async function (ms) {
 };
 /* settle the books after a sortie: returns the debrief the XO reads out */
 function settle() {
-  const c = MS.c, ok = MS.ok, L = [], add = (l, v) => { if (Math.round(v)) L.push([l, Math.round(v)]); }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base };
-  add(ok ? (own && STORY[c.story].payL ? STORY[c.story].payL : payer ? (c.cok === 'sub' && payer === c.emp ? `Subcontract fee — ${RIV[c.co].short}` : `Contract fee — ${c.story && STORY[c.story].payer || FAC[payer].short}`) : 'Collection — off the books') : 'Partial payment', base);   /* the first sortie is flown on the company's own account: no client to please, no bill from the bay, and a bad day there is not on the record */ for (const [l, v] of MS.bonus) add(l, v);
-  if (ok && P.kills) add(`Battlefield scrap ${c.salv}% · ${P.kills} kills`, P.kills * 1500 * c.salv / 25);
+  const c = MS.c, ok = MS.ok, L = [], add = (l, v, tag) => { if (Math.round(v)) { L.push([l, Math.round(v)]); if (tag) tal('cr.' + tag, Math.abs(Math.round(v))); } }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base };
+  add(ok ? (own && STORY[c.story].payL ? STORY[c.story].payL : payer ? (c.cok === 'sub' && payer === c.emp ? `Subcontract fee — ${RIV[c.co].short}` : `Contract fee — ${c.story && STORY[c.story].payer || FAC[payer].short}`) : 'Collection — off the books') : 'Partial payment', base, 'fee');   /* the first sortie is flown on the company's own account: no client to please, no bill from the bay, and a bad day there is not on the record */ for (const [l, v] of MS.bonus) add(l, v, v > 0 ? 'bonus' : '');
+  if (ok && P.kills) add(`Battlefield scrap ${c.salv}% · ${P.kills} kills`, P.kills * 1500 * c.salv / 25, 'scrap');
   D.salv = ok ? salvageRoll(c, YARD.loot, MS.bonus.length > 0) : null; YARD.loot = [];
-  if (!own) add('Repairs and rearm', -((1 - clamp(P.armor / P.max, 0, 1)) * 38000 + (P.dead ? 55000 : 0)));
-  if (!own) { const lost = Object.keys(P.lost || {}).filter(k => player.cfg[k]); if (lost.length) add(`Rebuilding ${lost.map(k => ZONE_N[k].toLowerCase()).join(', ')}`, -lost.reduce((s, k) => s + itemInfo(CAT[k] + '.' + player.cfg[k]).price * .15, 0)); }
-  if (CO.wing && CO.wing.share && !solo) add(`${CO.wing.ch.first}'s ${Math.round(CO.wing.share * 100)}% share`, -Math.max(0, base) * CO.wing.share);
+  if (!own) add('Repairs and rearm', -((1 - clamp(P.armor / P.max, 0, 1)) * 38000 + (P.dead ? 55000 : 0)), 'rep');
+  if (!own) { const lost = Object.keys(P.lost || {}).filter(k => player.cfg[k]); if (lost.length) add(`Rebuilding ${lost.map(k => ZONE_N[k].toLowerCase()).join(', ')}`, -lost.reduce((s, k) => s + itemInfo(CAT[k] + '.' + player.cfg[k]).price * .15, 0), 'rep'); }
+  if (CO.wing && CO.wing.share && !solo) add(`${CO.wing.ch.first}'s ${Math.round(CO.wing.share * 100)}% share`, -Math.max(0, base) * CO.wing.share, 'share');
   if (MS.v.faked && Math.random() < .45) { add('Clawback — the "dead" pilot was seen alive', -base * .5); rep(c.emp, -14); D.log.push(`${FAC[c.emp].short} found out the kill was faked.`); }
   if (payer === c.emp && !own) rep(c.emp, Math.round((ok ? 4 + c.diff : MS.abort ? -8 : -5) * (c.cok === 'sub' ? .5 : 1))); if (ok && FAC[c.foe] && c.foe !== 'maw') rep(c.foe, -3); rivSettle(c, ok, D, add, base);
   D.rep = Object.entries(MS.repD).filter(([f, v]) => CO.rep[f] !== undefined && Math.round(v)); for (const [f, v] of D.rep) repAdd(f, v, f === c.emp ? `${ok ? 'completed' : MS.abort ? 'abandoned' : 'failed'} their ${TYPES[c.type].name.toLowerCase()} contract at ${c.site}` : f === c.foe ? `flew against them at ${c.site}` : `the ${TYPES[c.type].name.toLowerCase()} contract at ${c.site}`);
   D.rel = []; for (const [k, L] of Object.entries(MS.relD || {})) if (RIV[k]) for (const [d, why] of L) if (Math.round(d)) { D.rel.push([k, Math.round(d), why]); rivRel(k, Math.round(d), why || `the ${c.site} contract`); }
   if (c.story) storySettle(c, ok, D, add);
-  D.renege = ok && payer === c.emp && c.twists.includes('renege') && base > 0; D.total = L.reduce((s, l) => s + l[1], 0); CO.cb += D.total; if (ok) CO.done++; else if (!own) CO.fails++;
+  D.renege = ok && payer === c.emp && c.twists.includes('renege') && base > 0; D.total = L.reduce((s, l) => s + l[1], 0); CO.cb += D.total; if (ok) CO.done++; else if (!own) CO.fails++; talSettle(c, ok, D, own);
   /* the world moves on */
   CO.hour += rand(8, 20); while (CO.hour >= 24) { CO.hour -= 24; CO.day++; } dropContract(c);
   if (c.story) news(D.story.news); else news(ok ? `${YARD.name} completed a ${TYPES[c.type].name.toLowerCase()} contract at ${c.site}${payer && payer !== c.emp ? ' — though not for the original client' : ''}.` : `${YARD.name} failed a ${FAC[c.emp].short} contract at ${c.site}.`);
@@ -6279,14 +6504,15 @@ function startField() {
   $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.sky}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
-  player.onStep = L => { L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
+  talSortie(c);
+  player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
   P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);
 }
 async function toHangar() {
   if (mode !== 'field' || P.leaving) return; P.leaving = true; mapClose(false); if (document.pointerLockElement) document.exitPointerLock(); locked = false; $('pause').classList.add('hid');
   if (MS.on && !MS.over) { MS.abort = true; endMission(false, 'You withdrew from the contract area.'); }
-  await tween(.7, fade); const D = MS.on ? settle() : null; MS.on = false; sortieGuard(false); commReset(); clearField(); mode = 'hangar'; player.run = 1; player.gait.sk = 1; soft = false;
+  await tween(.7, fade); const D = MS.on ? settle() : null; if (!D) saveCO();   /* the proving ground has no books to settle, but what was fired there was fired */ MS.on = false; sortieGuard(false); commReset(); clearField(); mode = 'hangar'; player.run = 1; player.gait.sk = 1; soft = false;
   HG.turn.add(player.root); HG.turn.rotation.y = 0; player.root.position.set(0, MECH_Y, 0); player.root.rotation.set(0, 0, 0); player.twist = player.pitch = 0; player.gait.amt = player.gait.turn = 0; player.setJets(false); if (Object.keys(P.lost || {}).length) { P.lost = {}; player.build(); }   /* the bay puts back whatever was shot off */
   player.gait.sag = 0; if (player.slot.head) player.slot.head.visible = true; player.onStep = null;
   setDoor(0); HG.lift.position.y = .1; orb.cine = false; orb.idle = 0; setGang(1); busy = false;
@@ -6308,7 +6534,7 @@ async function deploy() {
   orb.cine = true; orb.pos.set(14, 4.5, 26); orb.look.set(0, player.height * .55, -3);
   sfx.play('servo'); await tween(2.4, k => HG.turn.rotation.y = PI * k);
   sfx.play('door'); await tween(3.2, setDoor);
-  player.onStep = L => { sfx.play('step', .9); L.ankP.getWorldPosition(_v); puff(HG.fx, _v, 3, 1.6, .6, .25); };
+  tal('y.launch'); player.onStep = L => { tal('m.step'); sfx.play('step', .9); L.ankP.getWorldPosition(_v); puff(HG.fx, _v, 3, 1.6, .6, .25); };
   const sp = Math.max(4.2, player.stats.speed * .85); await tween(.5, k => player.gait.amt = k * sp / player.stats.speed); HG.walk = sp;
   await wait(3.2); await tween(1.5, fade); startField(); await tween(1.2, k => fade(1 - k));
 }
@@ -7024,7 +7250,7 @@ HQ.syncPins = () => {
 let dlgCur = null;
 /* dlg(who, text, [[label, fn, disabled]], person) — person: a crew figure to frame, or null to leave the camera alone */
 function dlg(who, text, opts, person) {
-  text = coTxt(text); dlgCur = { who, text, opts, t: 0 }; drawFace($('dlgFace'), who); $('dlgWho').textContent = `${who.name} · ${who.role}`; $('dlgWho').style.color = who.col; $('dlg').classList.remove('hid'); $('dlgOpts').innerHTML = '';
+  text = coTxt(text); tal('q.talk'); dlgCur = { who, text, opts, t: 0 }; drawFace($('dlgFace'), who); $('dlgWho').textContent = `${who.name} · ${who.role}`; $('dlgWho').style.color = who.col; $('dlg').classList.remove('hid'); $('dlgOpts').innerHTML = '';
   opts.forEach(([label, fn, dis], i) => { const b = document.createElement('button'); b.innerHTML = `<b>${i + 1}</b>${label}`; b.disabled = !!dis; b.onclick = () => { sfx.play('ui'); fn(); }; $('dlgOpts').appendChild(b); });
   sfx.play('comm'); vox.say(who, text, mode === 'hq' && HQ.contact && HQ.contact.ch.seed === who.seed ? 'holo' : undefined); if (person) { focusOn(person); if (person.cam) hq.focus.pos.set(...person.cam); }
 }
@@ -7033,8 +7259,9 @@ const unknown = c => c.story ? [] : ['plot', ...c.twists].filter(k => !c.intel.s
 const hintOf = (c, k) => k === 'rival' && RIV[c.rival] ? `${RIV[c.rival].name} has taken an interest in this one. Expect ${RIV[c.rival].ch.last}'s lance on the ground — and not necessarily on our side.` : k === 'plot' && c.type === 'recovery' && c.plot === 'race' && RIV[c.rival] ? `${RIV[c.rival].name} has filed for the same salvage.` : HINT[k === 'plot' ? `${c.type}.${c.plot}` : k];
 const learn = (c, k, src, s) => { c.intel.push({ k, s: s || hintOf(c, k), src }); CO.dirty = true; };
 const repWord = r => r > 40 ? 'trusted' : r > 15 ? 'favoured' : r > -15 ? 'neutral' : r > -40 ? 'distrusted' : 'hostile';
-const spend = n => { if (CO.cb < n) return false; CO.cb -= n; CO.dirty = true; saveCO(); return true; };
-function accept(c) { if (CO.active && CO.active !== c) { quitCost(CO.active); if (!CO.active.story) news(`${YARD.name} walked away from the ${FAC[CO.active.emp].short} job at ${CO.active.site}.`); } CO.active = CO.sel = c; c.upd = ''; if (!c.story) news(`${YARD.name} signed with ${FAC[c.emp].short}: ${TYPES[c.type].name.toLowerCase()} at ${c.site}.`); sfx.play('ok'); }
+/* `why` is the column it goes under in the record: market, mech, pilot, intel, bar, stake, gift */
+const spend = (n, why = 'misc') => { if (CO.cb < n) return false; CO.cb -= n; tal('cr.o.' + why, n); CO.dirty = true; saveCO(); return true; };
+function accept(c) { if (CO.active !== c) tal('q.acc'); if (CO.active && CO.active !== c) { tal('q.drop'); quitCost(CO.active); if (!CO.active.story) news(`${YARD.name} walked away from the ${FAC[CO.active.emp].short} job at ${CO.active.site}.`); } CO.active = CO.sel = c; c.upd = ''; if (!c.story) news(`${YARD.name} signed with ${FAC[c.emp].short}: ${TYPES[c.type].name.toLowerCase()} at ${c.site}.`); sfx.play('ok'); }
 
 function talkXO() {
   const c = CO.sel, x = CREW.xo, back = [['Something else', talkXO], ['That is all', dlgClose]], st = player.stats;
@@ -7052,7 +7279,7 @@ function talkXO() {
 function talkIntel() {
   const c = CO.sel, s = CREW.intel, cost = c ? Math.round((5000 + c.diff * 2500) * (stFlag('dead.end') ? .5 : 1)) : 0, left = c ? unknown(c) : [], back = [['Something else', talkIntel], ['Thanks, Mira', dlgClose]];
   dlg(s, tutLock() ? pick(['I have no files open. It is restful, and I do not like it. Clear that transponder and I will have work for you.', 'Every broker in the sector can hear our mech announcing a student driver. I have stopped answering their jokes.']) : pick(['I have six files open and I trust none of them. Which one are we talking about?', 'Everything on that board was written by someone who wants something. Ask.', 'Signals are noisy today. Somebody is moving a lot of metal.']), [
-    [c ? (left.length ? `Buy confirmed intel on ${c.site} (${fmt(cost)})` : `Nothing more to learn about ${c.site}`) : 'Buy intel (select a contract first)', () => { if (!spend(cost)) return dlg(s, 'My sources do not work on credit, and neither do I.', back); const k = pick(left); learn(c, k, 'sato'); dlg(s, `Confirmed, and it cost me a favour: ${hintOf(c, k)}`, back); }, !c || !left.length],
+    [c ? (left.length ? `Buy confirmed intel on ${c.site} (${fmt(cost)})` : `Nothing more to learn about ${c.site}`) : 'Buy intel (select a contract first)', () => { if (!spend(cost, 'intel')) return dlg(s, 'My sources do not work on credit, and neither do I.', back); tal('q.intel'); const k = pick(left); learn(c, k, 'sato'); dlg(s, `Confirmed, and it cost me a favour: ${hintOf(c, k)}`, back); }, !c || !left.length],
     ['Any rumours?', () => { const G = barGossip('intel'); if (G.length && Math.random() < .3) { const [rk, f] = pick(G); rivKnow(rk, f[0]); return dlg(s, `About ${RIV[rk].name}, for what it is worth: ${f[1]} I have put it in their file.`, back); } const L = CO.board.filter(o => !o.rum && o.twists.some(t => !o.intel.some(i => i.k === t))), o = L.length && Math.random() < .7 ? pick(L) : null; if (!o) return dlg(s, pick(['Nothing I would stake a mech on.', 'Only that everyone is hiring and nobody is paying on time.', 'The Red Maw are bolder this season. That is all I have.']), back); o.rum = true; const k = pick(o.twists.filter(t => !o.intel.some(i => i.k === t))); learn(o, k, 'sato'); dlg(s, `About ${o.site}, for free: ${hintOf(o, k)}`, back); }],
     ['How do the factions and the other companies see us?', () => dlg(s, EMPS.map(f => `${FAC[f].short}: ${repWord(CO.rep[f])} (${sdNum(CO.rep[f])})`).join(' · ') + '\n' + RIVS.map(k => `${RIV[k].name}: ${relWord(CO.riv[k].rel)} (${sdNum(CO.riv[k].rel)})`).join(' · ') + '\nGood standing with a faction means better fees and softer negotiators. With a company it decides whether they talk or shoot when we meet them. The STANDING tab on the board has the detail, and the reasons.', back)],
     ['Thanks, Mira', dlgClose]], HQ.P.intel);
@@ -7075,7 +7302,7 @@ function talkPilot(i) {
   if (p.until > now()) return dlg(ch, 'Still in the med bay, thanks to your last contract. Ask me in a couple of days.', [['Leave', dlgClose]], P0);
   if (CO.wing && CO.wing.p !== p) return dlg(ch, `You already have ${CO.wing.ch.first} on your ticket. A dropship carries two machines, not three.`, [[`Release ${CO.wing.ch.first} and talk terms`, () => { wingRelease(); talkPilot(i); }], ['Leave it as it is', dlgClose]], P0);
   if (CO.wing && CO.wing.p === p) return dlg(ch, 'I am already on your ticket. Changed your mind?', [['Stand down — I fly solo', () => { if (!CO.wing.share) CO.cb += Math.round(p.fee * .5); CO.wing = null; CO.dirty = true; dlg(ch, 'Your call. I am keeping half the retainer.', [['Leave', dlgClose]]); }], ['No. Be ready', dlgClose]], P0);
-  const hire = share => { if (!share && !spend(p.fee)) return dlg(ch, 'Come back when you can cover the retainer.', back); CO.wing = { p, ch, mech: p.mech, share: share ? p.share : 0 }; CO.dirty = true; dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will be on your wing at launch.` : 'Paid up front. I like you already. See you on the drop.', [['Leave', dlgClose]]); };
+  const hire = share => { if (!share && !spend(p.fee, 'pilot')) return dlg(ch, 'Come back when you can cover the retainer.', back); tal('q.hire'); CO.wing = { p, ch, mech: p.mech, share: share ? p.share : 0 }; CO.dirty = true; dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will be on your wing at launch.` : 'Paid up front. I like you already. See you on the drop.', [['Leave', dlgClose]]); };
   dlg(ch, i ? 'Anvil. Assault pilot. I am slow, I am expensive, and I do not miss.' : 'Rook. I fly light and fast, and I always come home. Need a second machine?', [
     [`Hire for the next contract — flat ${fmt(p.fee)}`, () => hire(false)], [`Offer ${Math.round(p.share * 100)}% of the contract fee instead`, () => hire(true)],
     ['Haggle the retainer down', () => { p.hag = true; if (Math.random() < .35 + CO.done * .06) { p.fee = Math.round(p.fee * .75 / 1000) * 1000; dlg(ch, `...You have a reputation. ${fmt(p.fee)}. Tell nobody.`, back); } else { p.fee = Math.round(p.fee * 1.15 / 1000) * 1000; dlg(ch, `For that, the price just went up. ${fmt(p.fee)}.`, back); } }, p.hag],
@@ -7087,7 +7314,7 @@ function talkContact(c) {
   const menu = line => {
     if (c.pat <= 0) { dropContract(c); sub ? rivRel(c.co, -3, `talks over ${c.site} broke down`) : repAdd(c.emp, -2, `talks over ${c.site} broke down`); news(`${E} broke off talks over ${c.site}.`); return dlg(ch, Q.bye, [['Close channel', dlgClose]]); }
     const odds = k => clamp(k + (sub ? CO.riv[c.co].rel : CO.rep[c.emp]) / 150 + CO.done * .02 - c.pushes * .17, .05, .9), act = CO.active === c;
-    const push = (k, okFn, cost) => () => { c.pushes++; if (Math.random() < odds(k)) { okFn(); c.pat -= cost; CO.dirty = true; menu(Q.yes); } else { c.pat -= cost * 1.6; CO.dirty = true; menu(Q.no); } };
+    const push = (k, okFn, cost) => () => { c.pushes++; tal('q.hag'); if (Math.random() < odds(k)) { okFn(); tal('q.hagW'); c.pat -= cost; CO.dirty = true; menu(Q.yes); } else { c.pat -= cost * 1.6; CO.dirty = true; menu(Q.no); } };
     const n = clamp(Math.ceil(c.pat / 18), 0, 5); dlg({ ...ch, role: `${ch.role} · PATIENCE ${'▮'.repeat(n)}${'▯'.repeat(5 - n)}` }, line, [
       [`Push for a higher fee (now ${fmt(c.pay)})`, push(Q.pay, () => { c.pay = Math.round(c.pay * 1.12 / 1000) * 1000; }, 12)],
       [`Ask for better salvage rights (now ${c.salv}%)`, push(Q.salv, () => { c.salv += 10; }, 10), c.salv >= 45],
@@ -7204,7 +7431,7 @@ function talkRival(k) {
     if (!(k === 'cob' ? R.rel >= 10 : k === 'car' ? c.diff >= 3 || R.rel >= 20 : true)) return said(T.jNo);
     const was = c.rival === k; rivCo(c, k, 'joint', .3); HQV.tab = 'board'; saveCO(); said(was ? T.jRival : T.jYes);
   };
-  const gift = () => { if (!spend(cost)) return said('Come back when the gesture would not bounce.'); R.gift = now(); rivRel(k, k === 'ver' ? 9 : k === 'car' ? 8 : 7, 'a peace offering'); saveCO(); said(T.giftYes); };
+  const gift = () => { if (!spend(cost, 'gift')) return said('Come back when the gesture would not bounce.'); tal('q.gift'); R.gift = now(); rivRel(k, k === 'ver' ? 9 : k === 'car' ? 8 : 7, 'a peace offering'); saveCO(); said(T.giftYes); };
   const talk = () => {
     const w = relWord(R.rel), askH = Math.ceil(24 - (now() - R.ask)), giftH = Math.ceil(48 - (now() - R.gift));
     dlg(ch, T.hi[R.rel > 15 ? 0 : R.rel > -15 ? 1 : 2], [
@@ -7528,14 +7755,14 @@ const barTold = key => { BARSV.told[key] = now(); BAR.dirty = true; saveCO(); };
 const barFresh = key => !BAR_SRC[key].paid && now() - (BARSV.told[key] ?? -99) >= 10;   /* everyone has one story in them every ten hours; after that it takes a drink */
 function barTell(key, ch, H, back, lead) {
   const r = barRumour(key); if (!r) return dlg(ch, pick(['Nothing about that board I have not already told you.', 'That is all I have. Ask me after the board turns over.']), back, H);
-  barTold(key); dlg(ch, `${lead}\n\n${r.head} ${r.s}\n\n${barFoot(r)}`, back, H);
+  barTold(key); tal('b.rum'); dlg(ch, `${lead}\n\n${r.head} ${r.s}\n\n${barFoot(r)}`, back, H);
 }
 function talkKeep() {
   const k = BARC.keep, H = BAR.P.keep, back = [['Something else', talkKeep], ['Thanks, Mother', dlgClose]], fresh = barFresh('keep'), has = barRumour('keep', true), R = barRoster();
-  const pour = (cost, d, line) => () => { if (!spend(cost)) return dlg(k, 'Not on the slate. Not for you, not for anyone.', back, H); barBuzzAdd(d); sfx.play(d > 0 ? 'glass' : 'ui'); dlg(k, line, back, H); };
+  const pour = (cost, d, line) => () => { if (!spend(cost, 'bar')) return dlg(k, 'Not on the slate. Not for you, not for anyone.', back, H); tal('b.drink'); barBuzzAdd(d); sfx.play(d > 0 ? 'glass' : 'ui'); dlg(k, line, back, H); };
   dlg(k, pick(['Commander. The usual, or are you here to listen?', 'Sit anywhere that is not already bleeding.', 'Upstairs you sign their contracts. Down here you buy the rounds.']), [
-    [!has ? 'What are people saying? (nothing new)' : fresh ? 'What are people saying?' : `Buy a drink and ask what people are saying — ${fmt(150)}`, () => { if (!fresh) { if (!spend(150)) return dlg(k, 'Not on the slate.', back, H); barBuzzAdd(.12); sfx.play('glass'); } barTell('keep', k, H, back, pick(['You did not hear it from me.', 'Three people told me this tonight, which means one person started it.', 'Loadmasters talk when they drink. I only pour.'])); }, !has],
-    [`Stand the house a round — ${fmt(900)}`, () => { if (!spend(900)) return dlg(k, 'A round for this room costs more than you are carrying.', back, H); BARSV.told = {}; barBuzzAdd(.12); sfx.play('glass'); BAR.dirty = true; saveCO(); dlg(k, 'That buys you a room full of friends for about an hour. Strand and Banerjee will talk to you again now — ask around.', back, H); }],
+    [!has ? 'What are people saying? (nothing new)' : fresh ? 'What are people saying?' : `Buy a drink and ask what people are saying — ${fmt(150)}`, () => { if (!fresh) { if (!spend(150, 'bar')) return dlg(k, 'Not on the slate.', back, H); tal('b.drink'); barBuzzAdd(.12); sfx.play('glass'); } barTell('keep', k, H, back, pick(['You did not hear it from me.', 'Three people told me this tonight, which means one person started it.', 'Loadmasters talk when they drink. I only pour.'])); }, !has],
+    [`Stand the house a round — ${fmt(900)}`, () => { if (!spend(900, 'bar')) return dlg(k, 'A round for this room costs more than you are carrying.', back, H); tal('b.round'); tal('b.drink'); BARSV.told = {}; barBuzzAdd(.12); sfx.play('glass'); BAR.dirty = true; saveCO(); dlg(k, 'That buys you a room full of friends for about an hour. Strand and Banerjee will talk to you again now — ask around.', back, H); }],
     [`Something strong — ${fmt(150)}`, pour(150, .16, pick(['Reactor coolant, the regulars call it. It is not, quite.', 'There. Do not operate heavy machinery. I am told you own some.']))],
     [`Black coffee — ${fmt(50)}`, pour(50, -.22, 'On the house rate. Drink it slowly and stop looking at Ballast.')],
     ['Who is in tonight?', () => dlg(k, `${R.map(p => `${p.ch.first} — ${BSK[p.sk][0].toLowerCase()}, flies ${/^[AEIOU]/.test(p.cfg.name) ? 'an' : 'a'} ${p.cfg.name}`).join('. ')}. All four fly for money; the better the pilot and the bigger the machine, the more of it.\nBallast will drink you under her table for a stake, and Vise will take your arm off for the same. Strand loads the dropships, Banerjee listens to bands she should not, and Calloway in the booth knows every contact on your board.`, back)],
@@ -7549,7 +7776,7 @@ function talkSrc(key) {
     broker: { hi: ['Calloway. I introduce people who need something broken to people who break things. Information is extra.', 'Commander. I know who is behind every name on your board. That knowledge has a price, like everything in here.'], ask: '', buy: 'Pay for a name: who am I dealing with on the board?', lead: ['Since you are paying.', 'This one is worth the fee.'], chat: ['I do not drink. I invoice.', 'Rumour is free and worth it. What I sell is who signs, who stalls and who does not pay.'] },
   }[key];
   dlg(ch, pick(T.hi), [
-    [!has ? `${T.ask || T.buy} (nothing new)` : fresh ? T.ask : `${T.buy} — ${fmt(S.cost)}`, () => { if (!fresh) { if (!spend(S.cost)) return dlg(ch, key === 'broker' ? 'Then we have nothing to discuss tonight.' : 'Next time, then.', back, H); if (!S.paid) sfx.play('glass'); } barTell(key, ch, H, back, pick(T.lead)); }, !has],
+    [!has ? `${T.ask || T.buy} (nothing new)` : fresh ? T.ask : `${T.buy} — ${fmt(S.cost)}`, () => { if (!fresh) { if (!spend(S.cost, 'bar')) return dlg(ch, key === 'broker' ? 'Then we have nothing to discuss tonight.' : 'Next time, then.', back, H); if (!S.paid) sfx.play('glass'); } barTell(key, ch, H, back, pick(T.lead)); }, !has],
     ['Just talk', () => dlg(ch, pick(T.chat), back, H)],
     ['Leave', dlgClose]], H);
 }
@@ -7559,7 +7786,7 @@ function talkBarPilot(p) {
   if (p.until > now()) return dlg(ch, 'Still being patched up after the last drop with you. Ask me in a couple of days.', bye, H);
   if (CO.wing && CO.wing.p === p) return dlg(ch, 'I am already on your ticket. Changed your mind?', [['Stand down — I fly without you', () => { const flat = !CO.wing.share; wingRelease(); dlg(ch, flat ? 'Your call. I am keeping half the retainer.' : 'Your call.', bye, H); }], ['No. Be ready', dlgClose]], H);
   if (CO.wing) return dlg(ch, `You already have ${CO.wing.ch.first} on your ticket. A dropship carries two machines, not three.`, [[`Release ${CO.wing.ch.first} and talk terms`, () => { wingRelease(); talkBarPilot(p); }], ['Leave it as it is', dlgClose]], H);
-  const hire = share => { if (!share && !spend(fee)) return dlg(ch, 'Come back when you can cover the retainer.', back, H); CO.wing = { p, ch, mech: 0, cfg: p.cfg, skill: p.skill, hpK: p.hpK, share: share ? p.share : 0, paid: share ? 0 : fee }; CO.dirty = BAR.dirty = true; saveCO(); sfx.play('ok'); dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will have the ${c.name} on the lifter when you launch.` : `Paid up front. The ${c.name} will be on your wing at launch.`, bye, H); };
+  const hire = share => { if (!share && !spend(fee, 'pilot')) return dlg(ch, 'Come back when you can cover the retainer.', back, H); tal('q.hire'); CO.wing = { p, ch, mech: 0, cfg: p.cfg, skill: p.skill, hpK: p.hpK, share: share ? p.share : 0, paid: share ? 0 : fee }; CO.dirty = BAR.dirty = true; saveCO(); sfx.play('ok'); dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will have the ${c.name} on the lifter when you launch.` : `Paid up front. The ${c.name} will be on your wing at launch.`, bye, H); };
   const line = [['Two drops in a simulator and one that counted. I am cheap, and I do what I am told.', 'Everyone starts somewhere. I would like to start somewhere that pays.'], ['I show up, I shoot what you point at, I go home. The rate is the rate.', 'Nothing fancy. I have brought the machine back every time so far.'], ['Nine seasons. I have flown for three of the factions on your board and against all five.', 'I know when to push and when to walk backwards shooting. That is what you are paying for.'], ['I do not miss much, and I do not come cheap. You have seen the numbers.', 'Pick the hard contract. With me on your wing it is not.'], ['You know the callsign. That is what the retainer is for.', 'I choose my commanders. Tonight I am thirsty enough to choose you.']][p.sk][p.seed % 2];
   const wn = k => c[k] ? (k === 'back' ? PARTS.back[c.back].name : PARTS.arm[c[k]].name) : 'nothing';
   dlg({ ...ch, role: `${ch.role} · ${S[0]}` }, `${line}\n\n${sheet}`, [
@@ -7606,7 +7833,7 @@ function barSync() {
 function barRelax(on) {
   if (on === BAR.relax || (on && (BAR.game || mode !== 'bar'))) return; BAR.relax = on; $('barUI').classList.toggle('chill', on);
   if (on) { dlgClose(); BAR.rest0 = now(); barCam.focus = { pos: V3(-8.45, 1.2, 2.4), look: V3(1, 1.05, -2.6) }; sfx.play('ui'); }
-  else { barCam.focus = null; if (now() - BAR.rest0 >= 4 && barBuzz() < .25) BARSV.rested = true; saveCO(); }
+  else { barCam.focus = null; tal('b.rest', Math.max(0, now() - BAR.rest0)); if (now() - BAR.rest0 >= 4 && barBuzz() < .25) BARSV.rested = true; saveCO(); }
   BAR.dirty = true; barStat();
 }
 
@@ -7694,7 +7921,7 @@ function talkHost(kind) {
     ['Not tonight', dlgClose]], H);
 }
 async function barGameOpen(kind, tier) {
-  const stake = BAR_STAKE[tier]; if (busy || BAR.game || mode !== 'bar') return; if (!spend(stake)) return sfx.play('deny'); busy = true; dlgClose(); blackout(true); await tween(.3, fade);
+  const stake = BAR_STAKE[tier]; if (busy || BAR.game || mode !== 'bar') return; if (!spend(stake, 'stake')) return sfx.play('deny'); tal(kind === 'drink' ? 'b.gd.n' : 'b.ga.n'); busy = true; dlgClose(); blackout(true); await tween(.3, fade);
   const D = kind === 'drink', T = BGT[kind], host = BAR.P[kind], me = BAR.me[kind] || (BAR.me[kind] = barMe(kind)), S = BAR.gSeat[kind];
   const G = { kind, tier, stake, host, me, ph: 'ready', pt: 0, res: null, msgK: '', r: 1, pos: .5, sph: 0, w: .19, you: [], opp: [], ys: 0, os: 0, last: '', oc: true, x: 0, xs: 0, push: 0, stam: 1, fat: 0, sg: 0, sT: rand(1.2, 2.2), sk: 1, day: rand(.88, 1.14), of: 0 };
   G.ho = { ...host.sp.o, arm: D ? 0 : 1, k: 0, sip: 0, wob: 0, out: 0, strain: 0 }; G.mo = { ...S.o, arm: D ? 0 : 1, k: 0, sip: 0, wob: 0, out: 0, strain: 0 };
@@ -7711,7 +7938,7 @@ function barGameHit() {
   if (G.ph !== 'play') return; G.push += .5 * (.25 + .75 * Math.min(1, G.stam / .5)) * (1 - .3 * barBuzz()) * (1 - G.push); sfx.play('step', .25);   /* the press rate sets the pull; with no strength left a press is worth a third */
 }
 function barDrinkHit(G, late) {
-  const ok = !late && Math.abs(G.pos - .5) <= G.w; G.you.push(ok); if (!ok) G.ys++; G.last = ok ? 'DOWN IN ONE' : late ? 'TOO SLOW — SPILLED' : 'SPILLED'; G.ph = 'you'; G.pt = 0; barBuzzAdd(.06); sfx.play(ok ? 'gulp' : 'glass');
+  const ok = !late && Math.abs(G.pos - .5) <= G.w; G.you.push(ok); if (!ok) G.ys++; G.last = ok ? 'DOWN IN ONE' : late ? 'TOO SLOW — SPILLED' : 'SPILLED'; G.ph = 'you'; G.pt = 0; if (ok) tal('b.glass'); barBuzzAdd(.06); sfx.play(ok ? 'gulp' : 'glass');
 }
 function barGameTick(dt, t) {
   const G = BAR.game, D = G.kind === 'drink', bz = barBuzz(), sipK = (p, n) => smooth(clamp(Math.min(p / .25, (n - p) / .25), 0, 1)); G.pt += dt; let msg = '';
@@ -7771,7 +7998,7 @@ function barGameDraw(G, t) {
 }
 function barGameEnd(res) {
   const G = BAR.game; if (!G || G.ph === 'end') return; const D = G.kind === 'drink', nm = BARC[G.kind].first; G.ph = 'end'; G.res = res; G.pt = 0;
-  if (res === 'win') { CO.cb += G.stake * 2; BARSV.wins[G.kind]++; sfx.play('ok'); if (BARSV.wins[G.kind] === 1) news(D ? `${YARD.name}'s commander drank ${nm} under her own table at the Last Round.` : `${YARD.name}'s commander put ${nm}'s arm down at the Last Round.`); }
+  if (res === 'win') { CO.cb += G.stake * 2; tal('cr.won', G.stake * 2); tal(D ? 'b.gd.w' : 'b.ga.w'); BARSV.wins[G.kind]++; sfx.play('ok'); if (BARSV.wins[G.kind] === 1) news(D ? `${YARD.name}'s commander drank ${nm} under her own table at the Last Round.` : `${YARD.name}'s commander put ${nm}'s arm down at the Last Round.`); }
   else if (res === 'draw') { CO.cb += G.stake; sfx.play('ui'); } else sfx.play(D ? 'thud' : 'deny');
   if (D) { if (G.os >= 3) G.ho.out = 1; if (G.ys >= 3) G.mo.out = 1; } else { G.push = 0; G.x = res === 'win' ? 1 : res === 'lose' ? -1 : G.x; }
   $('bgMsg').innerHTML = res === 'win' ? `<b style="color:#8dff6a">YOU WIN — ${fmt(G.stake * 2)} IS YOURS.</b> ${D ? `${nm} is face down on the table.` : `${nm}'s knuckles are on the wood.`}` : res === 'draw' ? `<b style="color:#ffb21a">A DRAW — STAKES RETURNED.</b> ${D ? 'Neither of you can find the glass.' : 'Time. Nobody gave an inch.'}`
@@ -7796,6 +8023,103 @@ async function barGameClose() {
   addEventListener('keydown', e => { if (!BAR.game || mode !== 'bar') return; if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) barGameHit(); } });
 }
 
+/* ============ THE BOARDS: THE RECORD, A FEW LINES AT A TIME, IN THE BAY, ON THE DECK AND BEHIND THE BAR ============ */
+/* Each board is a canvas on a wall with a few slots. Every few seconds one slot is dealt another line out of the record (talRows, 117_stats.js): whatever is not
+   on the board already and has not been lately, with every section given a fair turn however many lines it has. A line that changes while it is up is kept
+   current. The board of the room showing is the only one that is drawn, and only when something on it has changed (a board with a crawl draws at its own rate). */
+const TALB = { all: [], feed: [], feedT: -1e9 };
+/* what there is to show: everything that stands at more than nothing, or for a company with no history yet the lines that are worth showing at nothing */
+function talFeed() {
+  const n = performance.now(); if (n - TALB.feedT < 1000) return TALB.feed; TALB.feedT = n;
+  let R = talRows(false); if (R.length < 14) R = talRows(true); return TALB.feed = R;
+}
+function talDeal(B) {
+  const F = talFeed(), on = new Set(B.hist); for (const s of B.slots) on.add(s.id); let pool = F.filter(r => !on.has(r.g + '|' + r.l)); if (!pool.length) pool = F; if (!pool.length) return null;
+  const by = {}; for (const r of pool) (by[r.g] || (by[r.g] = [])).push(r); let tot = 0; for (const g in by) tot += Math.sqrt(by[g].length);
+  let x = Math.random() * tot, L = null; for (const g in by) { L = by[g]; if ((x -= Math.sqrt(L.length)) < 0) break; }
+  const r = pick(L), id = r.g + '|' + r.l; B.hist.push(id); while (B.hist.length > Math.min(30, F.length >> 1)) B.hist.shift(); return { id, g: r.g, l: r.l, v: r.v, age: 0 };
+}
+/* a line arriving: its letters settle from the left */
+const TAL_GLY = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+const talScr = (s, k) => { if (k >= 1) return s; const n = Math.floor(s.length * k); let o = s.slice(0, n); for (let i = n; i < s.length; i++) o += s[i] === ' ' ? ' ' : TAL_GLY[(Math.random() * 33) | 0]; return o; };
+/* o: rooms it is seen from, w and h of the canvas, n slots, every (seconds between deals), idle (pictures a second when nothing is arriving; 0 for none), glow, draw(B, g, t, dt) */
+function talBoard(o) {
+  const cv = document.createElement('canvas'); cv.width = o.w; cv.height = o.h; const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+  const mat = new THREE.MeshBasicMaterial({ map: tx }); mat.color.setScalar(o.glow || 1.4);
+  const B = { idle: 0, every: 3.2, ...o, cv, g: cv.getContext('2d'), tx, mat, slots: [], hist: [], wait: 0, turn: 0, acc: 9, live: 0, dirty: true, key: '' }; TALB.all.push(B); return B;
+}
+function talBoardTick(B, dt, t) {
+  let moving = false; B.wait -= dt;
+  if (!B.slots.length) { for (let i = 0; i < B.n; i++) { const s = talDeal(B); if (s) { s.age = -i * .35; B.slots.push(s); } } B.wait = B.every; }
+  else if (B.wait <= 0) { const s = talDeal(B); if (s) B.slots[B.turn % B.slots.length] = s; B.turn = (B.turn + 1) % B.n; B.wait = B.every; }
+  for (const s of B.slots) { if (s.age < 1) { moving = true; s.age += dt / .75; } }
+  if ((B.live -= dt) < 0) {
+    B.live = 1; const F = talFeed(), k = YARD.name + YARD.logoV; if (k !== B.key) { B.key = k; B.dirty = true; }
+    for (const s of B.slots) { const r = F.find(r => r.l === s.l && r.g === s.g); if (r && r.v !== s.v) { s.v = r.v; B.dirty = true; } }
+  }
+  B.acc += dt; const fps = moving ? 30 : B.idle; if (!B.dirty && !(fps && B.acc >= 1 / fps)) return;
+  const el = B.acc; B.acc = 0; B.dirty = false; B.draw(B, B.g, t, Math.min(el, .2)); B.tx.needsUpdate = true;
+}
+/* once a frame from the main loop */
+function talBoards(dt, t) { for (const B of TALB.all) if (B.rooms.includes(mode)) talBoardTick(B, dt, t); }
+const TAL_FONT = 'Menlo,Consolas,monospace';
+
+/* a label too long for one line of a board is broken in two near its middle */
+const talWrap = (s, n) => { if (s.length <= n) return [s]; const W = s.split(' '); let k = 0, i = 0; while (i < W.length - 1 && k + W[i].length < s.length / 2) k += W[i++].length + 1; return [W.slice(0, i).join(' '), W.slice(i).join(' ')]; };
+
+/* ---- the bay: a panel hung on each end of both gantry towers between the middle decks, so one of them faces the stand's camera wherever it has been dragged to ---- */
+{
+  const B = talBoard({ rooms: ['hangar'], w: 1024, h: 600, n: 2, every: 4.2, glow: 1.55, draw(B, g) {
+    g.fillStyle = '#05080a'; g.fillRect(0, 0, 1024, 600); g.strokeStyle = '#d9a316'; g.lineWidth = 8; g.strokeRect(4, 4, 1016, 592);
+    g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = '#ffb21a'; g.font = `bold 40px ${TAL_FONT}`; g.fillText('THE RECORD', 28, 58); g.fillRect(28, 76, 968, 4);
+    drawLogo(g, 968, 42, 26); g.textAlign = 'right'; g.fillStyle = '#e6dfcf'; g.font = `bold 30px ${TAL_FONT}`; g.fillText(YARD.name, 930, 54, 560); g.textAlign = 'left';
+    B.slots.forEach((s, i) => {
+      const y = 84 + i * 256, k = clamp(s.age, 0, 1); if (s.age < 0) return;
+      if (k < 1) { g.fillStyle = `rgba(255,178,26,${.3 * (1 - k)})`; g.fillRect(12, y + 4, 1000, 248); }
+      if (i) { g.fillStyle = 'rgba(255,178,26,.3)'; g.fillRect(28, y, 968, 3); }
+      const L = talWrap(s.l, 24); g.fillStyle = '#9fe9ff'; g.font = `bold 52px ${TAL_FONT}`; L.forEach((l, j) => g.fillText(talScr(l, k * 1.6), 28, y + 62 + j * 56, 968));
+      g.fillStyle = '#ffffff'; g.font = `bold ${L.length > 1 ? 100 : 124}px ${TAL_FONT}`; g.textAlign = 'right'; g.fillText(talScr(s.v, k), 996, y + 236, 968); g.textAlign = 'left';
+    });
+  } });
+  for (const s of [-1, 1]) for (const f of [-1, 1]) {
+    const t = HG['tower' + s]; box(t, M.dark, 10.1, 6.1, .3, 0, 15.1, f * 4.05); for (const x of [-2.3, 2.3]) box(t, M.girder, .3, .3, .5, x, 15.1, f * 3.75);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(9.6, 5.625), B.mat); m.position.set(0, 15.1, f * 4.22); if (f < 0) m.rotation.y = PI; t.add(m);
+  }
+  HG.statB = B;
+}
+/* ---- the deck: a long strip hung from the roof girders over the window onto the bay ---- */
+{
+  const sc = HQ.scene, B = talBoard({ rooms: ['hq'], w: 1920, h: 192, n: 3, every: 3, glow: 1.45, draw(B, g) {
+    g.fillStyle = '#04090c'; g.fillRect(0, 0, 1920, 192); g.fillStyle = '#12303a'; g.fillRect(0, 0, 1920, 4); g.fillRect(0, 188, 1920, 4); g.textBaseline = 'alphabetic';
+    B.slots.forEach((s, i) => {
+      const x = i * 640, k = clamp(s.age, 0, 1); if (i) { g.fillStyle = '#1d4a58'; g.fillRect(x, 22, 2, 148); } if (s.age < 0) return;
+      if (k < 1) { g.fillStyle = `rgba(95,216,255,${.26 * (1 - k)})`; g.fillRect(x + 4, 6, 632, 180); }
+      g.fillStyle = '#ffb21a'; g.fillRect(x + 26, 30, 6, 132);
+      const L = talWrap(s.l, 29), two = L.length > 1; g.textAlign = 'left'; g.fillStyle = '#7fe7ff'; g.font = `bold ${two ? 27 : 32}px ${TAL_FONT}`; L.forEach((l, j) => g.fillText(talScr(l, k * 1.6), x + 50, (two ? 46 : 62) + j * 30, 566));
+      g.fillStyle = '#ffffff'; g.font = `bold ${two ? 76 : 88}px ${TAL_FONT}`; g.fillText(talScr(s.v, k), x + 50, two ? 162 : 158, 566);
+    });
+  } });
+  box(sc, M.dark, 15.5, 1.86, .18, 0, 6.12, -9.62); for (const x of [-6, 6]) box(sc, M.girder, .12, .5, .12, x, 7.05, -9.62);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(15, 1.5), B.mat); m.position.set(0, 6.12, -9.52); sc.add(m); HQ.statB = B;
+}
+/* ---- the bar: the set over the far end of the back bar. One line at a time, big enough to read from the door, and the rest of it crawling along underneath ---- */
+{
+  const sc = BAR.scene, CR = { x: 0, s: '', w: 0 }, B = talBoard({ rooms: ['bar'], w: 640, h: 320, n: 1, every: 6, idle: 24, glow: 1.35, draw(B, g, t, dt) {
+    g.fillStyle = '#0a0705'; g.fillRect(0, 0, 640, 320); g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillStyle = '#ff8a3a'; g.fillRect(0, 0, 640, 6);
+    const s = B.slots[0];
+    if (s && s.age >= 0) {
+      const k = clamp(s.age, 0, 1), L = talWrap(s.l, 20); if (k < 1) { g.fillStyle = `rgba(255,138,58,${.3 * (1 - k)})`; g.fillRect(0, 6, 640, 264); }
+      g.fillStyle = '#ffe9c4'; g.font = `bold 44px ${TAL_FONT}`; L.forEach((l, j) => g.fillText(talScr(l, k * 1.6), 18, 62 + j * 50, 604));
+      g.fillStyle = '#ffb21a'; g.font = `bold ${L.length > 1 ? 104 : 128}px ${TAL_FONT}`; g.fillText(talScr(s.v, k), 18, 252, 604);   /* everything from the left: the far end of the set is behind the hiring list from the door */
+    }
+    /* the crawl: a dozen other lines end to end, and a new dozen when those have gone by */
+    g.fillStyle = '#1c0f08'; g.fillRect(0, 272, 640, 48); g.fillStyle = '#ff8a3a'; g.fillRect(0, 272, 640, 2); g.font = `26px ${TAL_FONT}`;
+    if (!CR.s || CR.x + CR.w < 0) { const F = talFeed(), L = []; for (let i = 0; i < 12 && F.length; i++) { const r = pick(F); L.push(`${r.l}  ${r.v}`); } CR.s = L.join('   ◆   '); CR.w = g.measureText(CR.s).width; CR.x = 640; }
+    CR.x -= 80 * dt; g.fillStyle = '#ffcf9a'; g.fillText(CR.s, CR.x, 306);
+  } });
+  const tv = grp(sc, 2.5, 3.02, -5.94, .1, 0, 0); box(tv, M.black, 2.76, 1.44, .1, 0, 0, -.06); box(sc, M.girder, .1, .4, .1, 2.5, 3.62, -6.2);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), B.mat); tv.add(m); BAR.statB = B;
+}
 /* ============ THE BRIEFING ROOM: BEFORE A STORY OPERATION THE XO WALKS THE LANCE THROUGH IT — WHAT IS KNOWN, AT ANY RATE ============ */
 /* a dark room, rows of seats, a lectern and one big screen. A briefing is a list of steps { t: what is said, by: who says it (the XO unless named), show: [marks added to the screen], shot }.
    marks: ['site', key, label, colour] · ['foe' | 'ally' | 'unk', key, label] · ['route', [keys], colour] · ['ring', key, metres, label] · ['card', title, [lines]] · ['face', character, [lines]] · ['clear'].
@@ -7926,7 +8250,7 @@ function brfStep(i) {
   dlg(who, st.t, [[i === n - 1 ? 'Go on' : 'Continue', () => brfStep(i + 1)], ['Skip to the end of the briefing', () => { for (let j = i + 1; j < n; j++) for (const op of H.brf[j].show || []) { if (op[0] === 'clear') BRF.marks = BRF.marks.filter(m => m.op[0] === 'site' && m.op[1] === 'lz'); else if (op[0] !== 'card' && op[0] !== 'face') BRF.marks.push({ op, i: j }); } BRF.i = n - 1; brfEnd(); }, i >= n - 1]], null);
 }
 function brfEnd() {
-  const c = BRF.c, T = stState(c.story); BRF.talk = BRF.xo; BRF.shot = 'wide'; BRF.i = BRF.H.brf.length; for (const h of BRF.people) if (h !== BRF.xo) h.look = BRF.eye;
+  const c = BRF.c, T = stState(c.story); tal('q.brf'); BRF.talk = BRF.xo; BRF.shot = 'wide'; BRF.i = BRF.H.brf.length; for (const h of BRF.people) if (h !== BRF.xo) h.look = BRF.eye;
   dlg(CREW.xo, T.n ? 'You have flown this ground once already, so you know what the brief is worth. That is everything we have. Mount up.' : pick(['That is what we know. What we do not know will introduce itself. Mount up.', 'Questions? ...Good, because I have no more answers. Bay crew are standing by.', 'That is the plan. It will last until somebody shoots at it. Dismissed — and good hunting.']),
     [['To the mech bay', () => brfLeave('bay')], ['Run through it again', () => { BRF.marks = []; BRF.card = null; brfStep(0); }], ['Back to the command deck', () => brfLeave('hq')]], null);
 }
@@ -9426,7 +9750,7 @@ function sunHud() { $('helpB').classList.toggle('hid', !sunKey()); tutKeys(P.lan
 function sunCall() {
   if (mode !== 'field' || P.dead || !sunKey() || (MS.on && MS.over)) return; if (!(P.lance > 0)) { sfx.play('deny'); return msg('SKY LANCE — NO CALLS LEFT THIS SORTIE', 2.5); }
   const p = P.aim.clone(); if (Math.hypot(p.x - P.pos.x, p.z - P.pos.z) < 34) { sfx.play('deny'); return msg('SKY LANCE — TOO CLOSE. PUT THE RETICLE FURTHER OUT', 2.5); }
-  P.lance--; sunHud(); sfx.play('alarm'); msg('SKY LANCE CALLED — STAND CLEAR', 3); skyLance(p, { own: 0, dmg: 950, r: 27, delay: 2.6, hit: at => { if (MS.on && MS.v.onLance) MS.v.onLance(at); } });
+  P.lance--; tal('s.lance'); sunHud(); sfx.play('alarm'); msg('SKY LANCE CALLED — STAND CLEAR', 3); skyLance(p, { own: 0, dmg: 950, r: 27, delay: 2.6, hit: at => { if (MS.on && MS.v.onLance) MS.v.onLance(at); } });
 }
 /* what the war does to an ordinary contract: a Concord lance arrives part-way through, and it is nobody's friend */
 TWISTS.concord = async ms => {
@@ -9915,7 +10239,7 @@ function storesOpen(o = {}) {
   if (ST.mode === 'shop' || ST.mode === 'inv' || ST.mode === 'mech') shopRoll(); if (ST.mode === 'mech') { ST.sort = 'lot'; ST.dir = 1; } $('stores').classList.remove('hid'); storesDraw();
 }
 function storesClose() {
-  if (!ST.open) return; if (ST.mode === 'salv') { for (const i of ST.picked) invAdd(ST.salv.pool[i], 1); saveCO(); }
+  if (!ST.open) return; if (ST.mode === 'salv') { for (const i of ST.picked) invAdd(ST.salv.pool[i], 1); tal('y.salv', ST.picked.size); tal('y.left', ST.salv.pool.length - ST.picked.size); saveCO(); }
   ST.open = false; $('stores').classList.add('hid'); const d = ST.done; ST.done = null; if (mode === 'hangar') refreshUI(); CO.dirty = true; if (d) d([...ST.picked].map(i => ST.salv.pool[i]));
 }
 /* ---- fitting: every part on offer is marked against the one in the slot. [better when higher (+1) or lower (-1), decimals] ---- */
@@ -9989,8 +10313,8 @@ function storesDraw() {
     const a = b.dataset.a;
     if (a === 'fit' || a === 'rem') { const s = ST.slot; storesClose(); sfx.play('ui'); fitPart(s, a === 'fit' ? b.dataset.k : null); return; }
     if (a === 'pick') { const i = +b.dataset.i; ST.picked.has(i) ? ST.picked.delete(i) : ST.picked.add(i); ST.sure = 0; sfx.play('ui'); }
-    if (a === 'buy') { const e = YARD.shop.stock[+b.dataset.i]; if (!e || !spend(e.price)) return sfx.play('deny'); invAdd(e.key, 1); if (--e.qty <= 0) YARD.shop.stock.splice(+b.dataset.i, 1); saveCO(); sfx.play('ok'); }
-    if (a === 'sell') { const k = b.dataset.k; if (!invN(k)) return; invAdd(k, -1); CO.cb += sellValue(k); CO.dirty = true; saveCO(); sfx.play('ok'); }
+    if (a === 'buy') { const e = YARD.shop.stock[+b.dataset.i]; if (!e || !spend(e.price, 'market')) return sfx.play('deny'); tal('y.buy'); invAdd(e.key, 1); if (--e.qty <= 0) YARD.shop.stock.splice(+b.dataset.i, 1); saveCO(); sfx.play('ok'); }
+    if (a === 'sell') { const k = b.dataset.k; if (!invN(k)) return; invAdd(k, -1); CO.cb += sellValue(k); tal('y.sell'); tal('cr.sell', sellValue(k)); CO.dirty = true; saveCO(); sfx.play('ok'); }
     storesDraw();
   });
   $('stInfo').textContent = salv ? `${ST.picked.size} of ${ST.salv.picks} claimed` : fit ? `${L.length} in stores${cur ? ' · 1 fitted' : ''}` : `${L.length} of ${all.length} shown`;
@@ -10047,7 +10371,7 @@ function dealShot(p) {
 /* where a bought machine goes: the first bay with nothing in it, or -1 for crates in stores */
 const dealBay = () => YARD.bays.findIndex(b => !bayParts(b));
 function dealBuy(r) {
-  if (!spend(r.price)) return false; const i = dealBay(), lot = dealLot(), k = lot.findIndex(e => e.p === r.p); if (k >= 0) lot.splice(k, 1);
+  if (!spend(r.price, 'mech')) return false; tal('y.mech'); const i = dealBay(), lot = dealLot(), k = lot.findIndex(e => e.p === r.p); if (k >= 0) lot.splice(k, 1);
   if (i < 0) { for (const s of SLOTS) if (r.cfg[s]) invAdd(CAT[s] + '.' + r.cfg[s], 1); if (r.cfg.sinks) invAdd('gear.sink', r.cfg.sinks); ST.mSaid = `${r.cfg.name} DELIVERED IN CRATES — 6 PARTS${r.cfg.sinks ? ` AND ${r.cfg.sinks} HEAT SINKS` : ''} ARE IN STORES. CLEAR A BAY AND FIT THEM`; }
   else {
     Object.assign(YARD.bays[i], cleanBay(r.cfg)); ST.mSaid = `${r.cfg.name} DELIVERED TO BAY ${i + 1} — ASSEMBLED, FUELLED AND READY`;
@@ -10084,7 +10408,7 @@ function dealDraw() {
   $('stInfo').textContent = ST.mSaid || `${L.length} of ${all.length} machines shown · ${dealLot().length} on the lot`;
 }
 /* ============ SETTINGS, COMPANY IDENTITY, SAVE FILES, NEW GAME ============ */
-const SET = { open: false, tab: 'audio', found: false, wipe: false, msg: '', bad: false, pv: -1, pvT: 0 };
+const SET = { open: false, tab: 'audio', found: false, wipe: false, msg: '', bad: false, pv: -1, pvT: 0, q: '', sec: '' };
 /* paint the company name and emblem wherever they appear */
 function brandSync() {
   document.querySelectorAll('.ttl').forEach(t => { t.querySelector('b').textContent = YARD.name; const g = t.querySelector('canvas').getContext('2d'); g.clearRect(0, 0, 100, 100); drawLogo(g, 50, 50, 47); });
@@ -10097,7 +10421,7 @@ function gfxApply() {
 }
 /* swap the whole company for another: a fresh start (null) or an imported save */
 function gameApply(s) {
-  if (dlgCur) dlgClose(); tutEnd(); yardApply(s); tutApply(s); ledgerApply(s); pilotsApply(s); boardApply(s); storyApply(s); barApply(s);
+  if (dlgCur) dlgClose(); tutEnd(); yardApply(s); tutApply(s); talApply(s); ledgerApply(s); pilotsApply(s); boardApply(s); storyApply(s); barApply(s);
   player.cfg = YARD.bays[YARD.act]; applyPaint(player.mats, player.cfg.paint); player.build(); mechName = bayTitle(); HG.armT = 0; HG.syncBerths(); if (HQ.setMini) HQ.setMini();
   brandSync(); saveCO(); setStatus(bayParts(player.cfg) ? 'STAND READY — ' + mechName : 'STAND EMPTY'); if (mode === 'hangar') { refreshUI(); renderHangarContract(); } else if (mode === 'hq') renderDetail();
 }
@@ -10123,9 +10447,9 @@ function settingsDraw() {
   const bindR = (id, set, show) => { const e = $(id); e.oninput = () => { set(+e.value); e.nextElementSibling.textContent = show(+e.value); }; e.onchange = () => { cfgSave(); sfx.play('ui'); }; };
   const bindT = (id, key, after) => { $(id).onclick = () => { CFG[key] = !CFG[key]; cfgSave(); sfx.play('ui'); if (after) after(); settingsDraw(); }; };
   $('setTitle').textContent = F ? 'FOUND YOUR COMPANY' : 'SETTINGS'; $('setSub').textContent = F ? 'NEW GAME' : `${YARD.name} · DAY ${CO.day}`;
-  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
+  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
   $('setTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.tab = b.dataset.k; SET.wipe = false; SET.msg = ''; settingsDraw(); });
-  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : 'Settings are kept on this machine, apart from the save file.';
+  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : 'Settings are kept on this machine, apart from the save file.';
   if (tab === 'audio') {
     /* a preview button; data-p names what it plays: p3 / c3 a mission score on patrol or in combat, night, amb, win */
     const pvb = (k, label) => `<button data-p="${k}" class="${SET.pv === k ? 'on' : ''}">${SET.pv === k ? '■ STOP' : '▶ ' + label}</button>`;
@@ -10175,11 +10499,13 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
     B.querySelectorAll('.ink button').forEach(b => b.onclick = () => { L[b.parentNode.dataset.k] = b.dataset.c; chg(); });
     $('lgRnd').onclick = () => { const a = pick(LOGO_INKS); let c = pick(LOGO_INKS); while (c === a) c = pick(LOGO_INKS); Object.assign(L, { shape: (Math.random() * 8) | 0, sym: (Math.random() * 14) | 0, c1: a, c2: c, c3: Math.random() < .6 ? c : pick(LOGO_INKS) }); chg(); };
     const nm = $('coName'); nm.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') nm.blur(); }; nm.oninput = () => { YARD.name = cleanName(nm.value, CO_DEF_NAME); brandSync(); }; nm.onchange = () => { nm.value = YARD.name; saveCO(); };
+  } else if (tab === 'stats') {
+    statsDraw(B);
   } else {
     const b = YARD.bays.filter(x => bayParts(x)).length, act = CO.active;
     B.innerHTML = `<div class="sh">THIS COMPANY</div><div class="sum"><canvas id="lgSm" width="120" height="120"></canvas><div><b>${YARD.name}</b><span>Day ${CO.day} · funds ${fmt(CO.cb)} · ${CO.done} contracts completed, ${CO.fails} failed</span><span>${b} of 3 bays occupied · ${invCount()} items in stores${act ? ` · signed for ${act.site}` : ''}</span><span class="dim">The game saves itself to this browser after every change.</span></div></div>
 <div class="sh">SAVE FILE</div><div class="gm"><button id="gExp"><b>EXPORT SAVE</b><small>Download the whole company as a .json file</small></button><button id="gImp" ${fld ? 'disabled' : ''}><b>IMPORT SAVE</b><small>Load a company from a .json file — replaces this one</small></button></div>
-<div class="sh">NEW GAME</div><div class="gm">${SET.wipe ? `<button id="gYes" class="dng"><b>YES — DISBAND ${YARD.name}</b><small>Ledger, standing, stores and every mech are gone for good</small></button><button id="gNo"><b>NO — KEEP PLAYING</b><small>Nothing is changed</small></button>` : `<button id="gNew" ${fld ? 'disabled' : ''}><b>START A NEW COMPANY</b><small>A clean ledger, ${fmt(120000)}, and a single light mech</small></button>`}</div>
+<div class="sh">NEW GAME</div><div class="gm">${SET.wipe ? `<button id="gYes" class="dng"><b>YES — DISBAND ${YARD.name}</b><small>Ledger, standing, stores, the record and every mech are gone for good</small></button><button id="gNo"><b>NO — KEEP PLAYING</b><small>Nothing is changed</small></button>` : `<button id="gNew" ${fld ? 'disabled' : ''}><b>START A NEW COMPANY</b><small>A clean ledger, ${fmt(120000)}, and a single light mech</small></button>`}</div>
 ${fld ? '<p class="snt">Importing and starting over are locked while a sortie is running.</p>' : ''}${SET.msg ? `<p class="snt ${SET.bad ? 'bad' : 'good'}">${SET.msg}</p>` : ''}`;
     drawLogo($('lgSm').getContext('2d'), 60, 60, 56);
     $('gExp').onclick = () => { const n = saveExport(); SET.msg = `Saved as ${n}`; SET.bad = false; sfx.play('ok'); settingsDraw(); };
@@ -10187,6 +10513,29 @@ ${fld ? '<p class="snt">Importing and starting over are locked while a sortie is
     if ($('gNew')) $('gNew').onclick = () => { sfx.play('ui'); SET.wipe = true; SET.msg = ''; settingsDraw(); };
     if ($('gYes')) { $('gYes').onclick = () => { sfx.play('ok'); newGame(); }; $('gNo').onclick = () => { sfx.play('ui'); SET.wipe = false; settingsDraw(); }; }
   }
+}
+/* SETTINGS · STATS: the whole record (117_stats.js). A box to find a line by any word in it, a section to keep to, and the weapons as a table of their own.
+   Typing redraws the list and leaves the box alone, so it keeps its caret */
+function statsDraw(B) {
+  const secs = [...TAL_DEF.map(d => d[0]), 'WEAPONS'], esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  B.innerHTML = `<div class="tlyQ"><input id="tlyFind" placeholder="FIND A STAT — ACCURACY, STEPS, TANKS…" spellcheck="false" autocomplete="off" value="${esc(SET.q)}"><span id="tlyN"></span></div>
+<div class="tlyC" id="tlyC"><button data-s=""${SET.sec ? '' : ' class="on"'}>EVERYTHING</button>${secs.map(s => `<button data-s="${s}"${SET.sec === s ? ' class="on"' : ''}>${s}</button>`).join('')}</div><div id="tlyL"></div>`;
+  const list = () => {
+    const q = SET.q.trim().toUpperCase().split(/\s+/).filter(Boolean), hit = s => q.every(w => s.includes(w)), R = talRows(2), W = talWeps(); let h = '', n = 0;
+    for (const g of secs) {
+      if (SET.sec && SET.sec !== g) continue;
+      if (g === 'WEAPONS') {
+        const L = W.filter(w => hit('WEAPONS ' + w.name + ' ' + w.cls)); if (!L.length && (q.length || !SET.sec)) continue; n += L.length;
+        h += `<div class="sh">WEAPONS <small>${W.length ? 'WHAT EACH ONE HAS FIRED, LANDED AND DONE' : 'NOTHING FIRED YET'}</small></div>` + (L.length ? `<div class="tlyW"><div class="hd"><span>WEAPON</span><span>FIRED</span><span>ON TARGET</span><span>ACCURACY</span><span>DAMAGE</span><span>KILLS</span></div>${L.map(w => `<div><span>${iconSvg(w.key, 15)}<b>${esc(w.name)}</b><small>${w.cls}</small></span><span>${TAL_F.n(w.s)}</span><span>${TAL_F.n(w.h)}</span><span class="ac"><i style="width:${(w.acc * 100).toFixed(0)}%"></i><em>${w.s ? TAL_F.p(w.acc) : '—'}</em></span><span>${TAL_F.d(w.d)}</span><span>${TAL_F.n(w.k)}</span></div>`).join('')}</div>` : '');
+        continue;
+      }
+      const L = R.filter(r => r.g === g && hit(g + ' ' + r.l)); if (!L.length) continue; n += L.length;
+      h += `<div class="sh">${g}</div><div class="tlyG">${L.map(r => `<div${r.z ? ' class="z"' : ''}><span>${esc(r.l)}</span><b>${esc(r.v)}</b></div>`).join('')}</div>`;
+    }
+    $('tlyL').innerHTML = h || `<p class="snt">Nothing on the record matches “${esc(SET.q)}”.</p>`; $('tlyN').textContent = `${n} LINE${n === 1 ? '' : 'S'}${TALLY.day > 1 ? ` · KEPT SINCE DAY ${TALLY.day}` : ''}`;
+  };
+  list(); const f = $('tlyFind'); f.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { if (SET.q) { SET.q = f.value = ''; list(); } else settingsClose(); } }; f.oninput = () => { SET.q = f.value.slice(0, 40); list(); };
+  $('tlyC').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.sec = b.dataset.s; $('tlyC').querySelectorAll('button').forEach(o => o.classList.toggle('on', o === b)); list(); $('setBody').scrollTop = 0; });
 }
 {
   $('setClose').onclick = () => { sfx.play('ok'); if (SET.found) { SET.found = false; YARD.founded = true; YARD.name = cleanName($('coName') && $('coName').value, CO_DEF_NAME); brandSync(); CO.news = CO.news.filter(n => !n.includes('is open for contracts') && !n.includes('Nobody is hiring yet')); news(tutLock() ? TUT_WIRE() : TUT_OPEN()); saveCO(); setStatus('STAND READY — ' + mechName); } settingsClose(); };
@@ -10217,7 +10566,7 @@ function mapBake() {
   g.putImageData(im, 0, 0); MAPV.step = step;
 }
 function mapOpen() {
-  if (mode !== 'field' || MAPV.open || P.dead || P.leaving) return; MAPV.open = true; mapBake(); MAPV.cx = P.pos.x; MAPV.cz = P.pos.z; MAPV.mx = -1;
+  if (mode !== 'field' || MAPV.open || P.dead || P.leaving) return; MAPV.open = true; tal('s.map'); mapBake(); MAPV.cx = P.pos.x; MAPV.cz = P.pos.z; MAPV.mx = -1;
   $('pause').classList.add('hid'); $('mapUI').classList.remove('hid'); sfx.play('comm'); if (locked && fieldUnlock) fieldUnlock(); mapSide(); mapLoop();
 }
 /* resume = true goes straight back to the fight; false drops to the pause menu */
@@ -10315,11 +10664,11 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
     const open = () => { if (busy || d.classList.contains('lock')) return sfx.play('deny'); sfx.play('ui'); storesOpen({ mode: 'fit', slot: s }); }; d.querySelector('.si').onclick = open; d.querySelector('.sn').onclick = open; d.querySelector('.sx').onclick = () => { sfx.play('ui'); fitPart(s, null); };
   }
   { const d = document.createElement('div'); d.className = 'slot sk'; d.innerHTML = `<label>HEAT SINKS</label><button class="si">${iconSvg('gear.sink', 26)}</button><div class="sn" id="sinkN"></div><span><button id="sinkDn">−</button><button id="sinkUp">+</button></span>`; $('slots').appendChild(d); $('sinkDn').onclick = () => fitSinks(-1); $('sinkUp').onclick = () => fitSinks(1); d.querySelector('.si').onclick = () => fitSinks(1); }
-  PAINTS.forEach((p, i) => { const b = document.createElement('button'); b.style.background = `linear-gradient(135deg,#${p.pri.toString(16).padStart(6, '0')} 60%,#${p.acc.toString(16).padStart(6, '0')} 60%)`; b.title = p.n; b.onclick = () => { sfx.play('ui'); paintMech(i); saveCO(); }; $('paints').appendChild(b); });
+  PAINTS.forEach((p, i) => { const b = document.createElement('button'); b.style.background = `linear-gradient(135deg,#${p.pri.toString(16).padStart(6, '0')} 60%,#${p.acc.toString(16).padStart(6, '0')} 60%)`; b.title = p.n; b.onclick = () => { sfx.play('ui'); if (!busy && i !== player.cfg.paint) tal('y.paint'); paintMech(i); saveCO(); }; $('paints').appendChild(b); });
   for (const [n] of STATS) { const d = document.createElement('div'); d.className = 'st'; d.innerHTML = `<span>${n}</span><i><b></b></i><em></em>`; $('stats').appendChild(d); statEl.push(d); }
   $('mechName').onclick = () => {
     const c = player.cfg; if (busy || !bayParts(c) || $('mechName').firstChild.tagName === 'INPUT') return; const i = document.createElement('input'); i.value = c.name; i.maxLength = 14; $('mechName').textContent = ''; $('mechName').appendChild(i); i.focus(); i.select();
-    let fin = false; const done = ok => { if (fin) return; fin = true; if (ok) { c.name = cleanName(i.value, c.name, 14); mechName = bayTitle(); yardChanged(); } i.remove(); refreshUI(); }; i.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') done(true); if (e.code === 'Escape') done(false); }; i.onblur = () => done(true);
+    let fin = false; const done = ok => { if (fin) return; fin = true; if (ok) { const was = c.name; c.name = cleanName(i.value, c.name, 14); if (c.name !== was) tal('y.name'); mechName = bayTitle(); yardChanged(); } i.remove(); refreshUI(); }; i.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') done(true); if (e.code === 'Escape') done(false); }; i.onblur = () => done(true);
   };
   refreshUI = () => {
     const cfg = player.cfg, c = CO.active, rd = mechReady(cfg, c && c.biome, c), st = rd.st, any = bayParts(cfg) > 0;
@@ -10344,7 +10693,7 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
   };
   $('btnStores').onclick = () => { sfx.play('ui'); storesOpen({ mode: 'inv' }); }; $('btnSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
   $('btnSpin').onclick = e => { spin = !spin; e.target.classList.toggle('on', spin); sfx.play('ui'); };
-  $('btnTest').onclick = () => { sfx.play('ui'); systemsTest().then(() => refreshUI()); refreshUI(); };
+  $('btnTest').onclick = () => { sfx.play('ui'); if (!busy) tal('y.test'); systemsTest().then(() => refreshUI()); refreshUI(); };
   $('btnDeploy').onclick = deploy;
   /* pointer lock, with a free-mouse fallback if the browser refuses it twice (e.g. sandboxed frames) */
   let lockFail = 0, failT = 0;
@@ -10363,10 +10712,10 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
     if (uiModal()) return; if (mode === 'field' && commHold && locked && e.code !== 'Escape') { e.preventDefault(); return commHoldKey(e); }
     if (mode === 'field' && mapKey(e)) return; keys[e.code] = true; if (mode !== 'field') return; if (e.code === 'Space' || e.code === 'Tab') e.preventDefault();
     if (e.code.startsWith('Digit')) commKey(+e.code[5] - 1);
-    if (e.code === 'KeyR' && locked && CO.kit > 0 && !P.dead && (P.armor < P.max * .98 || Object.keys(P.lost).length)) { CO.kit--; P.armor = Math.min(P.max, P.armor + P.max * .4); const n = zoneMend(); msg(`REPAIR KIT USED${n ? ` — ${n} COMPONENT${n > 1 ? 'S' : ''} BACK ON LINE` : ''} — ${CO.kit} LEFT`, 2.5); sfx.play('ok'); }
+    if (e.code === 'KeyR' && locked && CO.kit > 0 && !P.dead && (P.armor < P.max * .98 || Object.keys(P.lost).length)) { CO.kit--; tal('s.kit'); tal('d.kit', Math.min(P.max, P.armor + P.max * .4) - P.armor); P.armor = Math.min(P.max, P.armor + P.max * .4); const n = zoneMend(); msg(`REPAIR KIT USED${n ? ` — ${n} COMPONENT${n > 1 ? 'S' : ''} BACK ON LINE` : ''} — ${CO.kit} LEFT`, 2.5); sfx.play('ok'); }
     if (e.code === 'KeyB' && locked && !e.repeat) sunCall();
-    if (e.code === 'KeyV' && locked && !P.dead && invN('gear.cool') > 0 && P.heat > 20) { invAdd('gear.cool', -1); P.heat = Math.max(0, P.heat - 60); msg(`COOLANT FLUSH — ${invN('gear.cool')} LEFT`, 2.5); sfx.play('steam'); }
-    if (e.code === 'KeyC') P.cam = 1 - P.cam; if (e.code === 'KeyX') P.center = true; if (e.code === 'KeyH') withdrawKey(); if (e.code === 'Escape' && soft) { soft = false; setLock(false); }
+    if (e.code === 'KeyV' && locked && !P.dead && invN('gear.cool') > 0 && P.heat > 20) { invAdd('gear.cool', -1); tal('h.flush'); P.heat = Math.max(0, P.heat - 60); msg(`COOLANT FLUSH — ${invN('gear.cool')} LEFT`, 2.5); sfx.play('steam'); }
+    if (e.code === 'KeyC') { P.cam = 1 - P.cam; tal('s.cam'); } if (e.code === 'KeyX') P.center = true; if (e.code === 'KeyH') withdrawKey(); if (e.code === 'Escape' && soft) { soft = false; setLock(false); }
   });
   addEventListener('keyup', e => keys[e.code] = false); addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   const resize = () => { const w = innerWidth, h = innerHeight; renderer.setSize(w, h); POST.size(w, h); for (const c of [HG.camera, FD.camera, HQ.camera, BAR.camera, BRF.camera]) { c.aspect = w / h; c.updateProjectionMatrix(); } const u = renderer.domElement.height * .95; for (const f of [HG.fx, FD.fx]) f.spark.mat.uniforms.uS.value = f.smoke.mat.uniforms.uS.value = u; FD.fx.wx.mat.uniforms.uS.value = u; };
@@ -10757,11 +11106,11 @@ function introOpen() {
   const c = FD.camera; INTROV.keep = { fov: c.fov, pos: P.pos.clone(), shake: P.shake, kills: P.kills, loot: YARD.loot.slice(), k: FD.k };
   Object.assign(INTROV, { st: 1, t: 0, a0: -1, shot: -1, prev: mode, wt: 0, go: -1, warm: 0, blk: 1, end: 0, stall: 0, au: -1, hold: false });
   if (!INTROV.fl.length) INTROV.fl = [new THREE.PointLight(0xffa050, 0, 190, 1.5), new THREE.PointLight(0xffa050, 0, 190, 1.5)]; FD.scene.add(...INTROV.fl);
-  mode = 'intro'; sfx.hush(true); sfx.trim(.55); dlgClose(); fieldScale(1); document.body.classList.add('intro'); const el = $('intro'); el.className = 'ovl'; $('inBlk').style.opacity = 1; POST.scene = FD.scene; POST.camera = c; return true;
+  tal('t.intro'); TALLY.off = true; mode = 'intro'; sfx.hush(true); sfx.trim(.55); dlgClose(); fieldScale(1); document.body.classList.add('intro'); const el = $('intro'); el.className = 'ovl'; $('inBlk').style.opacity = 1; POST.scene = FD.scene; POST.camera = c; return true;
 }
 /* hand everything back as it was found */
 function introEnd() {
-  if (!INTROV.st) return; const K = INTROV.keep, c = FD.camera; INTROV.st = 0; INTROV.shot = -1; INTROV.S = null; music.introStop(); sfx.hush(false); sfx.trim(1);
+  if (!INTROV.st) return; const K = INTROV.keep, c = FD.camera; INTROV.st = 0; TALLY.off = false; talBy = null; INTROV.shot = -1; INTROV.S = null; music.introStop(); sfx.hush(false); sfx.trim(1);
   clearField(); clearEnv(); EV.home = false; EV.key = ''; MAPV.key = ''; fieldScale(K.k); FD.scene.remove(...INTROV.fl); FD.lamp.intensity = 0;
   for (const f of [FD.fx.spark, FD.fx.smoke, FD.fx.wx]) { f.life.fill(0); f.siz.fill(0); f.update(0); } $('msg').style.opacity = 0; msgT = 0;
   c.fov = K.fov; c.updateProjectionMatrix(); P.pos.copy(K.pos); P.shake = K.shake; P.kills = K.kills; YARD.loot = K.loot; dispatchEvent(new Event('resize'));   /* the resize puts the particles back to the game's lens */
@@ -10816,7 +11165,7 @@ function frame(now) {
     } else { POST.scene = HG.scene; POST.camera = HG.camera; POST.strength = .5; }
   }
   renderer.toneMappingExposure = mode === 'field' || (mode === 'intro' && POST.scene === FD.scene) ? FD.expo : 1;   /* the field's hour sets the exposure; indoors it is always 1 */
-  if (mode !== 'intro') tutTick(dt); POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
+  if (mode !== 'intro') { tutTick(dt); talFrame(dt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
 }
 sfx.init();   /* everything it needs exists by now */
 requestAnimationFrame(frame);

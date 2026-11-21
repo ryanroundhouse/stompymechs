@@ -12,7 +12,9 @@ beside you, five story threads (connected chapters that come up on the board one
 are briefed in a briefing room and are flown on a theatre 2.4 times the usual size) and over them
 one campaign, FALSE DAWN: eight chapters in three acts that change the rest of the game as they
 go. Contracts are flown at an hour (dawn, day, dusk, night), and the market sells whole machines
-as well as parts. A new company
+as well as parts. Everything a company does is counted (the record: some two hundred lines,
+from accuracy weapon by weapon to steps taken), shown a few lines at a time on a board in the
+bay, on the deck and behind the bar, and in full under SETTINGS · STATS. A new company
 is shown round each room by its crew, and flies a first sortie that teaches the controls before
 anybody will hire it. Everybody who speaks does so aloud, in a made-up language. The first time
 the page is opened it plays an eleven-second opening: four cuts of battle, then the STOMPY MECHS
@@ -44,7 +46,9 @@ playable page. Never hand-edit it.
   one of the `/* ============ TITLE ============ */` section banners. A new file goes in at a
   number between its neighbours (`255_thing.js`); keep the gaps. Every file ends with a newline.
   Where things are: `040_settings.js` the game's name (`GAME_ID`, `GAME_NAME`, `CO_DEF_NAME`) and
-  `lsGet`/`lsSet`; `115_first_day.js` what a new company has been shown (`TUT`); `020_post.js`
+  `lsGet`/`lsSet`; `115_first_day.js` what a new company has been shown (`TUT`); `117_stats.js`
+  the record (`TALLY`, `tal`, `TAL_DEF`, `talRows`) and `345_stat_boards.js` the boards that
+  show it (`talBoard`, `talBoards`); `020_post.js`
   the post chain `POST`; `030_gfx.js` materials and the texture kit (`std`, `hfNoise`,
   `txPanel`); `050_audio.js` `sfx` and the sound
   notice; `060_voices.js` and `070_music.js`; `080`/`090` mech parts (`ARM_FAM`, the extra
@@ -352,6 +356,24 @@ playable page. Never hand-edit it.
     the board's weights at each stage of a company's life, `t_real.js` and `t_int.js` contracts
     flown with the real weapons and the real legs (`ab.sh` flies them on the last commit's build
     as well, `debug_base.html`, for a before and after), `t_w.js` a table of every weapon.
+- The record, in `.scratch/stats/` (`ev.sh` bodies, each from a freshly loaded debug page, in
+  either browser; the last two put back the company they found):
+  - `t_stats.js` is the field: fifteen kinds of weapon fired at a dummy and then at the sky
+    (rounds, hits, damage against what came off the hull, nothing landing on the sky), a kill
+    made the real way, one of every vehicle, structure and ship (each variant must have a name
+    in `TAL_UNIT`), whose kill it was, movement through the real keys, heat to a shutdown,
+    damage taken, and a wingman's fire staying off the player's accuracy. It ends by listing
+    anything counted that no line shows. `window.__part` is `weps`, `kills`, `move`, `heat` or
+    `hurt`; `window.__only` a list of arm ids.
+  - `t_stats2.js` is a contract flown and settled against the books, the save (round trip, an
+    old save, hostile files, a name out of a save on the screen), a new game, an import, the
+    three boards ticked for a minute each, and the STATS tab through its search box and chips.
+  - `t_stats3.js` is every counter that hangs off a button or a key: the bay, the market, the
+    dealer, the deck, the bar and a contest, the field keys, a wave, a briefing.
+  - `fill.js` loads a record worth looking at, for a screenshot of a board or the tab.
+  - `.scratch/intro/t_intro.js` has the record in its `snap()`: the opening must count nothing.
+    In headless Chrome its "the title is up at 7.8 s" from the deck fails (shot 2), and did
+    before the record existed; Firefox passes it.
 - Release builds must contain no `window.__` hooks.
 
 ## Conventions
@@ -636,6 +658,41 @@ playable page. Never hand-edit it.
   through). `wingRec(c)` is the wingman recommendation, worked out from the difficulty and
   type each time rather than stored: it is a warning in `mechReady`, so launching alone
   takes the second press. Neither applies to a company's joint contract or to the Derby.
+- The record (`src/js/117_stats.js`) is one flat table, `TALLY.n`, of numbers under dotted keys
+  (`s.` sorties, `g.` gunnery, `w.arm.id.` and `w.back.id.` a weapon's pulls `p`, rounds `s`,
+  hits `h`, damage `d` and kills `k`, `k.` kills, `z.` parts shot off, `d.` damage taken, `m.`
+  movement, `h.` heat, `cr.` money, `y.` the yard, `q.` the deck, `b.` the bar, `c.` comms, `t.`
+  time). It belongs to the company: saved under `stats` (`talSave()`, `talApply()`, which seeds
+  an older save from its ledger and says since which day it has been kept), wiped by a new
+  game. The table has no prototype, like `RIV`, because its keys come out of save files.
+  - A new stat is two things: `tal(key, n)` (or `talMax`, `talMin`) where the thing happens,
+    and a row in `TAL_DEF` (`[key | function of the table, label, format, 1 if it is worth
+    showing at nothing]`), or a family in `talRows`. A label has to stand on its own: a board
+    shows it without its section. Something a player does every frame goes in `talField`,
+    which writes to the table directly.
+  - Nothing is counted while `TALLY.off` is set, which is how the opening leaves no trace.
+  - Whose round it is travels as `talBy`: the item key of the player's weapon (`arm.lp1`),
+    `'ally'`, or `null`. `fire` and `fireFrom` set it, a projectile carries it as `s.by` and
+    `updateShots` puts it back when the round lands, a burn remembers it (`e.burnW`) and so
+    does an ejection; `damage`, `killEnt` and `zoneBreak` read it. Anything that hurts a
+    hostile on the player's behalf some new way has to set it round the call, or the damage
+    and the kill go down as nobody's (`k.oth`). A round is one hit however many things it
+    touched (`talHit`).
+  - Money spent goes through `spend(n, why)`, which files it under `cr.o.why`; `settle()`
+    tags each line of the books (`add(label, value, tag)`). A sortie lost on the company's
+    own account is no loss here either.
+  - `talRows()` is what stands at more than nothing, `talRows(1)` adds the lines marked as
+    worth showing at nothing (a new company's boards), `talRows(2)` is the book in SETTINGS
+    · STATS (`statsDraw`): every line, searchable, with the weapons as a table (`talWeps()`).
+  - The boards (`src/js/345_stat_boards.js`) are canvases on a wall: `talBoard({ rooms, w, h,
+    n, every, idle, draw })`, one on each end of both gantry towers in the bay (`HG.statB`,
+    one texture), a strip over the deck's window (`HQ.statB`) and a set over the back bar with
+    a crawl (`BAR.statB`). `talBoards(dt, t)` in the main loop ticks the board of the room
+    showing: a slot is dealt another line every few seconds (`talDeal`: nothing on the board
+    or lately off it, each section weighted by the root of its size), a line that is up
+    follows its number, and a board is drawn only when it has changed. The side panels cover
+    the outer thirds of every room, so the deck's strip and the bar's set are drawn from the
+    left; in the bay one tower's board is always clear of them.
 - Salvage is not given up by accident: the chief asks again in `debrief`, and the picker's
   LEAVE IT ALL arms on the first press (`ST.sure`). A script hands the player an item by
   pushing `{ kind: 'gift', key }` onto `YARD.loot`.

@@ -15,7 +15,7 @@ function frame(now) {
     } else { POST.scene = HG.scene; POST.camera = HG.camera; POST.strength = .5; }
   }
   renderer.toneMappingExposure = mode === 'field' || (mode === 'intro' && POST.scene === FD.scene) ? FD.expo : 1;   /* the field's hour sets the exposure; indoors it is always 1 */
-  if (mode !== 'intro') tutTick(dt); POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
+  if (mode !== 'intro') { tutTick(dt); talFrame(dt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
 }
 sfx.init();   /* everything it needs exists by now */
 requestAnimationFrame(frame);

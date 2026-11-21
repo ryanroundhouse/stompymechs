@@ -6,7 +6,7 @@ function storesOpen(o = {}) {
   if (ST.mode === 'shop' || ST.mode === 'inv' || ST.mode === 'mech') shopRoll(); if (ST.mode === 'mech') { ST.sort = 'lot'; ST.dir = 1; } $('stores').classList.remove('hid'); storesDraw();
 }
 function storesClose() {
-  if (!ST.open) return; if (ST.mode === 'salv') { for (const i of ST.picked) invAdd(ST.salv.pool[i], 1); saveCO(); }
+  if (!ST.open) return; if (ST.mode === 'salv') { for (const i of ST.picked) invAdd(ST.salv.pool[i], 1); tal('y.salv', ST.picked.size); tal('y.left', ST.salv.pool.length - ST.picked.size); saveCO(); }
   ST.open = false; $('stores').classList.add('hid'); const d = ST.done; ST.done = null; if (mode === 'hangar') refreshUI(); CO.dirty = true; if (d) d([...ST.picked].map(i => ST.salv.pool[i]));
 }
 /* ---- fitting: every part on offer is marked against the one in the slot. [better when higher (+1) or lower (-1), decimals] ---- */
@@ -80,8 +80,8 @@ function storesDraw() {
     const a = b.dataset.a;
     if (a === 'fit' || a === 'rem') { const s = ST.slot; storesClose(); sfx.play('ui'); fitPart(s, a === 'fit' ? b.dataset.k : null); return; }
     if (a === 'pick') { const i = +b.dataset.i; ST.picked.has(i) ? ST.picked.delete(i) : ST.picked.add(i); ST.sure = 0; sfx.play('ui'); }
-    if (a === 'buy') { const e = YARD.shop.stock[+b.dataset.i]; if (!e || !spend(e.price)) return sfx.play('deny'); invAdd(e.key, 1); if (--e.qty <= 0) YARD.shop.stock.splice(+b.dataset.i, 1); saveCO(); sfx.play('ok'); }
-    if (a === 'sell') { const k = b.dataset.k; if (!invN(k)) return; invAdd(k, -1); CO.cb += sellValue(k); CO.dirty = true; saveCO(); sfx.play('ok'); }
+    if (a === 'buy') { const e = YARD.shop.stock[+b.dataset.i]; if (!e || !spend(e.price, 'market')) return sfx.play('deny'); tal('y.buy'); invAdd(e.key, 1); if (--e.qty <= 0) YARD.shop.stock.splice(+b.dataset.i, 1); saveCO(); sfx.play('ok'); }
+    if (a === 'sell') { const k = b.dataset.k; if (!invN(k)) return; invAdd(k, -1); CO.cb += sellValue(k); tal('y.sell'); tal('cr.sell', sellValue(k)); CO.dirty = true; saveCO(); sfx.play('ok'); }
     storesDraw();
   });
   $('stInfo').textContent = salv ? `${ST.picked.size} of ${ST.salv.picks} claimed` : fit ? `${L.length} in stores${cur ? ' · 1 fitted' : ''}` : `${L.length} of ${all.length} shown`;

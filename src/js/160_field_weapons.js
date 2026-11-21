@@ -70,20 +70,20 @@ function zoneBreak(e, k, owner) {
   if (arm) S.userData.pitch.visible = false; else if (k === 'back') S.visible = false; else if (k === 'head') S.rotation.set(-.25, 0, .4);
   FD.tick.push(dt => { if (e.dead || !zGone(e, k)) return false; if (Math.random() < dt * 9) { zoneW(m, z, _zc); FD.fx.smoke.emit(_zc.x, _zc.y, _zc.z, rand(-1, 1), rand(2, 4), rand(-1, 1), rand(1.2, 2.4), rand(1.5, 2.6), .1, .1, .1, .45, -.2, .3, 2); if (Math.random() < .3) sparks(FD.fx, _zc, 3, 5); } return true; });
   if (me) {
-    P.lost[k] = true; P.shake += .5; const w = arm || k === 'back' ? wepOf(k) : null; sfx.play('deny'); POST.kick();
+    P.lost[k] = true; tal('d.z.' + k); P.shake += .5; const w = arm || k === 'back' ? wepOf(k) : null; sfx.play('deny'); POST.kick();
     if (k === 'legs') msg('LEGS CRIPPLED — SHE CAN BARELY WALK', 3.5); else if (k === 'head') msg('COCKPIT HIT — SENSORS DOWN', 3.5);
     else { msg(`${ZONE_N[k]} DESTROYED${w ? ' — ' + w.name + ' OFFLINE' : ''}`, 3.5); if (k === 'back') { const s2 = mechStats({ ...player.cfg, back: null }), o = player.stats; player.stats = { ...o, jets: false, fx: '', cool: s2.cool, sensor: s2.sensor, speed: o.fx === 'boost' ? o.speed / 1.12 : o.speed }; P.sh = P.shMax = 0; PE.ecm = false; player.setJets(false); } }
     return buildWepHud();
   }
-  if (owner === 0) msg(`${e.name} — ${ZONE_N[k]} DESTROYED`, 2.2);
+  if (owner === 0) { msg(`${e.name} — ${ZONE_N[k]} DESTROYED`, 2.2); if (talBy !== 'ally') tal('z.' + k); }
   if (k === 'head') e.skill *= .45; else if (k === 'legs') e.legless = true; else if (k === 'back') { e.sh = e.shMax = 0; e.ecm = false; }
   e.rng = mechRng(e);
   /* an ordinary pilot with nothing left to shoot gets out. Anybody with a name stays in the seat: the script they belong to decides what becomes of them */
-  if ((arm || k === 'back') && e.team === 1 && !e.named && !e.ej && !mechArmed(e)) { e.pacify = true; e.ej = { t: 1.3, by: owner }; }
+  if ((arm || k === 'back') && e.team === 1 && !e.named && !e.ej && !mechArmed(e)) { e.pacify = true; e.ej = { t: 1.3, by: owner, w: talBy }; }
 }
 /* a field repair kit puts the player's wrecked parts back in service at half strength */
 function zoneMend() {
-  let n = 0; for (const k in P.zones) { const s = P.zones[k]; if (s.hp > 0) continue; n++; s.hp = s.max * .5; const S = player.slot[k]; if (!S) continue; if (S.userData.pitch) S.userData.pitch.visible = true; S.visible = true; if (k === 'head') S.rotation.set(0, 0, 0); }
+  let n = 0; for (const k in P.zones) { const s = P.zones[k]; if (s.hp > 0) continue; n++; tal('d.mend'); s.hp = s.max * .5; const S = player.slot[k]; if (!S) continue; if (S.userData.pitch) S.userData.pitch.visible = true; S.visible = true; if (k === 'head') S.rotation.set(0, 0, 0); }
   if (n) { P.lost = {}; player.stats = mechStats(player.cfg); P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; PE.ecm = player.stats.fx === 'ecm'; buildWepHud(); }
   return n;
 }
@@ -121,28 +121,28 @@ function shFlash(e) {
 function damage(e, dmg, at, owner, zone) {
   if (e === PE) {
     if (P.dead || MS.over) return; let d = dmg * .24;
-    if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
+    if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); tal('d.sh', a); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
     if (zone && P.zones) d *= zoneTake(PE, zone, d, owner);
-    P.armor -= d; P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
+    P.armor -= d; tal('d.h'); tal('d.n', d); talMax('d.big', d); P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
   }
   if (e.dead || e.inv) return; let d = dmg * (e.team === 0 ? .5 : 1); e.alert = true; if (owner === 0) e.hitP = 6;
-  if (e.sh > 0) { const a = Math.min(e.sh, d); e.sh -= a; d -= a; shFlash(e); } if (e.shMax) e.shT = 5; if (d <= .001) return;
+  let sh = 0; if (e.sh > 0) { sh = Math.min(e.sh, d); e.sh -= sh; d -= sh; shFlash(e); } if (e.shMax) e.shT = 5; if (owner === 0 && talBy) talDealt(e, d, sh); if (d <= .001) return;
   if (zone && e.zones && e.team === 1 && !e.nz) d *= zoneTake(e, zone, d, owner);
   e.hp -= d; if (at) sparks(FD.fx, at, 8, 7); if (e.hp <= 0) killEnt(e, owner);
 }
 function splash(at, r, dmg, owner) { for (const e of targetsOf(owner)) { if (e.dead) continue; const d = entGap(e, at); if (d < r) damage(e, dmg * (1 - Math.max(0, d) / r), null, owner, zoneAt(e, at)); } }
 /* an ion bolt or a maul stalls a machine: nothing moves and nothing fires until it clears. The player gets a spike of heat and a fire control that has to start again */
 function stunEnt(e, secs, owner) {
-  if (e === PE) { if (P.dead) return; P.heat = Math.min(99, P.heat + secs * 12); for (const k in P.cd) P.cd[k] = Math.max(P.cd[k], secs * .7); P.shake += .3; msg('ION HIT — FIRE CONTROL RESETTING', 1.8); return; }
+  if (e === PE) { if (P.dead) return; tal('d.stun'); tal('h.ion', Math.min(99, P.heat + secs * 12) - P.heat); P.heat = Math.min(99, P.heat + secs * 12); for (const k in P.cd) P.cd[k] = Math.max(P.cd[k], secs * .7); P.shake += .3; msg('ION HIT — FIRE CONTROL RESETTING', 1.8); return; }
   if (e.dead || e.inv || e.kind === 'struct' || e.stunCd > 0) return; e.stun = Math.max(e.stun || 0, secs * (e.big ? .4 : 1)); e.stunCd = e.stun + 3;
 }
-function burnEnt(e, dps, owner) { if (e === PE) { P.burnD = P.burnT > 0 ? Math.max(P.burnD, dps) : dps; P.burnT = 2.5; } else if (!e.dead && !e.inv) { e.burnD = e.burnT > 0 ? Math.max(e.burnD, dps) : dps; e.burnT = 2.5; e.burnO = owner; } }
+function burnEnt(e, dps, owner) { if (e === PE) { P.burnD = P.burnT > 0 ? Math.max(P.burnD, dps) : dps; P.burnT = 2.5; } else if (!e.dead && !e.inv) { e.burnD = e.burnT > 0 ? Math.max(e.burnD, dps) : dps; e.burnT = 2.5; e.burnO = owner; e.burnW = talBy; } }
 /* every unit's turn in the frame goes through here: what is burning burns, shields come back, the stalled stay stalled, and a pilot with no guns leaves */
 function entTick(e, dt, t) {
-  if (e.burnT > 0) { e.burnT -= dt; if (!e.inv) e.hp -= e.burnD * dt * (e.team === 0 ? .5 : 1); if (Math.random() < dt * 16) FD.fx.spark.emit(e.pos.x + rand(-e.r, e.r) * .6, e.pos.y + e.cy + rand(-e.r, e.r) * .5, e.pos.z + rand(-e.r, e.r) * .6, rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.4), 5, 2, .4, .8, -2, .6, 1.5); if (e.hp <= 0) return killEnt(e, e.burnO ?? 0); }
+  if (e.burnT > 0) { e.burnT -= dt; if (!e.inv) { const bd = e.burnD * dt * (e.team === 0 ? .5 : 1); e.hp -= bd; if (e.burnO === 0 && talMine(e.burnW)) { tal('g.d', bd); tal('g.burn', bd); tal('w.' + e.burnW + '.d', bd); } } if (Math.random() < dt * 16) FD.fx.spark.emit(e.pos.x + rand(-e.r, e.r) * .6, e.pos.y + e.cy + rand(-e.r, e.r) * .5, e.pos.z + rand(-e.r, e.r) * .6, rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.4), 5, 2, .4, .8, -2, .6, 1.5); if (e.hp <= 0) { talBy = e.burnW || null; e.burnK = 1; killEnt(e, e.burnO ?? 0); talBy = null; return; } }
   if (e.shMax && (e.shT = (e.shT || 0) - dt) < 0 && e.sh < e.shMax) e.sh = Math.min(e.shMax, e.sh + e.shMax * .25 * dt);
   if (e.stunCd > 0) e.stunCd -= dt;
-  if (e.ej) { if ((e.ej.t -= dt) <= 0) { _zc.copy(e.pos); _zc.y += e.mech.height; for (let i = 0; i < 14; i++) FD.fx.spark.emit(_zc.x, _zc.y, _zc.z, rand(-2, 2), rand(24, 44), rand(-2, 2), rand(.5, 1), rand(.6, 1.2), 5, 4, 2, 1, 6, .3); if (e.ej.by === 0) msg(`${e.name} DISARMED — PILOT EJECTS`, 2.6); return killEnt(e, e.ej.by); } }
+  if (e.ej) { if ((e.ej.t -= dt) <= 0) { _zc.copy(e.pos); _zc.y += e.mech.height; for (let i = 0; i < 14; i++) FD.fx.spark.emit(_zc.x, _zc.y, _zc.z, rand(-2, 2), rand(24, 44), rand(-2, 2), rand(.5, 1), rand(.6, 1.2), 5, 4, 2, 1, 6, .3); if (e.ej.by === 0) msg(`${e.name} DISARMED — PILOT EJECTS`, 2.6); talBy = e.ej.w || null; killEnt(e, e.ej.by); talBy = null; return; } }
   if (e.stun > 0) { e.stun -= dt; if (Math.random() < dt * 10) { _zc.copy(e.pos); _zc.y += e.cy; sparks(FD.fx, _zc, 3, 6, 2, 3.4, 6); } if (e.mech) { e.mech.gait.amt = damp(e.mech.gait.amt, 0, 6, dt); e.mech.gait.turn = 0; e.mech.update(dt); } return; }
   e.update(dt, t);
 }
@@ -168,7 +168,9 @@ function flameJet(O, D, w, owner) {
   }
 }
 function emitShot(o, d, w, owner, lock, glow, aim) {
-  const t = w.type, foe = owner === 1, O = o.clone(), D = d.clone();
+  const t = w.type, foe = owner === 1, O = o.clone(), D = d.clone(), by = talBy, mine = talMine(by); if (mine) { talShot(by); talHit = 0; } else if (foe) tal('e.s');
+  if (t === 'arc') { arcShot(O, D, w, owner); if (mine && talHit) talLand(by); return; }
+  if (t === 'flame') { flameJet(O, D, w, owner); if (mine && talHit) talLand(by); return; }
   if (t === 'laser' || t === 'rail' || t === 'beam') {
     const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), rail = t === 'rail', hue = rail ? WEP_HUE.rail : glow, bw = (w.bw || (rail ? .28 : .2)) * 3, bl = w.bl || (rail ? .5 : .14), held = t === 'beam';
     /* a white-hot line inside a wide soft one, a flare at the muzzle, and light at both ends */
@@ -178,10 +180,8 @@ function emitShot(o, d, w, owner, lock, glow, aim) {
     { const c = _c2.setHex(hue); for (let i = 0; i < (held ? 1 : rail ? 7 : 3); i++) FD.fx.spark.emit(end.x, end.y, end.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), rand(.08, .16), rand(1.2, 2.4) * (rail ? 1.6 : 1), c.r * 4 + 1.5, c.g * 4 + 1.5, c.b * 4 + 1.5, .9, 0, 0, .7); }
     if (h.ent) damage(h.ent, w.dmg, end, owner, h.zone); else if (h.t < w.range) { sparks(FD.fx, end, held ? 3 : 10, 6); if (!held) puff(FD.fx, end, 2, 1.5, .4, .3); if (!held || Math.random() < .12) scarAt(end, rail ? 1.5 : .8, held ? .5 : .8); }
     if (rail) for (let k = 0; k < h.t; k += 5) FD.fx.spark.emit(O.x + D.x * k, O.y + D.y * k, O.z + D.z * k, rand(-.4, .4), rand(-.4, .4), rand(-.4, .4), rand(.4, .9), .5, 1.5, 2.6, 5, .7, 0, 0, 1);
-    return;
+    if (mine && talHit) talLand(by); return;
   }
-  if (t === 'arc') return arcShot(O, D, w, owner);
-  if (t === 'flame') return flameJet(O, D, w, owner);
   const S1 = geoC.s1 || (geoC.s1 = new THREE.SphereGeometry(1, 12, 8)), big = w.big || 1, vel = D.clone().multiplyScalar(w.speed); let m, life = w.life || 3, arm = .25;
   if (t === 'plasma') { m = new THREE.Mesh(GEO.ball, foe ? SM.eplasma : SM.plasma); m.scale.setScalar((w.big || .75) * 1.7); }
   else if (t === 'ion') { m = new THREE.Mesh(GEO.ball, SM.ion); m.scale.set(.55 * big, .55 * big, 3 * big); }
@@ -196,33 +196,36 @@ function emitShot(o, d, w, owner, lock, glow, aim) {
   else { m = new THREE.Mesh(GEO.tube, t === 'bolt' ? SM.bolt : foe ? SM.etracer : SM.tracer); const k = w.small ? .6 : big; m.scale.set(.4 * k, .4 * k, (t === 'flak' ? 2.2 : 5.5) * (w.small ? .7 : Math.sqrt(big))); if (!w.life && t === 'flak') life = .9; }
   m.position.copy(O); m.lookAt(_p.copy(O).add(vel)); FD.scene.add(m);
   const hue = t === 'plasma' ? (foe ? 0xff5a3a : 0x66e0ff) : t === 'bolt' ? 0xff3a2a : WEP_HUE[t] || (foe ? 0xff6a3a : 0xffb060);
-  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w, hue });
+  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w, hue, by });
   sparks(FD.fx, O, w.small ? 2 : 5, 3, 5, 3.4, 1.4); muzzleAt(O, D, hue, w.small ? 30 : clamp(36 + w.dmg * 2.2, 40, 150), w.small ? .6 : Math.min(1.8, .8 + w.dmg / 60));
 }
 /* things that hit rather than shoot. A saw bites every tick it is held against something; anything else swings, and lands a third of a second later on whatever is still in reach */
 function meleeHit(mech, u, w, owner, aim) {
   /* the blow goes where the pilot is looking, not where the torso happens to point: from a chase camera off one shoulder those are thirty degrees apart at arm's length */
-  const me = mech === player, pos = mech.root.position, ax = aim.x - pos.x, az = aim.z - pos.z, al = Math.hypot(ax, az) || 1, fx = ax / al, fz = az / al;
+  const me = mech === player, by = talBy, pos = mech.root.position, ax = aim.x - pos.x, az = aim.z - pos.z, al = Math.hypot(ax, az) || 1, fx = ax / al, fz = az / al;
   const strike = () => {
     if (mech.off || (me && P.dead)) return; const cosA = Math.cos(w.arc || .7), got = []; u.muzzle.getWorldPosition(_o); const at0 = _o.clone();
     for (const e of targetsOf(owner)) { if (e.dead) continue; const dx = e.pos.x - pos.x, dz = e.pos.z - pos.z, d = Math.hypot(dx, dz); if (d - e.r > w.range || Math.abs(e.pos.y + e.cy - pos.y - mech.chestY) > 16 || (dx * fx + dz * fz) / (d || 1) < cosA) continue; got.push([d, e]); }
-    got.sort((p, q) => p[0] - q[0]); if (!w.sweep) got.length = Math.min(got.length, 1);
+    got.sort((p, q) => p[0] - q[0]); if (!w.sweep) got.length = Math.min(got.length, 1); talBy = by; talHit = 0; if (me) talShot(by);
     for (const [, e] of got) {
       const at = e.pos.clone(); at.y += e.cy; at.lerp(at0, Math.min(1, e.r / (at.distanceTo(at0) || 1))); const z = zoneAt(e, at0);
       if (w.grind) sparks(FD.fx, at, 5, 9, 5, 3.4, 1.2); else { sparks(FD.fx, at, 30, 13); puff(FD.fx, at, 4, 2, .4, .4); if (me || at.distanceTo(P.pos) < 200) sfx.play('punch', me ? 1 : .6); if (me) P.shake += .35; }
       damage(e, w.dmg, at, owner, z); if (w.stun) stunEnt(e, w.stun, owner); if (w.burn) burnEnt(e, w.burn, owner);
     }
+    if (me && talHit) talLand(by); talBy = null;
   };
   if (w.grind) return strike(); u.swing = 1; let t = .32 * 2.2 / (u.swingK || 2.2); FD.tick.push(dt => { if ((t -= dt) > 0) return true; strike(); return false; });
 }
 function fire(mech, slot, w, aim, owner, lock) {
   const S = mech.slot[slot], u = slot === 'back' ? null : S.userData, mz = u ? [u.muzzle] : S.userData.muzzles, glow = mech.mats.glow.emissive.getHex(), me = mech === player, held = w.type === 'beam' || w.type === 'flame' || w.grind;
+  talBy = me ? (slot === 'back' ? 'back.' : 'arm.') + mech.cfg[slot] : owner === 0 ? 'ally' : null; if (me) talPull(talBy, w);
   if (u) { u.fireT = held ? .25 : .4; if (w.type !== 'melee') u.recoil = held ? .12 : 1; }
   if (w.type === 'melee') meleeHit(mech, u, w, owner, aim);
   else for (let i = 0; i < (w.salvo || 1); i++) {
     mz[i % mz.length].getWorldPosition(_o); _d.copy(aim).sub(_o).normalize(); const sp = w.spread || 0; if (sp) _d.add(_v.set(rand(-sp, sp), rand(-sp, sp), rand(-sp, sp))).normalize();
     emitShot(_o, _d, w, owner, lock, glow, aim);
   }
+  talBy = null;
   if (me || mech.root.position.distanceTo(P.pos) < 260) sfx.play(w.snd || (w.grind ? 'saw' : SND[w.type]) || 'laser', me ? 1 : .4);
 }
 function updateShots(dt) {
@@ -241,12 +244,12 @@ function updateShots(dt) {
       for (const e of targetsOf(s.owner)) { if (e.dead) continue; if (entIn(e, p)) { hit = e; break; } }
       if (!hit && inSolid(p)) boom = true;
     }
-    if (!hit && !boom) continue;
+    if (!hit && !boom) continue; talBy = s.by; talHit = 0;
     const bl = w.blast ?? (s.t === 'missile' ? 6 : s.t === 'plasma' ? 9 : 0);
     if (bl) { explode(FD.fx, p, clamp(bl / 7, .45, 2.6)); splash(p, bl, s.dmg, s.owner); if (hit && w.stun) stunEnt(hit, w.stun, s.owner); const dd = p.distanceTo(P.pos); if (dd < 220) sfx.play('boom', clamp(bl / 12, .3, 1.1)); if (bl > 10 && dd < 120) P.shake += (1 - dd / 120) * .5; }
     else if (hit) { if (s.t === 'ion') sparks(FD.fx, p, 16, 9, 2, 3.4, 6); flashAt(p, s.hue, clamp(24 + s.dmg * 2, 30, 120), 50, .1); damage(hit, s.dmg, p, s.owner, zoneAt(hit, p)); if (w.stun) stunEnt(hit, w.stun, s.owner); }
     else if (s.life > 0) { sparks(FD.fx, p, 4, 5); puff(FD.fx, p, 1, 1.2, .45, .3); flashAt(p, s.hue, 30, 40, .08); if (!w.small && Math.random() < .35) scarAt(p, .7, .4); }
-    FD.scene.remove(s.m); FD.shots.splice(i, 1);
+    if (talHit && talMine(s.by)) talLand(s.by); talBy = null; FD.scene.remove(s.m); FD.shots.splice(i, 1);
   }
   for (let i = FD.beams.length - 1; i >= 0; i--) { const b = FD.beams[i]; b.life -= dt; const k = Math.max(0, b.life / b.max); b.m.scale.x = b.m.scale.y = b.w * k; if (b.life <= 0) { FD.scene.remove(b.m); if (!b.m.material.userData.keep) b.m.material.dispose(); FD.beams.splice(i, 1); } }
 }
@@ -277,7 +280,7 @@ function drive(e, want, spd, dt, rad, turnRate) {
   return turn;
 }
 function killEnt(e, owner) {
-  if (e.dead) return; e.dead = true; e.by = owner; if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
+  if (e.dead) return; e.dead = true; e.by = owner; talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
   explode(FD.fx, at, big ? 2.4 : 1.2); sfx.play('boom', big ? 1.2 : .7); FD.ents.splice(FD.ents.indexOf(e), 1);
   if (e.blast) { explode(FD.fx, at, 3.4); splash(at, e.blast, 70, 0); splash(at, e.blast, 70, 1); }
   if (e.onKill) e.onKill(e, owner);
@@ -290,7 +293,8 @@ function killEnt(e, owner) {
 }
 /* drones, turrets, tanks and ships have no Mech: they fire any weapon from a point, at a point */
 function fireFrom(o, aim, w, e) {
-  _d.copy(aim).sub(o).normalize(); const O = o.clone().addScaledVector(_d, w.off ?? 2), D0 = _d.clone(), sp = w.spread || 0, owner = e.rv && e.team === 0 ? 4 : e.team, A = aim.clone();
+  _d.copy(aim).sub(o).normalize(); const O = o.clone().addScaledVector(_d, w.off ?? 2), D0 = _d.clone(), sp = w.spread || 0, owner = e.rv && e.team === 0 ? 4 : e.team, A = aim.clone(); talBy = owner === 0 ? 'ally' : null;
   for (let i = 0; i < (w.salvo || 1); i++) { const D = D0.clone(); if (sp) D.add(_v.set(rand(-sp, sp), rand(-sp, sp), rand(-sp, sp))).normalize(); emitShot(O, D, w, owner, e.tgt || null, e.team === 1 ? 0xff3a2a : 0x7fe7ff, A); }
+  talBy = null;
   if (o.distanceTo(P.pos) < 220) sfx.play(w.snd || SND[w.type] || 'laser', .3);
 }

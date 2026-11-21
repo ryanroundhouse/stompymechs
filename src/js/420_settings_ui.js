@@ -1,5 +1,5 @@
 /* ============ SETTINGS, COMPANY IDENTITY, SAVE FILES, NEW GAME ============ */
-const SET = { open: false, tab: 'audio', found: false, wipe: false, msg: '', bad: false, pv: -1, pvT: 0 };
+const SET = { open: false, tab: 'audio', found: false, wipe: false, msg: '', bad: false, pv: -1, pvT: 0, q: '', sec: '' };
 /* paint the company name and emblem wherever they appear */
 function brandSync() {
   document.querySelectorAll('.ttl').forEach(t => { t.querySelector('b').textContent = YARD.name; const g = t.querySelector('canvas').getContext('2d'); g.clearRect(0, 0, 100, 100); drawLogo(g, 50, 50, 47); });
@@ -12,7 +12,7 @@ function gfxApply() {
 }
 /* swap the whole company for another: a fresh start (null) or an imported save */
 function gameApply(s) {
-  if (dlgCur) dlgClose(); tutEnd(); yardApply(s); tutApply(s); ledgerApply(s); pilotsApply(s); boardApply(s); storyApply(s); barApply(s);
+  if (dlgCur) dlgClose(); tutEnd(); yardApply(s); tutApply(s); talApply(s); ledgerApply(s); pilotsApply(s); boardApply(s); storyApply(s); barApply(s);
   player.cfg = YARD.bays[YARD.act]; applyPaint(player.mats, player.cfg.paint); player.build(); mechName = bayTitle(); HG.armT = 0; HG.syncBerths(); if (HQ.setMini) HQ.setMini();
   brandSync(); saveCO(); setStatus(bayParts(player.cfg) ? 'STAND READY — ' + mechName : 'STAND EMPTY'); if (mode === 'hangar') { refreshUI(); renderHangarContract(); } else if (mode === 'hq') renderDetail();
 }
@@ -38,9 +38,9 @@ function settingsDraw() {
   const bindR = (id, set, show) => { const e = $(id); e.oninput = () => { set(+e.value); e.nextElementSibling.textContent = show(+e.value); }; e.onchange = () => { cfgSave(); sfx.play('ui'); }; };
   const bindT = (id, key, after) => { $(id).onclick = () => { CFG[key] = !CFG[key]; cfgSave(); sfx.play('ui'); if (after) after(); settingsDraw(); }; };
   $('setTitle').textContent = F ? 'FOUND YOUR COMPANY' : 'SETTINGS'; $('setSub').textContent = F ? 'NEW GAME' : `${YARD.name} · DAY ${CO.day}`;
-  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
+  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
   $('setTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.tab = b.dataset.k; SET.wipe = false; SET.msg = ''; settingsDraw(); });
-  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : 'Settings are kept on this machine, apart from the save file.';
+  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : 'Settings are kept on this machine, apart from the save file.';
   if (tab === 'audio') {
     /* a preview button; data-p names what it plays: p3 / c3 a mission score on patrol or in combat, night, amb, win */
     const pvb = (k, label) => `<button data-p="${k}" class="${SET.pv === k ? 'on' : ''}">${SET.pv === k ? '■ STOP' : '▶ ' + label}</button>`;
@@ -90,11 +90,13 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
     B.querySelectorAll('.ink button').forEach(b => b.onclick = () => { L[b.parentNode.dataset.k] = b.dataset.c; chg(); });
     $('lgRnd').onclick = () => { const a = pick(LOGO_INKS); let c = pick(LOGO_INKS); while (c === a) c = pick(LOGO_INKS); Object.assign(L, { shape: (Math.random() * 8) | 0, sym: (Math.random() * 14) | 0, c1: a, c2: c, c3: Math.random() < .6 ? c : pick(LOGO_INKS) }); chg(); };
     const nm = $('coName'); nm.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') nm.blur(); }; nm.oninput = () => { YARD.name = cleanName(nm.value, CO_DEF_NAME); brandSync(); }; nm.onchange = () => { nm.value = YARD.name; saveCO(); };
+  } else if (tab === 'stats') {
+    statsDraw(B);
   } else {
     const b = YARD.bays.filter(x => bayParts(x)).length, act = CO.active;
     B.innerHTML = `<div class="sh">THIS COMPANY</div><div class="sum"><canvas id="lgSm" width="120" height="120"></canvas><div><b>${YARD.name}</b><span>Day ${CO.day} · funds ${fmt(CO.cb)} · ${CO.done} contracts completed, ${CO.fails} failed</span><span>${b} of 3 bays occupied · ${invCount()} items in stores${act ? ` · signed for ${act.site}` : ''}</span><span class="dim">The game saves itself to this browser after every change.</span></div></div>
 <div class="sh">SAVE FILE</div><div class="gm"><button id="gExp"><b>EXPORT SAVE</b><small>Download the whole company as a .json file</small></button><button id="gImp" ${fld ? 'disabled' : ''}><b>IMPORT SAVE</b><small>Load a company from a .json file — replaces this one</small></button></div>
-<div class="sh">NEW GAME</div><div class="gm">${SET.wipe ? `<button id="gYes" class="dng"><b>YES — DISBAND ${YARD.name}</b><small>Ledger, standing, stores and every mech are gone for good</small></button><button id="gNo"><b>NO — KEEP PLAYING</b><small>Nothing is changed</small></button>` : `<button id="gNew" ${fld ? 'disabled' : ''}><b>START A NEW COMPANY</b><small>A clean ledger, ${fmt(120000)}, and a single light mech</small></button>`}</div>
+<div class="sh">NEW GAME</div><div class="gm">${SET.wipe ? `<button id="gYes" class="dng"><b>YES — DISBAND ${YARD.name}</b><small>Ledger, standing, stores, the record and every mech are gone for good</small></button><button id="gNo"><b>NO — KEEP PLAYING</b><small>Nothing is changed</small></button>` : `<button id="gNew" ${fld ? 'disabled' : ''}><b>START A NEW COMPANY</b><small>A clean ledger, ${fmt(120000)}, and a single light mech</small></button>`}</div>
 ${fld ? '<p class="snt">Importing and starting over are locked while a sortie is running.</p>' : ''}${SET.msg ? `<p class="snt ${SET.bad ? 'bad' : 'good'}">${SET.msg}</p>` : ''}`;
     drawLogo($('lgSm').getContext('2d'), 60, 60, 56);
     $('gExp').onclick = () => { const n = saveExport(); SET.msg = `Saved as ${n}`; SET.bad = false; sfx.play('ok'); settingsDraw(); };
@@ -102,6 +104,29 @@ ${fld ? '<p class="snt">Importing and starting over are locked while a sortie is
     if ($('gNew')) $('gNew').onclick = () => { sfx.play('ui'); SET.wipe = true; SET.msg = ''; settingsDraw(); };
     if ($('gYes')) { $('gYes').onclick = () => { sfx.play('ok'); newGame(); }; $('gNo').onclick = () => { sfx.play('ui'); SET.wipe = false; settingsDraw(); }; }
   }
+}
+/* SETTINGS · STATS: the whole record (117_stats.js). A box to find a line by any word in it, a section to keep to, and the weapons as a table of their own.
+   Typing redraws the list and leaves the box alone, so it keeps its caret */
+function statsDraw(B) {
+  const secs = [...TAL_DEF.map(d => d[0]), 'WEAPONS'], esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  B.innerHTML = `<div class="tlyQ"><input id="tlyFind" placeholder="FIND A STAT — ACCURACY, STEPS, TANKS…" spellcheck="false" autocomplete="off" value="${esc(SET.q)}"><span id="tlyN"></span></div>
+<div class="tlyC" id="tlyC"><button data-s=""${SET.sec ? '' : ' class="on"'}>EVERYTHING</button>${secs.map(s => `<button data-s="${s}"${SET.sec === s ? ' class="on"' : ''}>${s}</button>`).join('')}</div><div id="tlyL"></div>`;
+  const list = () => {
+    const q = SET.q.trim().toUpperCase().split(/\s+/).filter(Boolean), hit = s => q.every(w => s.includes(w)), R = talRows(2), W = talWeps(); let h = '', n = 0;
+    for (const g of secs) {
+      if (SET.sec && SET.sec !== g) continue;
+      if (g === 'WEAPONS') {
+        const L = W.filter(w => hit('WEAPONS ' + w.name + ' ' + w.cls)); if (!L.length && (q.length || !SET.sec)) continue; n += L.length;
+        h += `<div class="sh">WEAPONS <small>${W.length ? 'WHAT EACH ONE HAS FIRED, LANDED AND DONE' : 'NOTHING FIRED YET'}</small></div>` + (L.length ? `<div class="tlyW"><div class="hd"><span>WEAPON</span><span>FIRED</span><span>ON TARGET</span><span>ACCURACY</span><span>DAMAGE</span><span>KILLS</span></div>${L.map(w => `<div><span>${iconSvg(w.key, 15)}<b>${esc(w.name)}</b><small>${w.cls}</small></span><span>${TAL_F.n(w.s)}</span><span>${TAL_F.n(w.h)}</span><span class="ac"><i style="width:${(w.acc * 100).toFixed(0)}%"></i><em>${w.s ? TAL_F.p(w.acc) : '—'}</em></span><span>${TAL_F.d(w.d)}</span><span>${TAL_F.n(w.k)}</span></div>`).join('')}</div>` : '');
+        continue;
+      }
+      const L = R.filter(r => r.g === g && hit(g + ' ' + r.l)); if (!L.length) continue; n += L.length;
+      h += `<div class="sh">${g}</div><div class="tlyG">${L.map(r => `<div${r.z ? ' class="z"' : ''}><span>${esc(r.l)}</span><b>${esc(r.v)}</b></div>`).join('')}</div>`;
+    }
+    $('tlyL').innerHTML = h || `<p class="snt">Nothing on the record matches “${esc(SET.q)}”.</p>`; $('tlyN').textContent = `${n} LINE${n === 1 ? '' : 'S'}${TALLY.day > 1 ? ` · KEPT SINCE DAY ${TALLY.day}` : ''}`;
+  };
+  list(); const f = $('tlyFind'); f.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { if (SET.q) { SET.q = f.value = ''; list(); } else settingsClose(); } }; f.oninput = () => { SET.q = f.value.slice(0, 40); list(); };
+  $('tlyC').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.sec = b.dataset.s; $('tlyC').querySelectorAll('button').forEach(o => o.classList.toggle('on', o === b)); list(); $('setBody').scrollTop = 0; });
 }
 {
   $('setClose').onclick = () => { sfx.play('ok'); if (SET.found) { SET.found = false; YARD.founded = true; YARD.name = cleanName($('coName') && $('coName').value, CO_DEF_NAME); brandSync(); CO.news = CO.news.filter(n => !n.includes('is open for contracts') && !n.includes('Nobody is hiring yet')); news(tutLock() ? TUT_WIRE() : TUT_OPEN()); saveCO(); setStatus('STAND READY — ' + mechName); } settingsClose(); };

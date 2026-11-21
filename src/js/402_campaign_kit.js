@@ -70,7 +70,7 @@ function sunHud() { $('helpB').classList.toggle('hid', !sunKey()); tutKeys(P.lan
 function sunCall() {
   if (mode !== 'field' || P.dead || !sunKey() || (MS.on && MS.over)) return; if (!(P.lance > 0)) { sfx.play('deny'); return msg('SKY LANCE — NO CALLS LEFT THIS SORTIE', 2.5); }
   const p = P.aim.clone(); if (Math.hypot(p.x - P.pos.x, p.z - P.pos.z) < 34) { sfx.play('deny'); return msg('SKY LANCE — TOO CLOSE. PUT THE RETICLE FURTHER OUT', 2.5); }
-  P.lance--; sunHud(); sfx.play('alarm'); msg('SKY LANCE CALLED — STAND CLEAR', 3); skyLance(p, { own: 0, dmg: 950, r: 27, delay: 2.6, hit: at => { if (MS.on && MS.v.onLance) MS.v.onLance(at); } });
+  P.lance--; tal('s.lance'); sunHud(); sfx.play('alarm'); msg('SKY LANCE CALLED — STAND CLEAR', 3); skyLance(p, { own: 0, dmg: 950, r: 27, delay: 2.6, hit: at => { if (MS.on && MS.v.onLance) MS.v.onLance(at); } });
 }
 /* what the war does to an ordinary contract: a Concord lance arrives part-way through, and it is nobody's friend */
 TWISTS.concord = async ms => {

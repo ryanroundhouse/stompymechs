@@ -2,7 +2,7 @@
 let dlgCur = null;
 /* dlg(who, text, [[label, fn, disabled]], person) — person: a crew figure to frame, or null to leave the camera alone */
 function dlg(who, text, opts, person) {
-  text = coTxt(text); dlgCur = { who, text, opts, t: 0 }; drawFace($('dlgFace'), who); $('dlgWho').textContent = `${who.name} · ${who.role}`; $('dlgWho').style.color = who.col; $('dlg').classList.remove('hid'); $('dlgOpts').innerHTML = '';
+  text = coTxt(text); tal('q.talk'); dlgCur = { who, text, opts, t: 0 }; drawFace($('dlgFace'), who); $('dlgWho').textContent = `${who.name} · ${who.role}`; $('dlgWho').style.color = who.col; $('dlg').classList.remove('hid'); $('dlgOpts').innerHTML = '';
   opts.forEach(([label, fn, dis], i) => { const b = document.createElement('button'); b.innerHTML = `<b>${i + 1}</b>${label}`; b.disabled = !!dis; b.onclick = () => { sfx.play('ui'); fn(); }; $('dlgOpts').appendChild(b); });
   sfx.play('comm'); vox.say(who, text, mode === 'hq' && HQ.contact && HQ.contact.ch.seed === who.seed ? 'holo' : undefined); if (person) { focusOn(person); if (person.cam) hq.focus.pos.set(...person.cam); }
 }
@@ -11,8 +11,9 @@ const unknown = c => c.story ? [] : ['plot', ...c.twists].filter(k => !c.intel.s
 const hintOf = (c, k) => k === 'rival' && RIV[c.rival] ? `${RIV[c.rival].name} has taken an interest in this one. Expect ${RIV[c.rival].ch.last}'s lance on the ground — and not necessarily on our side.` : k === 'plot' && c.type === 'recovery' && c.plot === 'race' && RIV[c.rival] ? `${RIV[c.rival].name} has filed for the same salvage.` : HINT[k === 'plot' ? `${c.type}.${c.plot}` : k];
 const learn = (c, k, src, s) => { c.intel.push({ k, s: s || hintOf(c, k), src }); CO.dirty = true; };
 const repWord = r => r > 40 ? 'trusted' : r > 15 ? 'favoured' : r > -15 ? 'neutral' : r > -40 ? 'distrusted' : 'hostile';
-const spend = n => { if (CO.cb < n) return false; CO.cb -= n; CO.dirty = true; saveCO(); return true; };
-function accept(c) { if (CO.active && CO.active !== c) { quitCost(CO.active); if (!CO.active.story) news(`${YARD.name} walked away from the ${FAC[CO.active.emp].short} job at ${CO.active.site}.`); } CO.active = CO.sel = c; c.upd = ''; if (!c.story) news(`${YARD.name} signed with ${FAC[c.emp].short}: ${TYPES[c.type].name.toLowerCase()} at ${c.site}.`); sfx.play('ok'); }
+/* `why` is the column it goes under in the record: market, mech, pilot, intel, bar, stake, gift */
+const spend = (n, why = 'misc') => { if (CO.cb < n) return false; CO.cb -= n; tal('cr.o.' + why, n); CO.dirty = true; saveCO(); return true; };
+function accept(c) { if (CO.active !== c) tal('q.acc'); if (CO.active && CO.active !== c) { tal('q.drop'); quitCost(CO.active); if (!CO.active.story) news(`${YARD.name} walked away from the ${FAC[CO.active.emp].short} job at ${CO.active.site}.`); } CO.active = CO.sel = c; c.upd = ''; if (!c.story) news(`${YARD.name} signed with ${FAC[c.emp].short}: ${TYPES[c.type].name.toLowerCase()} at ${c.site}.`); sfx.play('ok'); }
 
 function talkXO() {
   const c = CO.sel, x = CREW.xo, back = [['Something else', talkXO], ['That is all', dlgClose]], st = player.stats;
@@ -30,7 +31,7 @@ function talkXO() {
 function talkIntel() {
   const c = CO.sel, s = CREW.intel, cost = c ? Math.round((5000 + c.diff * 2500) * (stFlag('dead.end') ? .5 : 1)) : 0, left = c ? unknown(c) : [], back = [['Something else', talkIntel], ['Thanks, Mira', dlgClose]];
   dlg(s, tutLock() ? pick(['I have no files open. It is restful, and I do not like it. Clear that transponder and I will have work for you.', 'Every broker in the sector can hear our mech announcing a student driver. I have stopped answering their jokes.']) : pick(['I have six files open and I trust none of them. Which one are we talking about?', 'Everything on that board was written by someone who wants something. Ask.', 'Signals are noisy today. Somebody is moving a lot of metal.']), [
-    [c ? (left.length ? `Buy confirmed intel on ${c.site} (${fmt(cost)})` : `Nothing more to learn about ${c.site}`) : 'Buy intel (select a contract first)', () => { if (!spend(cost)) return dlg(s, 'My sources do not work on credit, and neither do I.', back); const k = pick(left); learn(c, k, 'sato'); dlg(s, `Confirmed, and it cost me a favour: ${hintOf(c, k)}`, back); }, !c || !left.length],
+    [c ? (left.length ? `Buy confirmed intel on ${c.site} (${fmt(cost)})` : `Nothing more to learn about ${c.site}`) : 'Buy intel (select a contract first)', () => { if (!spend(cost, 'intel')) return dlg(s, 'My sources do not work on credit, and neither do I.', back); tal('q.intel'); const k = pick(left); learn(c, k, 'sato'); dlg(s, `Confirmed, and it cost me a favour: ${hintOf(c, k)}`, back); }, !c || !left.length],
     ['Any rumours?', () => { const G = barGossip('intel'); if (G.length && Math.random() < .3) { const [rk, f] = pick(G); rivKnow(rk, f[0]); return dlg(s, `About ${RIV[rk].name}, for what it is worth: ${f[1]} I have put it in their file.`, back); } const L = CO.board.filter(o => !o.rum && o.twists.some(t => !o.intel.some(i => i.k === t))), o = L.length && Math.random() < .7 ? pick(L) : null; if (!o) return dlg(s, pick(['Nothing I would stake a mech on.', 'Only that everyone is hiring and nobody is paying on time.', 'The Red Maw are bolder this season. That is all I have.']), back); o.rum = true; const k = pick(o.twists.filter(t => !o.intel.some(i => i.k === t))); learn(o, k, 'sato'); dlg(s, `About ${o.site}, for free: ${hintOf(o, k)}`, back); }],
     ['How do the factions and the other companies see us?', () => dlg(s, EMPS.map(f => `${FAC[f].short}: ${repWord(CO.rep[f])} (${sdNum(CO.rep[f])})`).join(' · ') + '\n' + RIVS.map(k => `${RIV[k].name}: ${relWord(CO.riv[k].rel)} (${sdNum(CO.riv[k].rel)})`).join(' · ') + '\nGood standing with a faction means better fees and softer negotiators. With a company it decides whether they talk or shoot when we meet them. The STANDING tab on the board has the detail, and the reasons.', back)],
     ['Thanks, Mira', dlgClose]], HQ.P.intel);
@@ -53,7 +54,7 @@ function talkPilot(i) {
   if (p.until > now()) return dlg(ch, 'Still in the med bay, thanks to your last contract. Ask me in a couple of days.', [['Leave', dlgClose]], P0);
   if (CO.wing && CO.wing.p !== p) return dlg(ch, `You already have ${CO.wing.ch.first} on your ticket. A dropship carries two machines, not three.`, [[`Release ${CO.wing.ch.first} and talk terms`, () => { wingRelease(); talkPilot(i); }], ['Leave it as it is', dlgClose]], P0);
   if (CO.wing && CO.wing.p === p) return dlg(ch, 'I am already on your ticket. Changed your mind?', [['Stand down — I fly solo', () => { if (!CO.wing.share) CO.cb += Math.round(p.fee * .5); CO.wing = null; CO.dirty = true; dlg(ch, 'Your call. I am keeping half the retainer.', [['Leave', dlgClose]]); }], ['No. Be ready', dlgClose]], P0);
-  const hire = share => { if (!share && !spend(p.fee)) return dlg(ch, 'Come back when you can cover the retainer.', back); CO.wing = { p, ch, mech: p.mech, share: share ? p.share : 0 }; CO.dirty = true; dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will be on your wing at launch.` : 'Paid up front. I like you already. See you on the drop.', [['Leave', dlgClose]]); };
+  const hire = share => { if (!share && !spend(p.fee, 'pilot')) return dlg(ch, 'Come back when you can cover the retainer.', back); tal('q.hire'); CO.wing = { p, ch, mech: p.mech, share: share ? p.share : 0 }; CO.dirty = true; dlg(ch, share ? `${Math.round(p.share * 100)} percent of the fee, then. I will be on your wing at launch.` : 'Paid up front. I like you already. See you on the drop.', [['Leave', dlgClose]]); };
   dlg(ch, i ? 'Anvil. Assault pilot. I am slow, I am expensive, and I do not miss.' : 'Rook. I fly light and fast, and I always come home. Need a second machine?', [
     [`Hire for the next contract — flat ${fmt(p.fee)}`, () => hire(false)], [`Offer ${Math.round(p.share * 100)}% of the contract fee instead`, () => hire(true)],
     ['Haggle the retainer down', () => { p.hag = true; if (Math.random() < .35 + CO.done * .06) { p.fee = Math.round(p.fee * .75 / 1000) * 1000; dlg(ch, `...You have a reputation. ${fmt(p.fee)}. Tell nobody.`, back); } else { p.fee = Math.round(p.fee * 1.15 / 1000) * 1000; dlg(ch, `For that, the price just went up. ${fmt(p.fee)}.`, back); } }, p.hag],
@@ -65,7 +66,7 @@ function talkContact(c) {
   const menu = line => {
     if (c.pat <= 0) { dropContract(c); sub ? rivRel(c.co, -3, `talks over ${c.site} broke down`) : repAdd(c.emp, -2, `talks over ${c.site} broke down`); news(`${E} broke off talks over ${c.site}.`); return dlg(ch, Q.bye, [['Close channel', dlgClose]]); }
     const odds = k => clamp(k + (sub ? CO.riv[c.co].rel : CO.rep[c.emp]) / 150 + CO.done * .02 - c.pushes * .17, .05, .9), act = CO.active === c;
-    const push = (k, okFn, cost) => () => { c.pushes++; if (Math.random() < odds(k)) { okFn(); c.pat -= cost; CO.dirty = true; menu(Q.yes); } else { c.pat -= cost * 1.6; CO.dirty = true; menu(Q.no); } };
+    const push = (k, okFn, cost) => () => { c.pushes++; tal('q.hag'); if (Math.random() < odds(k)) { okFn(); tal('q.hagW'); c.pat -= cost; CO.dirty = true; menu(Q.yes); } else { c.pat -= cost * 1.6; CO.dirty = true; menu(Q.no); } };
     const n = clamp(Math.ceil(c.pat / 18), 0, 5); dlg({ ...ch, role: `${ch.role} · PATIENCE ${'▮'.repeat(n)}${'▯'.repeat(5 - n)}` }, line, [
       [`Push for a higher fee (now ${fmt(c.pay)})`, push(Q.pay, () => { c.pay = Math.round(c.pay * 1.12 / 1000) * 1000; }, 12)],
       [`Ask for better salvage rights (now ${c.salv}%)`, push(Q.salv, () => { c.salv += 10; }, 10), c.salv >= 45],
@@ -182,7 +183,7 @@ function talkRival(k) {
     if (!(k === 'cob' ? R.rel >= 10 : k === 'car' ? c.diff >= 3 || R.rel >= 20 : true)) return said(T.jNo);
     const was = c.rival === k; rivCo(c, k, 'joint', .3); HQV.tab = 'board'; saveCO(); said(was ? T.jRival : T.jYes);
   };
-  const gift = () => { if (!spend(cost)) return said('Come back when the gesture would not bounce.'); R.gift = now(); rivRel(k, k === 'ver' ? 9 : k === 'car' ? 8 : 7, 'a peace offering'); saveCO(); said(T.giftYes); };
+  const gift = () => { if (!spend(cost, 'gift')) return said('Come back when the gesture would not bounce.'); tal('q.gift'); R.gift = now(); rivRel(k, k === 'ver' ? 9 : k === 'car' ? 8 : 7, 'a peace offering'); saveCO(); said(T.giftYes); };
   const talk = () => {
     const w = relWord(R.rel), askH = Math.ceil(24 - (now() - R.ask)), giftH = Math.ceil(48 - (now() - R.gift));
     dlg(ch, T.hi[R.rel > 15 ? 0 : R.rel > -15 ? 1 : 2], [

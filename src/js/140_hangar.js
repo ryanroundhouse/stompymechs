@@ -270,18 +270,18 @@ async function swapLegsBare(id) {
 async function fitPart(slot, id) {
   const cfg = player.cfg; id = id || null; if (busy || mode !== 'hangar' || cfg[slot] === id) return false;
   if (id && (!invN(CAT[slot] + '.' + id) || (!cfg.torso && slot !== 'legs' && slot !== 'torso'))) { sfx.play('deny'); return false; }
-  busy = true; setStatus(id ? `FITTING ${SLOT_LABEL[slot]} — ${PARTS[CAT[slot]][id].name}` : `REMOVING ${SLOT_LABEL[slot]} — RETURNED TO STORES`, true); refreshUI();
+  busy = true; if (id) tal('y.fit'); if (cfg[slot]) tal('y.strip'); setStatus(id ? `FITTING ${SLOT_LABEL[slot]} — ${PARTS[CAT[slot]][id].name}` : `REMOVING ${SLOT_LABEL[slot]} — RETURNED TO STORES`, true); refreshUI();
   await indexTable(); await (slot !== 'legs' ? swapUpper(slot, id) : cfg.torso ? swapLegs(id) : swapLegsBare(id));
   setGang(1); busy = false; mechName = bayTitle(); setStatus('STAND READY — ' + mechName); yardChanged(); refreshUI(); return true;
 }
 function fitSinks(d) {
   const c = player.cfg, T = PARTS.torso[c.torso]; if (busy || !T) return; const n = clamp(c.sinks + d, 0, T.sinks);
   if (n === c.sinks || (d > 0 && !invN('gear.sink'))) return sfx.play('deny');
-  invAdd('gear.sink', c.sinks - n); c.sinks = n; player.stats = mechStats(c); sfx.play('weld'); const b = player.slotBox('torso'); sparks(HG.fx, b.getCenter(V3()).setY(b.max.y - .4), 18, 6); yardChanged(); refreshUI();
+  invAdd('gear.sink', c.sinks - n); if (n > c.sinks) tal('y.sink', n - c.sinks); c.sinks = n; player.stats = mechStats(c); sfx.play('weld'); const b = player.slotBox('torso'); sparks(HG.fx, b.getCenter(V3()).setY(b.max.y - .4), 18, 6); yardChanged(); refreshUI();
 }
 /* bring another bay's machine to the assembly stand: the lift takes this one below deck and raises the other */
 async function switchBay(i) {
-  if (busy || mode !== 'hangar' || i === YARD.act) return; busy = true; const to = YARD.bays[i], has = bayParts(to) > 0;
+  if (busy || mode !== 'hangar' || i === YARD.act) return; busy = true; tal('y.bay'); const to = YARD.bays[i], has = bayParts(to) > 0;
   setStatus(has ? `LIFT CYCLE — RETRIEVING ${to.name || 'UNIT'} FROM BAY ${i + 1}` : `LIFT CYCLE — BAY ${i + 1} IS EMPTY`, true); refreshUI();
   await indexTable(); let D = player.height + 2; steamRing(); sfx.play('servoDn');
   await tween(1.6, k => { player.root.position.y = MECH_Y - k * D; HG.lift.position.y = .1 - k * D; }, ease.in);

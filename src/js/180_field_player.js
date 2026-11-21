@@ -53,21 +53,22 @@ function updateField(dt, t) {
   if (!P.air && heightAt(nx, nz) - heightAt(P.pos.x, P.pos.z) > Math.abs(step) * 1.2 + .02) P.v *= .6; else { P.pos.x = nx; P.pos.z = nz; }
   collide(P.pos, player.radius * .65);
   const ground = floorAt(P.pos); let jet = false; if (!P.air && P.pos.y - ground > 2.5) P.air = true;
+  talField(dt, sprint, ctl && K.Space && st.jets && P.fuel > 0, dyaw, ground, wade);
   if (ctl && K.Space && st.jets && P.fuel > 0) {
     jet = true; P.vy = Math.min(P.vy + 46 * dt, 14); P.fuel -= dt * .4; P.air = true; P.heat += 5 * dt; P.stepT -= dt; if (P.stepT < 0) { sfx.play('jet'); P.stepT = .16; }
     for (const f of player.slot.back.userData.flames) { f.getWorldPosition(_v); FD.fx.spark.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(-14, -8), rand(-1, 1), rand(.15, .35), rand(.7, 1.3), 1.2, 2.6, 5, .7, 0, 1); }
   } else P.fuel = Math.min(1, P.fuel + dt * (P.air ? .04 : .2));
-  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
+  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
   else P.pos.y = damp(P.pos.y, ground, 14, dt);
   /* heat + shutdown */
   P.heat = Math.max(0, P.heat - st.cool * FD.coolK * (P.coolK || 1) * dt * (P.shut > 0 ? 2 : sprint ? SPRINT_K.shed : 1));
   if (P.buzz && !P.dead) { P.twist += (Math.sin(t * .83) + Math.sin(t * 1.37 + 1)) * .055 * P.buzz * dt; P.pitch = clamp(P.pitch + Math.sin(t * 1.1 + 2) * .04 * P.buzz * dt, -.38, .5); }
-  if (EV.wl != null && !P.air && !P.dead && P.pos.y < EV.wl - .6) { if (EV.B.liq === 'lava') { P.heat += 26 * dt; P.armor -= 5 * dt; if (Math.random() < .3) { _v.copy(P.pos); _v.y = EV.wl; sparks(FD.fx, _v, 2, 5, 5, 1.6, .3); } if (P.armor <= 0) playerLost(); } else P.heat = Math.max(0, P.heat - 9 * dt); }
+  if (EV.wl != null && !P.air && !P.dead && P.pos.y < EV.wl - .6) { if (EV.B.liq === 'lava') { P.heat += 26 * dt; P.armor -= 5 * dt; tal('m.lava', dt); tal('d.lava', 5 * dt); tal('h.lava', 26 * dt); if (Math.random() < .3) { _v.copy(P.pos); _v.y = EV.wl; sparks(FD.fx, _v, 2, 5, 5, 1.6, .3); } if (P.armor <= 0) playerLost(); } else P.heat = Math.max(0, P.heat - 9 * dt); }
   if (P.shMax && (P.shT -= dt) < 0 && P.sh < P.shMax) P.sh = Math.min(P.shMax, P.sh + P.shMax * .2 * dt);
-  if (P.burnT > 0 && !P.dead) { P.burnT -= dt; P.heat += P.burnD * 2 * dt; P.armor -= P.burnD * .24 * dt; if (Math.random() < dt * 12) { _v.copy(P.pos); _v.y += player.chestY * rand(.4, 1.1); FD.fx.spark.emit(_v.x + rand(-2, 2), _v.y, _v.z + rand(-2, 2), rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.2), 5, 2, .4, .8, -2, .6, 1.5); } if (P.armor <= 0) playerLost(); }
+  if (P.burnT > 0 && !P.dead) { P.burnT -= dt; P.heat += P.burnD * 2 * dt; P.armor -= P.burnD * .24 * dt; tal('h.fire', P.burnD * 2 * dt); tal('d.burn', P.burnD * .24 * dt); if (Math.random() < dt * 12) { _v.copy(P.pos); _v.y += player.chestY * rand(.4, 1.1); FD.fx.spark.emit(_v.x + rand(-2, 2), _v.y, _v.z + rand(-2, 2), rand(-1, 1), rand(3, 7), rand(-1, 1), rand(.4, .8), rand(1.2, 2.2), 5, 2, .4, .8, -2, .6, 1.5); } if (P.armor <= 0) playerLost(); }
   player.gait.sag = damp(player.gait.sag, P.lost.legs ? 1 : 0, 2.5, dt);
-  if (P.heat > HEAT_WARN && P.heat < 100 && !P.hw && P.shut <= 0 && !P.dead) { P.hw = true; msg('HEAT CRITICAL — EASE OFF', 2.5); sfx.play('deny'); } if (P.heat < HEAT_WARN - 25) P.hw = false;
-  if (P.heat >= 100 && P.shut <= 0 && !P.dead) { P.shut = 3.5; msg('REACTOR SHUTDOWN — VENTING HEAT', 3.4); sfx.play('deny'); sfx.play('steam'); }
+  if (P.heat > HEAT_WARN && P.heat < 100 && !P.hw && P.shut <= 0 && !P.dead) { P.hw = true; tal('h.warn'); msg('HEAT CRITICAL — EASE OFF', 2.5); sfx.play('deny'); } if (P.heat < HEAT_WARN - 25) P.hw = false;
+  if (P.heat >= 100 && P.shut <= 0 && !P.dead) { P.shut = 3.5; tal('h.shut'); msg('REACTOR SHUTDOWN — VENTING HEAT', 3.4); sfx.play('deny'); sfx.play('steam'); }
   if (P.shut > 0) { P.shut -= dt; if (Math.random() < .5) { _v.copy(P.pos); _v.y += player.chestY; puff(FD.fx, _v, 1, 2.5, .85, .3, 4, 2); } }
   /* drive the mech */
   const R = player.root; R.position.copy(P.pos); if (!P.dead) R.rotation.set(0, P.yaw, 0); player.twist = P.twist; player.pitch = P.shut > 0 ? -.3 : P.pitch;
@@ -92,7 +93,7 @@ function updateField(dt, t) {
   }
   retarget(); fieldUnits(dt, t);
   updateMission(dt); fieldFx(dt, t);
-  if (!MS.on && !P.dead && !FD.ents.some(e => e.team === 1)) { P.waveT += dt; if (P.waveT > 4) { P.waveT = 0; if (P.wave) { P.armor = Math.min(P.max, P.armor + P.max * .3); } spawnWave(P.wave + 1); } }
+  if (!MS.on && !P.dead && !FD.ents.some(e => e.team === 1)) { P.waveT += dt; if (P.waveT > 4) { P.waveT = 0; if (P.wave) { P.armor = Math.min(P.max, P.armor + P.max * .3); tal('pg.w'); } spawnWave(P.wave + 1); talMax('pg.best', P.wave); } }
   if (FD.beacon) M.redGlow.emissiveIntensity = Math.sin(t * 4) > .6 ? 6 : 1.5;
   FD.fx.spark.update(dt); FD.fx.smoke.update(dt);
   /* HUD */

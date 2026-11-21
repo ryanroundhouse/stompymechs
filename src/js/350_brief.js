@@ -128,7 +128,7 @@ function brfStep(i) {
   dlg(who, st.t, [[i === n - 1 ? 'Go on' : 'Continue', () => brfStep(i + 1)], ['Skip to the end of the briefing', () => { for (let j = i + 1; j < n; j++) for (const op of H.brf[j].show || []) { if (op[0] === 'clear') BRF.marks = BRF.marks.filter(m => m.op[0] === 'site' && m.op[1] === 'lz'); else if (op[0] !== 'card' && op[0] !== 'face') BRF.marks.push({ op, i: j }); } BRF.i = n - 1; brfEnd(); }, i >= n - 1]], null);
 }
 function brfEnd() {
-  const c = BRF.c, T = stState(c.story); BRF.talk = BRF.xo; BRF.shot = 'wide'; BRF.i = BRF.H.brf.length; for (const h of BRF.people) if (h !== BRF.xo) h.look = BRF.eye;
+  const c = BRF.c, T = stState(c.story); tal('q.brf'); BRF.talk = BRF.xo; BRF.shot = 'wide'; BRF.i = BRF.H.brf.length; for (const h of BRF.people) if (h !== BRF.xo) h.look = BRF.eye;
   dlg(CREW.xo, T.n ? 'You have flown this ground once already, so you know what the brief is worth. That is everything we have. Mount up.' : pick(['That is what we know. What we do not know will introduce itself. Mount up.', 'Questions? ...Good, because I have no more answers. Bay crew are standing by.', 'That is the plan. It will last until somebody shoots at it. Dismissed — and good hunting.']),
     [['To the mech bay', () => brfLeave('bay')], ['Run through it again', () => { BRF.marks = []; BRF.card = null; brfStep(0); }], ['Back to the command deck', () => brfLeave('hq')]], null);
 }

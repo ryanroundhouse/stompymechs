@@ -39,7 +39,7 @@ function dealShot(p) {
 /* where a bought machine goes: the first bay with nothing in it, or -1 for crates in stores */
 const dealBay = () => YARD.bays.findIndex(b => !bayParts(b));
 function dealBuy(r) {
-  if (!spend(r.price)) return false; const i = dealBay(), lot = dealLot(), k = lot.findIndex(e => e.p === r.p); if (k >= 0) lot.splice(k, 1);
+  if (!spend(r.price, 'mech')) return false; tal('y.mech'); const i = dealBay(), lot = dealLot(), k = lot.findIndex(e => e.p === r.p); if (k >= 0) lot.splice(k, 1);
   if (i < 0) { for (const s of SLOTS) if (r.cfg[s]) invAdd(CAT[s] + '.' + r.cfg[s], 1); if (r.cfg.sinks) invAdd('gear.sink', r.cfg.sinks); ST.mSaid = `${r.cfg.name} DELIVERED IN CRATES — 6 PARTS${r.cfg.sinks ? ` AND ${r.cfg.sinks} HEAT SINKS` : ''} ARE IN STORES. CLEAR A BAY AND FIT THEM`; }
   else {
     Object.assign(YARD.bays[i], cleanBay(r.cfg)); ST.mSaid = `${r.cfg.name} DELIVERED TO BAY ${i + 1} — ASSEMBLED, FUELLED AND READY`;

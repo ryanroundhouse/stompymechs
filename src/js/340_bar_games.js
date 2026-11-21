@@ -35,7 +35,7 @@ function talkHost(kind) {
     ['Not tonight', dlgClose]], H);
 }
 async function barGameOpen(kind, tier) {
-  const stake = BAR_STAKE[tier]; if (busy || BAR.game || mode !== 'bar') return; if (!spend(stake)) return sfx.play('deny'); busy = true; dlgClose(); blackout(true); await tween(.3, fade);
+  const stake = BAR_STAKE[tier]; if (busy || BAR.game || mode !== 'bar') return; if (!spend(stake, 'stake')) return sfx.play('deny'); tal(kind === 'drink' ? 'b.gd.n' : 'b.ga.n'); busy = true; dlgClose(); blackout(true); await tween(.3, fade);
   const D = kind === 'drink', T = BGT[kind], host = BAR.P[kind], me = BAR.me[kind] || (BAR.me[kind] = barMe(kind)), S = BAR.gSeat[kind];
   const G = { kind, tier, stake, host, me, ph: 'ready', pt: 0, res: null, msgK: '', r: 1, pos: .5, sph: 0, w: .19, you: [], opp: [], ys: 0, os: 0, last: '', oc: true, x: 0, xs: 0, push: 0, stam: 1, fat: 0, sg: 0, sT: rand(1.2, 2.2), sk: 1, day: rand(.88, 1.14), of: 0 };
   G.ho = { ...host.sp.o, arm: D ? 0 : 1, k: 0, sip: 0, wob: 0, out: 0, strain: 0 }; G.mo = { ...S.o, arm: D ? 0 : 1, k: 0, sip: 0, wob: 0, out: 0, strain: 0 };
@@ -52,7 +52,7 @@ function barGameHit() {
   if (G.ph !== 'play') return; G.push += .5 * (.25 + .75 * Math.min(1, G.stam / .5)) * (1 - .3 * barBuzz()) * (1 - G.push); sfx.play('step', .25);   /* the press rate sets the pull; with no strength left a press is worth a third */
 }
 function barDrinkHit(G, late) {
-  const ok = !late && Math.abs(G.pos - .5) <= G.w; G.you.push(ok); if (!ok) G.ys++; G.last = ok ? 'DOWN IN ONE' : late ? 'TOO SLOW — SPILLED' : 'SPILLED'; G.ph = 'you'; G.pt = 0; barBuzzAdd(.06); sfx.play(ok ? 'gulp' : 'glass');
+  const ok = !late && Math.abs(G.pos - .5) <= G.w; G.you.push(ok); if (!ok) G.ys++; G.last = ok ? 'DOWN IN ONE' : late ? 'TOO SLOW — SPILLED' : 'SPILLED'; G.ph = 'you'; G.pt = 0; if (ok) tal('b.glass'); barBuzzAdd(.06); sfx.play(ok ? 'gulp' : 'glass');
 }
 function barGameTick(dt, t) {
   const G = BAR.game, D = G.kind === 'drink', bz = barBuzz(), sipK = (p, n) => smooth(clamp(Math.min(p / .25, (n - p) / .25), 0, 1)); G.pt += dt; let msg = '';
@@ -112,7 +112,7 @@ function barGameDraw(G, t) {
 }
 function barGameEnd(res) {
   const G = BAR.game; if (!G || G.ph === 'end') return; const D = G.kind === 'drink', nm = BARC[G.kind].first; G.ph = 'end'; G.res = res; G.pt = 0;
-  if (res === 'win') { CO.cb += G.stake * 2; BARSV.wins[G.kind]++; sfx.play('ok'); if (BARSV.wins[G.kind] === 1) news(D ? `${YARD.name}'s commander drank ${nm} under her own table at the Last Round.` : `${YARD.name}'s commander put ${nm}'s arm down at the Last Round.`); }
+  if (res === 'win') { CO.cb += G.stake * 2; tal('cr.won', G.stake * 2); tal(D ? 'b.gd.w' : 'b.ga.w'); BARSV.wins[G.kind]++; sfx.play('ok'); if (BARSV.wins[G.kind] === 1) news(D ? `${YARD.name}'s commander drank ${nm} under her own table at the Last Round.` : `${YARD.name}'s commander put ${nm}'s arm down at the Last Round.`); }
   else if (res === 'draw') { CO.cb += G.stake; sfx.play('ui'); } else sfx.play(D ? 'thud' : 'deny');
   if (D) { if (G.os >= 3) G.ho.out = 1; if (G.ys >= 3) G.mo.out = 1; } else { G.push = 0; G.x = res === 'win' ? 1 : res === 'lose' ? -1 : G.x; }
   $('bgMsg').innerHTML = res === 'win' ? `<b style="color:#8dff6a">YOU WIN — ${fmt(G.stake * 2)} IS YOURS.</b> ${D ? `${nm} is face down on the table.` : `${nm}'s knuckles are on the wood.`}` : res === 'draw' ? `<b style="color:#ffb21a">A DRAW — STAKES RETURNED.</b> ${D ? 'Neither of you can find the glass.' : 'Time. Nobody gave an inch.'}`

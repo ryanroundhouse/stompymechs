@@ -43,7 +43,7 @@ const commQ = []; let commCur = null, commHold = false, commSel = -1, commMv = 0
 function comm(who, text, opts, tmo = 18, def = 0, chat = false) { const k = MS.k; text = coTxt(text); return new Promise(res => commQ.push({ who, text, opts, tmo, def, res, k, chat, qt: MS.t })); }
 function commFree() { commHold = false; cutEnd(); $('commDim').classList.add('hid'); $('comm').classList.remove('hold'); }
 function commReset() { commQ.length = 0; commCur = null; commFree(); $('comm').classList.add('hid'); vox.stop(); }
-function commDone(i) { const c = commCur; if (!c) return; commCur = null; vox.stop(); $('comm').classList.add('hid'); if (c.opts) MS.log.push(`${c.who.last || c.who.name}: "${c.opts[i]}"`); if (c.k === MS.k && !MS.over) c.res(i); }
+function commDone(i) { const c = commCur; if (!c) return; commCur = null; vox.stop(); $('comm').classList.add('hid'); if (c.opts) { MS.log.push(`${c.who.last || c.who.name}: "${c.opts[i]}"`); tal(c.tmoD ? 'c.tmo' : 'c.ans'); } if (c.k === MS.k && !MS.over) c.res(i); }
 function commKey(n) { const c = commCur; if (c && c.opts && n >= 0 && n < c.opts.length && c.t > .5) { sfx.play('ui'); commDone(n); } }
 function commMark(i) { if (i === commSel) return; commSel = i; [...$('commOpts').children].forEach((d, j) => d.classList.toggle('on', j === i)); }
 function commMove(d) { const c = commCur; if (!c || !c.opts || c.t < .45) return; commMark(commSel < 0 ? (d > 0 ? 0 : c.opts.length - 1) : clamp(commSel + d, 0, c.opts.length - 1)); sfx.play('ui'); }
@@ -62,7 +62,7 @@ function updateComm(dt) {
   if (!commCur) {
     if (CUT.live && CUT.back) return; const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
     c.hold = !c.chat && CFG.hold > (c.opts ? 0 : 1) && MS.on && !MS.over && !P.dead; c.auto = false; c.cut = null; cutPick(c); if (CUT.live && !c.cut) { commQ.unshift(c); return; }   // the camera is out and this line is about something else: bring it home first
-    commCur = c; c.t = 0; commSel = -1; commMv = 0;
+    commCur = c; c.t = 0; commSel = -1; commMv = 0; if (!c.chat) tal('c.heard');
     const vd = vox.say(c.who, c.text, 'radio'); c.dur = c.opts ? c.tmo : Math.max(clamp(2.4 + c.text.length * .045, 3.2, 8.5), vd + .7);
     drawFace($('commFace'), c.who); $('commWho').textContent = `${c.who.name} · ${c.who.role}`; $('commWho').style.color = c.who.col;
     $('commOpts').innerHTML = c.opts ? c.opts.map((o, i) => `<div data-i="${i}"><b>${i + 1}</b>${o}</div>`).join('') : c.hold ? '<div class="go" data-i="0"><b>SPACE</b>CONTINUE</div>' : '';
@@ -71,7 +71,7 @@ function updateComm(dt) {
     commHold = c.hold; if (c.hold) P.md = [false, false, false]; if (c.cut) cutGo(c);
   }
   const c = commCur; c.t += dt; $('commTxt').textContent = c.text.slice(0, Math.floor(c.t * (c.hold ? 110 : 70))); $('commBar').style.width = c.opts && !c.hold ? (1 - c.t / c.dur) * 100 + '%' : '0%';
-  if ((!c.hold || c.auto) && c.t >= c.dur) commDone(c.def);
+  if ((!c.hold || c.auto) && c.t >= c.dur) { c.tmoD = true; commDone(c.def); }
 }
 /* ---- the comm camera. When a line comes from somebody who is out there on the field, the view leaves your machine and goes to theirs while they speak. When it comes from somebody who is not —
    the XO, the client, an enemy commander somewhere over the hill — and it is about a thing that has just happened, the view goes to that thing instead. The sortie is held throughout and stays

@@ -10,14 +10,15 @@ function startField() {
   $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.sky}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
-  player.onStep = L => { L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
+  talSortie(c);
+  player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
   P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);
 }
 async function toHangar() {
   if (mode !== 'field' || P.leaving) return; P.leaving = true; mapClose(false); if (document.pointerLockElement) document.exitPointerLock(); locked = false; $('pause').classList.add('hid');
   if (MS.on && !MS.over) { MS.abort = true; endMission(false, 'You withdrew from the contract area.'); }
-  await tween(.7, fade); const D = MS.on ? settle() : null; MS.on = false; sortieGuard(false); commReset(); clearField(); mode = 'hangar'; player.run = 1; player.gait.sk = 1; soft = false;
+  await tween(.7, fade); const D = MS.on ? settle() : null; if (!D) saveCO();   /* the proving ground has no books to settle, but what was fired there was fired */ MS.on = false; sortieGuard(false); commReset(); clearField(); mode = 'hangar'; player.run = 1; player.gait.sk = 1; soft = false;
   HG.turn.add(player.root); HG.turn.rotation.y = 0; player.root.position.set(0, MECH_Y, 0); player.root.rotation.set(0, 0, 0); player.twist = player.pitch = 0; player.gait.amt = player.gait.turn = 0; player.setJets(false); if (Object.keys(P.lost || {}).length) { P.lost = {}; player.build(); }   /* the bay puts back whatever was shot off */
   player.gait.sag = 0; if (player.slot.head) player.slot.head.visible = true; player.onStep = null;
   setDoor(0); HG.lift.position.y = .1; orb.cine = false; orb.idle = 0; setGang(1); busy = false;
@@ -39,7 +40,7 @@ async function deploy() {
   orb.cine = true; orb.pos.set(14, 4.5, 26); orb.look.set(0, player.height * .55, -3);
   sfx.play('servo'); await tween(2.4, k => HG.turn.rotation.y = PI * k);
   sfx.play('door'); await tween(3.2, setDoor);
-  player.onStep = L => { sfx.play('step', .9); L.ankP.getWorldPosition(_v); puff(HG.fx, _v, 3, 1.6, .6, .25); };
+  tal('y.launch'); player.onStep = L => { tal('m.step'); sfx.play('step', .9); L.ankP.getWorldPosition(_v); puff(HG.fx, _v, 3, 1.6, .6, .25); };
   const sp = Math.max(4.2, player.stats.speed * .85); await tween(.5, k => player.gait.amt = k * sp / player.stats.speed); HG.walk = sp;
   await wait(3.2); await tween(1.5, fade); startField(); await tween(1.2, k => fade(1 - k));
 }
