@@ -104,7 +104,7 @@ const HINT = {
   'headhunt.duel': 'The target is old-school. Likes to settle things one on one.', 'headhunt.runner': 'The target keeps an extraction bird on standby. Wound them and they will run.', 'headhunt.decoy': "The target's transponder has been logged in two places at once.", 'headhunt.plea': 'The target knows something the client wants buried. They may try to bargain.',
   'recon.quiet': 'Light patrols only. A careful pilot could be in and out unseen.', 'recon.column': 'Heavy fuel traffic into one of the sites. Something big is staging there.', 'recon.beacon': 'A third-party patrol went missing in that sector yesterday.', 'recon.hunted': 'They have direction-finding gear. Run a scanner too long and they will find you.',
   'recovery.race': 'Another mercenary outfit has filed for the same salvage.', 'recovery.cargo': 'The manifest lists the package as inert. Its power draw says otherwise.', 'recovery.trap': 'The wreck is too clean. Somebody wants it found.', 'recovery.surv': 'A distress tone is still pulsing from the hull. There may be survivors.',
-  storm: 'Forecast shows weather closing in over the operating area.', reinf: 'An enemy dropship is on alert within range.', ace: 'Somebody has posted a bounty on our mech.', pirates: 'Red Maw reavers work that region and tax everything that moves.', supply: 'Our field team can stage a repair sled nearby.', side: 'There may be a target of opportunity close to the objective.', renege: 'This client has a history of disputing invoices after the fact.',
+  storm: 'Forecast shows weather closing in over the operating area.', reinf: 'An enemy dropship is on alert within range.', ace: 'Somebody has posted a bounty on our mech.', pirates: 'Red Maw reavers work that region and tax everything that moves.', supply: 'Our field team can stage a repair sled nearby.', side: 'There may be a target of opportunity close to the objective.', renege: 'This client has a history of disputing invoices after the fact.', concord: 'Concord peacekeepers are interdicting contracts in that grid.',
 };
 const BRIEF = {
   strike: (E, F, c) => `${E.name} wants the ${F.short} installation at ${c.site} removed from the map. Reactor, fuel and uplink are the priority targets.`,
@@ -115,18 +115,40 @@ const BRIEF = {
   recovery: (E, F, c) => `A dropship carrying a ${c.item} went down at ${c.site}. Recover the package before ${F.short} scavengers strip the wreck.`,
 };
 let cid = 0;
+/* what the board is dealt to hold: a job of every weight the company has grown into, from a milk run up. The ceiling rises with the record (two diamonds for a new company, five after a
+   dozen contracts) and the floor never does, so there is always work for a light machine, a new wingman or a bad week. diffWant() is the six weights a full board should show;
+   diffDeal() is the one it is short of */
+const diffTop = () => clamp(2 + (CO.done >> 2), 2, 5);
+const diffWant = () => { const T = diffTop(); return [0, 1, 2, 3, 4, 5].map(i => Math.round(1 + i * (T - 1) / 5)); };
+function diffDeal() {
+  const want = diffWant(); for (const c of CO.board) if (!c.story) { const i = want.indexOf(c.diff); if (i >= 0) want.splice(i, 1); }
+  return want.length ? pick(want) : 1 + ((Math.random() * diffTop()) | 0);
+}
+const diffPay = d => .55 + d * .32;
+/* a board from before the spread (every card at the ceiling) is re-rated on the way in: the cards over the count for their weight take the weights that are missing, and the fee goes
+   with them. Anything the player has signed, talked terms on or bought intel for is left as it stands, and a board that is only a card or two out is left alone */
+function boardSpread() {
+  const want = diffWant(), extra = []; for (const c of CO.board) if (!c.story) { const i = want.indexOf(c.diff); if (i >= 0) want.splice(i, 1); else extra.push(c); }
+  if (extra.length < 3) return;
+  for (const c of extra) {
+    if (!want.length) break; if (c === CO.active || c.co || c.talked || c.pushes || (c.intel && c.intel.length)) continue; const d = want.splice((Math.random() * want.length) | 0, 1)[0];
+    c.pay = Math.round(c.pay * diffPay(d) / diffPay(c.diff) / 1000) * 1000; c.diff = d; c.cap = capFor(c.type, d); if (d < 3 || c.cap) c.twists = c.twists.filter(t => t !== 'worm');
+  }
+}
 function genContract(o = {}) {
   const type = o.type || pick(Object.keys(TYPES)), emp = o.emp || pick(EMPS), foe = o.foe || pick([...EMPS.filter(f => f !== emp), 'maw']), biome = o.biome || pick(BIOME_KEYS), T = TYPES[type], persona = pick(PERSONA_STD);
-  const diff = clamp(Math.round(1 + CO.done * .22 + rand(-1.1, 1.8)), 1, 5), seed = ((CO.seed + ++cid * 7919 + Math.random() * 1e5) | 0) % 1000000, rg = REGION[biome], a = rand(TAU), rr = rand(.05, .2);
+  const diff = clamp(o.diff || diffDeal(), 1, 5), seed = ((CO.seed + ++cid * 7919 + Math.random() * 1e5) | 0) % 1000000, rg = REGION[biome], a = rand(TAU), rr = rand(.05, .2);
   const c = {
-    id: cid, type, emp, foe, biome, mood: Math.random() < .4 ? 1 : 0, diff, seed, plot: pick(T.plots), twists: [], persona, pat: PERSONA[persona].pat, pushes: 0, intel: [], support: false,
+    id: cid, type, emp, foe, biome, mood: Math.random() < .4 ? 1 : 0, tod: todDeal(biome, CO.board.filter(b => !b.story).map(b => b.tod)), diff, seed, plot: pick(T.plots), twists: [], persona, pat: PERSONA[persona].pat, pushes: 0, intel: [], support: false,
     contact: mkChar(seed + 1, FAC[emp].short + ' ' + pick(['LIAISON', 'PROCUREMENT', 'FIELD OFFICE', 'ATTACHÉ']), FAC[emp].col), site: `${pick(SITE.a)} ${pick(SITE[biome])}`, item: pick(ITEMS), op: `${pick(OPS[0])} ${pick(OPS[1])}`,
-    pay: Math.round(T.base * (.55 + diff * .32) * rand(.85, 1.2) * (1 + CO.rep[emp] / 250) / 1000) * 1000, salv: pick([10, 15, 20, 25]), exp: now() + rand(10, 46), pos: [rg[0] + Math.sin(a) * rr, rg[1] + Math.cos(a) * rr], upd: o.upd || '',
+    pay: Math.round(T.base * diffPay(diff) * rand(.85, 1.2) * (1 + CO.rep[emp] / 250) / 1000) * 1000, salv: pick([10, 15, 20, 25]), exp: now() + rand(10, 46), pos: [rg[0] + Math.sin(a) * rr, rg[1] + Math.cos(a) * rr], upd: o.upd || '',
   };
   c.cap = capFor(type, diff);
   for (let i = 0; i < 2; i++) if (Math.random() < .55) { const t = pick(['storm', 'reinf', 'ace', 'pirates', 'supply', 'side', 'renege', 'air', 'air', 'works', 'worm']); if (!c.twists.includes(t) && !(t === 'pirates' && foe === 'maw') && !(t === 'storm' && !BIOMES[biome].storm)
     && !(t === 'worm' && (diff < 3 || c.cap || type === 'assault')) && !(t === 'works' && (type === 'assault' || type === 'recon')) && !(t === 'air' && type === 'intercept')) c.twists.push(t); }
   /* now and then another company wants the same job — or has been hired to stop it. A salvage race always has one */
+  if (sunWar()) { c.pay = Math.round(c.pay * 1.15 / 1000) * 1000; if (!o.type && Math.random() < .24) c.twists.push('concord'); }   /* the campaign's war: everybody left is hiring, and the Concord interdicts what it hears about */
+  if (stFlag('sun.end') === 3 && stDone('sun')) c.pay = Math.round(c.pay * 1.1 / 1000) * 1000;   /* and the retainer the Lamplighters' Trust pays the company that gave it the sky */
   if (type === 'recovery' && c.plot === 'race') c.rival = rivPick(); else if (Math.random() < .07) { c.rival = rivPick(); c.twists.push('rival'); }
   c.brief = (o.pre || '') + BRIEF[type](FAC[emp], FAC[foe], c); return c;
 }
@@ -139,10 +161,12 @@ const dropContract = c => { const i = CO.board.indexOf(c); if (i >= 0) CO.board.
 /* the board is alive: offers lapse, terms drift, situations escalate */
 function drift() {
   const L = CO.board.filter(c => c !== CO.active && !c.story); if (!L.length) return; const c = pick(L), E = FAC[c.emp].short, r = Math.random();
-  if (r < .22 && c.diff < 5) { c.diff++; c.pay = Math.round(c.pay * 1.18 / 1000) * 1000; c.upd = 'ESCALATED'; news(`Situation at ${c.site} is deteriorating. ${E} has raised its fee.`); }
+  if (r < .12 && c.diff < 5) { c.diff++; c.pay = Math.round(c.pay * 1.18 / 1000) * 1000; c.upd = 'ESCALATED'; news(`Situation at ${c.site} is deteriorating. ${E} has raised its fee.`); }
+  else if (r < .22 && c.diff > 1) { c.diff--; c.pay = Math.round(c.pay * .86 / 1000) * 1000; c.upd = 'EASED'; news(`${FAC[c.foe].short} has pulled units away from ${c.site}. ${E} has trimmed its fee to match.`); }
   else if (r < .4) { c.pay = Math.round(c.pay * .9 / 1000) * 1000; c.upd = 'FEE CUT'; news(`${E} is shopping the ${c.site} job around. Fee reduced.`); }
   else if (r < .58) { c.pay = Math.round(c.pay * 1.12 / 1000) * 1000; c.exp += 8; c.upd = 'FEE RAISED'; news(`${E} is getting nervous about ${c.site}. Fee raised, deadline extended.`); }
   else if (r < .72) { const m = BIOMES[c.biome].wx; if (m.length > 1) { c.mood = 1 - c.mood; c.upd = 'WEATHER'; news(`Conditions over ${c.site} have changed: ${m[c.mood][0].toLowerCase()}.`); } }
+  else if (r < .8) { const k = todDeal(c.biome); if (k !== c.tod) { c.tod = k; c.upd = 'RESCHEDULED'; news(`The client has moved the operation at ${c.site}: it now goes in at ${TOD[k].name.toLowerCase()}.`); } }
   else if (r < .86) { const t = pick(['reinf', 'ace', 'side', 'storm', 'air']); if (!c.twists.includes(t) && !(t === 'storm' && !BIOMES[c.biome].storm) && !(t === 'air' && c.type === 'intercept')) { c.twists.push(t); c.upd = 'NEW ACTIVITY'; news(`Signals traffic around ${c.site} has spiked. Something has changed on the ground.`); } }
   else { c.plot = pick(TYPES[c.type].plots); c.intel = c.intel.filter(i => i.k !== 'plot'); c.upd = 'SITUATION CHANGED'; news(`Fresh reports out of ${c.site} contradict the original brief.`); }
   CO.dirty = true;

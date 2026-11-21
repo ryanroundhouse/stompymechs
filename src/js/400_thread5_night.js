@@ -15,7 +15,7 @@ STORY.night = {
   end: 'There is a bell in Harrow Vale now, cast from one of her organ pipes. They ring it once a year. Your company has a standing invitation.',
   ch: [{
     /* ---------------- I ---------------- */
-    title: 'Harrow Vale', kind: 'escort', biome: 'forest', mood: 1, seed: 95011, diff: 3, pay: 150000, salv: 30, site: 'Harrow Vale', op: 'NIGHTFALL',
+    title: 'Harrow Vale', kind: 'escort', biome: 'forest', mood: 1, tod: 'night', seed: 95011, diff: 3, pay: 150000, salv: 30, site: 'Harrow Vale', op: 'NIGHTFALL',
     tease: 'A Tyr militia post at the head of Harrow Vale has been screaming for help for six hours. The Red Maw is not raiding the valley; it is emptying it, farm by farm, and something behind the raiders is throwing shells the size of oil drums. The League will pay anything for a lance that can get in, find whoever is still alive at the post, and bring them out before whatever is doing the shelling arrives.',
     wire: 'Tyr Free League emergency band: "Any unit, any unit. Harrow Vale post is still holding. Sergeant Adeyemi requests — his words — anybody at all."',
     sites: { lz: [-620, 470, 44, 'EVAC FIELD'], post: [300, -240, 60, 'MILITIA POST'], ford: [-170, 120, 46, 'THE FORD'], ridge: [730, -470, 0, ''] },
@@ -29,7 +29,7 @@ STORY.night = {
       { t: 'In, find the sergeant, load the trucks, out through the ford. Whatever is behind that ridge is not our contract tonight. Tonight we are an ambulance.', show: [['clear'], ['route', ['post', 'ford', 'lz'], '#8dff6a'], ['site', 'post', 'MILITIA POST', '#8dff6a'], ['site', 'lz', 'EVAC FIELD', '#8dff6a'], ['unk', 'ridge', 'WHAT IS FIRING?']] },
     ],
     async run(ms) {
-      const S = ms.S, brick = STC.brick, krait = STC.krait, xo = ms.ops, mira = CREW.intel; applyAtmo(2, .2, null);
+      const S = ms.S, brick = STC.brick, krait = STC.krait, xo = ms.ops, mira = CREW.intel; applyAtmo(2, .7, null);   /* the hour is night (the chapter's `tod`); this is only the murk on top of it */
       const post = mkStruct('bunker', S.post.x, S.post.z, 0, { name: 'HARROW VALE POST', hpK: 5 }); post.inv = true; const B = lnBrick(gpos(S.post.x + 22, S.post.z + 14), { ai: 'guard' }), Mi = lnMil(S.post, 2, { ai: 'guard' });
       const Tk = [0, 1, 2].map(i => { const t = mkTruck(S.post.x - 14 + i * 12, S.post.z + 34, 0, []); t.name = 'MILITIA TRUCK'; t.hp = t.max = 420; t.halt = true; return t; }); let lost = 0; for (const t of Tk) t.onKill = () => { lost++; msg(`TRUCK LOST — ${3 - lost} LEFT`, 3); if (lost >= 3 && !ms.over) lose('The last truck is burning on the Harrow road with everybody who was in it. The post held for six hours and it was not enough.', .1); };
       const siege = hot1(foes(.9, ...stOff(S.post, 1.2, 170), 0, 40)); foes(.6, S.ford.x + 40, S.ford.z - 60, 0, 40);
@@ -196,7 +196,7 @@ STORY.night = {
     prize(D, add, f) { stGift(D, 'arm.acn', 1); rivRel('ver', f['night.jack'] === 2 ? 16 : f['night.jack'] ? 8 : 2, 'the Tithe House job'); },
   }, {
     /* ---------------- IV ---------------- */
-    title: 'Forge Night', kind: 'strike', biome: 'volcanic', mood: 1, seed: 95051, diff: 4, pay: 190000, salv: 40, site: 'the Cinder Peak forge-yards', op: 'ANVIL CHORUS',
+    title: 'Forge Night', kind: 'strike', biome: 'volcanic', mood: 1, tod: 'night', seed: 95051, diff: 4, pay: 190000, salv: 40, site: 'the Cinder Peak forge-yards', op: 'ANVIL CHORUS',
     tease: 'The LAST SERMON is in dock at the forge-yards under Cinder Peak, with her armour off and three forges running day and night to cast her a new skin. In two days she will be finished, and nothing in the sector will be able to hurt her. Tonight she is a hull on blocks. The yards are a fortress — so Dario Quintero of the Carnival has offered to give the garrison something else to look at. He has asked what the budget is. Nobody has dared answer.',
     wire: 'The Carnival has applied for a permit to hold "a modest outdoor entertainment" on the west slope of Cinder Peak. The Red Maw has not replied.',
     sites: { lz: [-620, 450, 40, 'LZ'], gate: [-220, 170, 54, 'FORGE GATE'], f1: [130, -70, 42, 'FORGE'], f2: [370, 150, 42, 'FORGE'], f3: [290, -370, 42, 'FORGE'], dock: [600, -150, 76, 'THE DOCK'], stock: [30, -430, 40, 'STOCKADE'], show: [-540, -400, 44, 'THE SHOW'] },
@@ -249,7 +249,7 @@ STORY.night = {
     prize(D, add) { stGift(D, 'gear.core', 1); stGift(D, 'back.plt', 1); rivRel('car', 8, 'forge night at Cinder Peak'); repAdd('tyr', 4, 'burned the Cinder Peak forges'); },
   }, {
     /* ---------------- V ---------------- */
-    title: 'Dawn', kind: 'garrison', biome: 'forest', mood: 0, seed: 95067, diff: 5, pay: 320000, salv: 50, site: 'Harrow Vale', op: 'FIRST LIGHT',
+    title: 'Dawn', kind: 'garrison', biome: 'forest', mood: 0, tod: 'night', seed: 95067, diff: 5, pay: 320000, salv: 50, site: 'Harrow Vale', op: 'FIRST LIGHT',
     tease: 'The LAST SERMON will reach Harrow Vale an hour before sunrise. The town is where it started: the people you brought out went home, and they have declined to leave twice. The League has sent what it has. The XO has sent to everybody else. Nobody knows who is coming. There is one road into the Vale and you will be standing on it.',
     wire: 'All channels, from Cmdr. Varga: "{CO} will be at Harrow Vale at first light. Anybody who has ever owed us a drink: now would be a good time."',
     sites: { lz: [-380, 330, 44, 'THE LINE'], town: [-560, 140, 76, 'HARROW VALE'], ford: [-110, 50, 46, 'THE FORD'], bend: [330, -140, 44, 'THE BEND'], far: [740, -330, 0, ''], north: [-190, -470, 40, 'NORTH WOOD'], south: [120, 520, 40, 'MILL RISE'] },
@@ -263,7 +263,7 @@ STORY.night = {
       { t: 'I have nothing clever left to say. It has been a long night. Go and end it.', show: [['clear'], ['site', 'town', 'HARROW VALE', '#8dff6a'], ['route', ['far', 'bend', 'ford', 'town'], '#ff5a3a'], ['foe', 'bend', 'LAST SERMON'], ['unk', 'north', 'WHO IS COMING?'], ['unk', 'south', 'WHO IS COMING?']] },
     ],
     async run(ms) {
-      const S = ms.S, brick = STC.brick, dea = STC.deacon, krait = STC.krait, xo = ms.ops, mira = CREW.intel, fb = stFlag('night.brick'), fc = stFlag('night.cob'), fd = stFlag('night.deacon'), fj = stFlag('night.jack'); applyAtmo(1.9, .2, null);
+      const S = ms.S, brick = STC.brick, dea = STC.deacon, krait = STC.krait, xo = ms.ops, mira = CREW.intel, fb = stFlag('night.brick'), fc = stFlag('night.cob'), fd = stFlag('night.deacon'), fj = stFlag('night.jack'); applyAtmo(1.9, .7, null);
       const Tn = [0, 1, 2, 3].map(i => mkStruct('hab', ...stOff(S.town, i * TAU / 4 + .5, 40), 0, { name: 'HARROW VALE', hpK: 3.4, ry: i * 1.3 })); let fell = false; const townUp = () => alive(Tn);
       (async () => { await until(() => !townUp()); fell = true; lose('Harrow Vale is burning from end to end. They went home, and they would not leave twice, and the line did not hold.', .1); })();
       const Al = []; let nA = 0; const join = L => { for (const e of L) Al.push(e); nA++; return L; };
@@ -300,7 +300,7 @@ STORY.night = {
       setObj('h', () => `Break her reactor — the rose window · ${Math.round(D.hp / D.max * 100)}%`); W.push(...stFrom(.9 * K, D.pos, stAng(S.bend, S.ford) + 1.5, 120, {}));
       await until(() => D.hp < D.max * .1 || D.dead || fell); if (fell) return; D.inv = true; D.halt = true; for (const e of FD.ents) if (e.team === 1 && e !== D && e.kind !== 'struct') { e.pacify = true; e.ai = 'hold'; }
       /* dawn */
-      weatherShift(1, 1, null, 22); look(D, 'LAST SERMON — STOPPED'); msg('SHE HAS STOPPED', 5); unnav('s'); setObj('h', null, 1); setObj('d', null, 1);
+      weatherShift(1, 1, null, 22); todShift('dawn', 26); look(D, 'LAST SERMON — STOPPED'); msg('SHE HAS STOPPED', 5); unnav('s'); setObj('h', null, 1); setObj('d', null, 1);
       await tell(mira, 'She has stopped. Reactor containment is going; she has perhaps two minutes. The Maw are walking away from her. All of them. They are just... putting their weapons down and walking.');
       const r = await ask(krait, 'Well, child. Here we are, and there is the sun. I am an old woman on a burning ship, a long way from the chapel I started in. There is a hatch. It is forty metres to the trees. You have every gun in the valley. What would you like to do?', ['Let her walk.', 'No. She goes down with the Sermon.'], 30, 0); stSet('krait', r ? 0 : 1);
       if (r === 0) { await lnKrait('...Mercy. From a mercenary. At dawn. I preached that for thirty years and never once believed it would be offered to me. I shall have to think again about a great many things. Goodbye, child.'); if (Br) chatter(brick, "She's walking. Just an old woman in a coat, walking into the trees. ...I'm not going to shoot her. I thought I would. I'm not."); }

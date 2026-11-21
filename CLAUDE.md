@@ -8,8 +8,11 @@ with contracts and a rotating market, a bar (rumours, pilots for hire, two conte
 missions with salvage (eighteen catalogue mechs, fifty-three weapons in families, fifteen kinds of
 vehicle, a centipede, factories and two capital ships, all of which can be shot apart a
 component at a time), three rival mech companies that compete with you, hire you and fly
-beside you, and five story threads: connected chapters that come up on the board one at a time,
-are briefed in a briefing room and are flown on a theatre 2.4 times the usual size. A new company
+beside you, five story threads (connected chapters that come up on the board one at a time,
+are briefed in a briefing room and are flown on a theatre 2.4 times the usual size) and over them
+one campaign, FALSE DAWN: eight chapters in three acts that change the rest of the game as they
+go. Contracts are flown at an hour (dawn, day, dusk, night), and the market sells whole machines
+as well as parts. A new company
 is shown round each room by its crew, and flies a first sortie that teaches the controls before
 anybody will hire it. Everybody who speaks does so aloud, in a made-up language. The first time
 the page is opened it plays an eleven-second opening: four cuts of battle, then the STOMPY MECHS
@@ -42,17 +45,22 @@ playable page. Never hand-edit it.
   number between its neighbours (`255_thing.js`); keep the gaps. Every file ends with a newline.
   Where things are: `040_settings.js` the game's name (`GAME_ID`, `GAME_NAME`, `CO_DEF_NAME`) and
   `lsGet`/`lsSet`; `115_first_day.js` what a new company has been shown (`TUT`); `020_post.js`
-  the post chain `POST`; `050_audio.js` `sfx` and the sound
+  the post chain `POST`; `030_gfx.js` materials and the texture kit (`std`, `hfNoise`,
+  `txPanel`); `050_audio.js` `sfx` and the sound
   notice; `060_voices.js` and `070_music.js`; `080`/`090` mech parts (`ARM_FAM`, the extra
   chassis); `110_yard.js` the yard, stores, bays, `SPRINT_K`, `capFor`; `150_field_env.js`
-  terrain and `fieldScale`; `160_field_weapons.js` the weapons engine (`emitShot`, `fire`) and
+  terrain, `fieldScale`, the sky and the hour (`TOD`, `todKey`, `todShift`, `groundTex`);
+  `155_field_glow.js` everything that glows out there (`glowM`, `flashAt`, `scarAt`,
+  `shockAt`); `160_field_weapons.js` the weapons engine (`emitShot`, `fire`) and
   component damage (`mechZones`, `damage`); `170_units.js` vehicles, `UNIT_POOL`, `spawn`;
   `190_mission_engine.js` comms, objectives and the comm camera (`cutWho`); `200_story_kit.js`
   the story helpers, `stLook` and `stRace`/`RACE_K`; `210_missions.js` and `240_ops.js` the
   contract types and twists; `230`/`250` the rival companies; `260_story.js` thread state, the
   board and the save; `280`-`310` people and crews; `330_bar.js`, `340_bar_games.js`;
   `350_brief.js` the briefing room; `355_thread0_shakedown.js` the first sortie; `360`-`400` the
-  five threads (`stKeep` is in `400`, the Derby's `dbCall` in `390`); `445_guide.js` the room
+  five threads (`stKeep` is in `400`, the Derby's `dbCall` in `390`); `402_campaign_kit.js` the
+  campaign's cast and tools (`sunWar`, `sunDim`, `sunKey`, `skyLance`, `sunSweep`) and `403`-`405`
+  its three acts; `415_mech_dealer.js` the dealer (`dealLot`, `dealBuy`); `445_guide.js` the room
   tours, the next-step chip and the HUD key prompts; `447_intro.js` the opening (`INTROV`,
   `INTRO_SHOTS`); `450_main.js` the main loop. `grep -l name src/js/*.js` finds
   anything else.
@@ -171,7 +179,11 @@ playable page. Never hand-edit it.
     `f.sh run`) walks the release page from a clean save through the real buttons: charter, bay
     tour, deck tour, the card, ACCEPT, the briefing, LAUNCH (and the opening first, with two
     presses of SPACE, when the profile has not seen it), and with `window.__more = 1`
-    ENGAGE (twice: headless refuses pointer lock) and SPACE through the first comms.
+    ENGAGE (twice: headless refuses pointer lock) and SPACE through the first comms. That last
+    leaves the release page in a sortie, where the guard asks before the page is left: the next
+    `nav` then hangs the tab with nobody to answer, and every `eval` after it. Close the tab
+    (`curl http://127.0.0.1:$CDP_PORT/json/close/<id>`, then `curl -X PUT .../json/new?about:blank`)
+    before driving anything else.
   - `t_after.js` (on `debug.html?tut`, clean save) flies it with the story autopilot and comes
     home through the real debrief: books, the salvage picker and its tour, the epilogue, the
     board opening, the `home` tour. `step.js` (`ACTS` replaced by a list of `'next'`, `'#id'`
@@ -252,8 +264,10 @@ playable page. Never hand-edit it.
   - `t_ops.js` flies the new contracts with a crude autopilot (`window.__ops = [[type, plot,
     o, picks, dps, secs]]`); `t_ship.js` is a capital ship against a pilot who stands by the
     depot and shoots one thing (`'hull' | 'eng' | 'gun'`) at a given rate; `t_flee.js` lets a
-    beaten ship go and watches her leave. A ship should last about a minute and a half at 45
-    dps, and the depot about three and a half minutes if she is left alone.
+    beaten ship go and watches her leave. A ship should last about a minute at 45 dps on the
+    hull and little more than half that through her engines, at any rating, and the depot more
+    than six minutes if she is left alone. (She had half as much hull again and the depot stood
+    three and a half minutes; the defence contracts could not be won.)
   - `t_board.js` deals sixty boards and counts limits, types and twists, then asks the bay
     about each limit; `t_launch.js` presses the real launch button against a limit and a job
     rated for two; `t_salv.js` goes through both salvage confirmations with real buttons;
@@ -314,6 +328,30 @@ playable page. Never hand-edit it.
   - `.scratch/perf/` holds the probes from the survey that began this round: `drv.mjs` (`load`,
     `cpu`, `prof`, `audio` over CDP), `stat.js` (draw calls, triangles, what a scene holds),
     `who.js` (which drawables ever move), `gpu.js` (what each graphics setting costs).
+- The hour, the dealer, the board and the campaign, in `.scratch/g/`. That round was driven
+  through a Chrome of its own (`export CDP_PORT=9340`, profile `.scratch/chrome-profile-iso`;
+  `cdp.mjs` and everything built on it read the port from there), started like the other.
+  - `pic.sh out.png 'async body'` is a fresh debug page, a setup and a screenshot. `sky.js`
+    (`window.__sk`) tiles a biome's skies at every hour, `fsheet.js` (`window.__g`) a firefight
+    as a contact sheet, `close.js` six texture close-ups, `time.js` what one picture of a fight
+    costs. Look at a sky sheet and a fight sheet after changing `TOD`, the sky shader or
+    anything in `src/js/155_field_glow.js`, and at the opening's sheet too: its cuts are lit by
+    the same code.
+  - `fly.sh 'label' '<run.sh object>' ['lines to keep']` flies a chapter with the story
+    autopilot and prints the verdict. The campaign's chapters are `{ k: "sun", ch: 0..7 }`, with
+    `picks` for the other answers and `f` for what earlier chapters decided. Chapter VII wants
+    `follow` set to the reactors, then PAX, then `MS.S.anchor`, and VIII to the ground stations
+    and then the TRIBUNAL, with an `each` that puts `P.aim` on her and calls `sunCall()` while
+    `MS.v.onLance` is set and `MS.v.link` is not: nav markers alone do not finish either.
+  - `t_camp.js` (the card, what each act changes, the key, the save, the three endings),
+    `t_camp2.js` (three chapters home through the real debrief, with their flags and prizes) and
+    `t_camp3.js` (B through a key press, the interdiction on an ordinary contract, a pilot who
+    stands still under the light) are `ev.sh` bodies and run in either browser. `reg.sh file.js
+    ['prelude'] [url]` runs any body on a fresh page and prints only what failed.
+  - In `.scratch/` itself: `t_dealer.js` is the dealer through its real buttons, `t_spread.js`
+    the board's weights at each stage of a company's life, `t_real.js` and `t_int.js` contracts
+    flown with the real weapons and the real legs (`ab.sh` flies them on the last commit's build
+    as well, `debug_base.html`, for a before and after), `t_w.js` a table of every weapon.
 - Release builds must contain no `window.__` hooks.
 
 ## Conventions
@@ -464,7 +502,7 @@ playable page. Never hand-edit it.
 - Where a thread stands is `stState(k)` in `STV.th`: `ch` the next chapter, `st` 0 not begun, 1
   between chapters, 2 on the board, 3 finished, `at` when it may next be offered, `exp` when
   the offer closes, `n` failed attempts. `storySync()` is the only thing that puts story cards
-  on the board (never more than three), `storyLapse()` takes an unanswered one away for a
+  on the board (never more than three, and the campaign's besides), `storyLapse()` takes an unanswered one away for a
   while, `storySettle()` moves the thread on or, after a failure, queues the same chapter
   again. Story cards are never saved with the board; `storySave()` / `storyApply()` keep the
   thread state and rebuild them. `STORY.zero` is the thread marked `first`: see the first day,
@@ -601,6 +639,68 @@ playable page. Never hand-edit it.
 - Salvage is not given up by accident: the chief asks again in `debrief`, and the picker's
   LEAVE IT ALL arms on the first press (`ST.sure`). A script hands the player an item by
   pushing `{ kind: 'gift', key }` onto `YARD.loot`.
+- The hour. A contract carries `tod` (`dawn`, `day`, `dusk` or `night`; `todDeal` deals it, and
+  leans towards a night or a day when the board has none), a chapter may name one, and
+  `todKey(biome, mood, tod)` is the hour actually flown: a biome's own list (`tods`) can refuse
+  one. `TOD[k]` bends the biome's noon (sky, fog, the sun's height and colour, the fill, stars,
+  exposure); `applyAtmo` sets it and `await todShift(key, seconds)` moves it while the sortie is
+  flown, which is how a night ends in a dawn. A script means the hour it names (`todShift`,
+  `todFor(key, true)`); a card does not: while `sunDim()` every card's sky is `ecl`, the
+  eclipse, which nothing deals. What the machines reflect is the sky they stand under
+  (`skyEnv`), drawn again when the light has changed. The proving ground is the yard at noon,
+  or under whatever the campaign has done to the sun.
+- Everything that glows in the field is drawn with `glowM(hex, k, core, soft, rim)`
+  (`src/js/155_field_glow.js`): one shader, one material kept per colour and shape. Never
+  dispose one. Something that has to fade on its own takes a `.clone()` and disposes that, as
+  the sky lance does. `flashAt(p, hex, power, reach, life)` borrows one of six pooled point
+  lights (`CFG.wlight`, LIGHT FROM WEAPONS FIRE in SETTINGS), `scarAt(p, r)` leaves a scorch on
+  the ground, `shockAt` a blast ring, and `fieldBoom` is all three.
+- Surfaces are made, not loaded (`src/js/030_gfx.js`). A tiling height field (`hfNoise`,
+  `hfStamp`, `hfCells`, `hfBlur`) gives a picture, a normal map (`hfNormal`) and a wear map, and
+  `txMate` ties the three together, so `std({ map })` finds the other two at the picture's own
+  repeat. `txPanel` (armour plate), `txConcrete`, `txCorr` and `txRock` are made that way; the
+  ground is `groundTex(kind)` in `src/js/150_field_env.js`, one pair per kind of ground, made
+  the first time a theatre needs it. Fine relief sparkles under a low sun: keep the
+  high-frequency terms of a height field small (the road was turned down twice for it).
+- The board is a spread of weights. `diffTop()` is the hardest a company is offered (two
+  diamonds at first, five after a dozen contracts), `diffWant()` the six weights a full board
+  should hold and `diffDeal()` whichever of them it is short of; `boardSpread()` re-rates a
+  board saved before there was a spread, on the way in. A card's difficulty and its hour are
+  always on the card, whatever tags it carries.
+- The dealer (`src/js/415_mech_dealer.js`, the third tab of the stores) sells catalogue machines
+  whole. Six stand on the lot (`YARD.shop.mechs`, `[{ p, price, tag }]`, `p` an index into
+  `PRESETS`, one of each weight class among them), dealt with the market's rotation (`mrot`) and
+  saved with it (`dealClean` on the way in); anything else is built to order at
+  `DEAL_K.order`. A purchase goes to the first empty bay, or into stores as its parts when every
+  bay is taken.
+- A capital ship is there to be taken apart: an engine takes `SHIP_ENG_K` (a quarter) of the
+  hull with it and slows her, so aim is worth more than weight of fire. An assembly plant given
+  `stock` builds that many and no more. Where a contract has something to stand by (`OPS_HOLD`)
+  the works twist is put near enough to walk to.
+- The campaign is the thread marked `main` (`STORY.sun`, FALSE DAWN: acts in
+  `src/js/403_campaign_act1.js` to `405`, tools in `402_campaign_kit.js`). A `main` thread's
+  card is over and above the three story cards, is listed first, never lapses and comes back
+  sooner after a failure. Its chapters carry `act`, and may carry their own `emp`, `foe`, `who`,
+  `note` and `after` (the wire that goes round when the chapter is won); `guests` may be a
+  function, and a briefing step's `t`, `by` and `show` getters, where they depend on a flag.
+  What it has done to the rest of the game is read from where the thread stands, never stored:
+  - `sunWar()`, once chapter III is won and until the end: ordinary contracts pay 15% more and
+    may carry the `concord` twist, a peacekeeper lance that interdicts the sortie.
+  - `sunDim()`, once chapter V is won and until the end: the Array is edge-on across the sun and
+    every sky in the sector is the eclipse (`TOD.ecl`). It is false during the opening.
+  - `sunKey()`, from the moment the key is lifted in chapter V, and after the end only if the
+    keys were kept (`sun.end` 2): B calls the SKY LANCE where the reticle is (`sunCall`),
+    `P.lance` times a sortie, which is once unless a chapter grants more. `sunHud()` puts the
+    prompt on the HUD and the line in the controls list; a chapter that wants to know where one
+    landed sets `MS.v.onLance(at)`.
+  - `sun.end` 3 (the keys given away) pays 10% more on every contract afterwards.
+  `skyLance(p, o)` is a strike from orbit (a ring, a count, then a column; `own` 1 theirs, 0
+  ours) and `sunSweep(from, to, o)` a beam that walks after `to()` and burns both sides, slower
+  for a machine that has lost its legs. Both hit by horizontal distance (`sunBurn`), so a ship
+  overhead is caught. `sunFoes` and `sunFrom` are `foes` and `stFrom` in Concord paint,
+  `sunPilots(n)` the company's own pilots flying for nothing. The Concord is not a `FAC`
+  (`third()` deals from those): its chapters carry an existing `emp` and `foe`, and the thread
+  shows names through `forN`, `vsN` and `payer`.
 - Never keep a `getChannelData()` view of a buffer that gets played. Firefox detaches the view
   once the buffer is playing, reads from it then give `undefined`, and a sample built from that is
   all NaN. One NaN note silences every score until reload (the music shares one compressor).

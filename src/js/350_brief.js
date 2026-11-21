@@ -100,7 +100,7 @@ function brfDraw(t) {
   /* the right-hand panel: what this is, then whatever the current step put up */
   const PX = 716, PW = 536; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
   g.fillStyle = S.col; g.font = 'bold 30px Menlo,monospace'; g.fillText(S.name, PX, 62, PW); g.fillStyle = '#e6f4ff'; g.font = '21px Menlo,monospace'; g.fillText(`${STNUM[c.chap]} · ${c.title.toUpperCase()}`, PX, 94, PW);
-  g.fillStyle = '#7fb0c8'; g.font = '15px Menlo,monospace'; g.fillText(`OP. ${c.op} · ${B.name} · ${(B.wx[c.mood] || B.wx[0])[0]}`, PX, 120, PW); g.fillText(`${c.site.toUpperCase()} · ${(STK).toFixed(1)} KM · GRID 200 M`, PX, 141, PW);
+  g.fillStyle = '#7fb0c8'; g.font = '15px Menlo,monospace'; g.fillText(`OP. ${c.op} · ${B.name} · ${skyOf(c.biome, c.mood, c.tod)}`, PX, 120, PW); g.fillText(`${c.site.toUpperCase()} · ${(STK).toFixed(1)} KM · GRID 200 M`, PX, 141, PW);
   g.fillStyle = S.col; g.fillRect(PX, 154, PW, 2);
   const K = BRF.card; let y = 196;
   if (K) {

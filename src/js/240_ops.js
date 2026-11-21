@@ -16,7 +16,7 @@ NEXT.assault = ['garrison', 'They want that ground back, works or no works. ']; 
 
 MISSIONS.assault = async function (ms) {
   const c = ms.c, A = ms.A, E = FAC[c.emp].short, F = FAC[c.foe].short, two = c.plot === 'twin', kid = { skill: .7 + c.diff * .08, hpK: .7 + c.diff * .06 };
-  const mkP = (p, name) => mkFactory(p.x, p.z, 1, { ry: Math.atan2(ms.LZ.x - p.x, ms.LZ.z - p.z), every: 20 - c.diff * 1.6, cap: 2 + (c.diff >> 1), tier: c.diff < 3 ? 0 : 1, hpK: .7 + c.diff * .1, kid, name, wake: 330 });
+  const mkP = (p, name) => mkFactory(p.x, p.z, 1, { ry: Math.atan2(ms.LZ.x - p.x, ms.LZ.z - p.z), every: 26 - c.diff * 2.2, cap: 2 + (c.diff > 3 ? 1 : 0), tier: c.diff < 3 ? 0 : 1, hpK: .55 + c.diff * .09, kid, name, wake: 330 });
   const Ps = two ? [mkP(A, 'NORTH LINE'), mkP(ms.B, 'SOUTH LINE')] : [mkP(A)], pc = p => Math.max(0, p.hp / p.max * 100).toFixed(0) + '%', dark = () => { for (const p of Ps) if (!p.dead) { p.pacify = true; p.name += ' (DARK)'; } };
   spawn({ turret: 1 + (c.diff >> 1) }, A.x, A.z, 32, 46); if (c.plot !== 'worm') foes(.5, A.x, A.z, 26, 72, { ai: 'guard' }); if (two) spawn({ turret: 1 }, ms.B.x, ms.B.z, 30, 40);
   setObj('m', () => two ? `Destroy both assembly lines — ${alive(Ps)} standing` : `Destroy the assembly plant — ${pc(Ps[0])}`); Ps.forEach((p, i) => nav('p' + i, p, two ? p.name : 'PLANT', '#ff5a1f'));
@@ -45,19 +45,19 @@ MISSIONS.assault = async function (ms) {
       else say(fm, 'I cannot reach the board. There are two of their people standing on it. I am sorry — we are running.');
     } else { rep(c.foe, -6); note(`You burned the works at ${c.site} with the line crew still inside.`); }
   }
-  if (c.plot === 'plant') (async () => { await until(() => Ps[0].hp < Ps[0].max * .5); if (ms.over || Ps[0].dead) return; chatter(ms.ops, 'She is half gone and they know it. Everything on the line is coming out of that door at once.'); for (let i = 0; i < 2; i++) for (const e of spawn({ mech: 1, tier: c.diff < 3 ? 0 : 1 }, ...groundSpot(A.x + Math.sin(Ps[0].obj.rotation.y) * 24, A.z + Math.cos(Ps[0].obj.rotation.y) * 24, 0, 8), 0, 4, 1, fopt(kid))) e.alert = true; })();
+  if (c.plot === 'plant') (async () => { await until(() => Ps[0].hp < Ps[0].max * .5); if (ms.over || Ps[0].dead) return; chatter(ms.ops, 'She is half gone and they know it. Everything on the line is coming out of that door at once.'); for (let i = 0; i < (c.diff > 2 ? 2 : 1); i++) for (const e of spawn({ mech: 1, tier: c.diff < 3 ? 0 : 1 }, ...groundSpot(A.x + Math.sin(Ps[0].obj.rotation.y) * 24, A.z + Math.cos(Ps[0].obj.rotation.y) * 24, 0, 8), 0, 4, 1, fopt(kid))) e.alert = true; })();
   await until(() => !alive(Ps)); setObj('m', null, 1); note(`The works at ${c.site} was destroyed after building ${Ps.reduce((n, p) => n + p.built, 0)} machines.`);
   if (c.plot !== 'yard') { say(ms.ops, 'The works is down. Their response force is rolling — do not wait around to count it.'); hot1(foes(.6, ...ringPt(A, 170), 0, 30)); }
   return extract(`${c.site} will not build another machine.`);
 };
 
 MISSIONS.intercept = async function (ms) {
-  const c = ms.c, A = ms.A, E = FAC[c.emp].short, F = FAC[c.foe].short, plot = c.plot === 'pair' && c.diff < 3 ? 'cruiser' : c.plot, hpK = .5 + c.diff * .14;
-  const base = mkStruct('hq', A.x, A.z, 0, { name: `${c.site} DEPOT`, hpK: 1 + c.diff * .05 }); spawn({ turret: 2, v: 'sentry' }, A.x, A.z, 24, 34, 0);
+  const c = ms.c, A = ms.A, E = FAC[c.emp].short, F = FAC[c.foe].short, plot = c.plot === 'pair' && c.diff < 3 ? 'cruiser' : c.plot, hpK = (.55 + c.diff * .1) * (plot === 'pair' ? .8 : 1);
+  const base = mkStruct('hq', A.x, A.z, 0, { name: `${c.site} DEPOT`, hpK: 1.3 + c.diff * .1 }); spawn({ turret: 2, v: 'sentry' }, A.x, A.z, 24, 34, 0);
   const pct = () => Math.max(0, base.hp / base.max * 100).toFixed(0) + '%'; base.onKill = () => lose(`The depot at ${c.site} was levelled from the air.`, .1);
   setObj('m', () => `Keep the depot standing — ${pct()}`); nav('b', base, 'DEPOT', '#8dff6a');
   /* a ship comes in from the far side of the depot, a long way out, and makes for it */
-  const inbound = (v, da, o = {}) => { const a = Math.atan2(A.x - ms.LZ.x, A.z - ms.LZ.z) + da; let x = A.x + Math.sin(a) * 390, z = A.z + Math.cos(a) * 390; const k = Math.min(1, 395 * FD.k / Math.hypot(x, z)); x *= k; z *= k; return mkCapital(v, x, z, 1, { hpK, dK: .75 + c.diff * .1, alert: true, to: A, focus: base, yaw: Math.atan2(A.x - x, A.z - z), ...o }); };
+  const inbound = (v, da, o = {}) => { const a = Math.atan2(A.x - ms.LZ.x, A.z - ms.LZ.z) + da; let x = A.x + Math.sin(a) * 390, z = A.z + Math.cos(a) * 390; const k = Math.min(1, 395 * FD.k / Math.hypot(x, z)); x *= k; z *= k; return mkCapital(v, x, z, 1, { hpK, dK: .65 + c.diff * .07, alert: true, to: A, focus: base, yaw: Math.atan2(A.x - x, A.z - z), ...o }); };
   const state = S => `hull ${Math.max(0, S.hp / S.max * 100).toFixed(0)}% · ${S.subs.filter(s => s.gun && !s.dead).length} guns · ${S.subs.filter(s => !s.gun && !s.dead).length} engines`;
   /* a beaten captain may ask to be let go */
   const parley = async S => {
@@ -81,16 +81,16 @@ MISSIONS.intercept = async function (ms) {
     await until(() => ms.t > 4);
     if (plot === 'pair') {
       const H = hunt(inbound('hive', -.5), 'k', 'CARRIER'); say(ms.hnd, `${c.contact.last}. A ${F} carrier is inbound on ${c.site} and she is not alone: a cruiser is an hour behind her and closing. You have the carrier to yourself for about a minute.`);
-      await until(() => ms.t > 80 || H.hp < H.max * .45 || done(H)); const L = hunt(inbound('lev', .6), 'k2', 'CRUISER'); say(ms.ops, 'There is the second hull. Gun cruiser, coming in on the other bearing. Her engines are outboard at the stern — each one you take costs her a fifth of the hull.');
+      await until(() => ms.t > 110 || H.hp < H.max * .35 || done(H)); const L = hunt(inbound('lev', .6), 'k2', 'CRUISER'); say(ms.ops, 'There is the second hull. Gun cruiser, coming in on the other bearing. Her engines are outboard at the stern — each one you take costs her a quarter of the hull.');
       (async () => { await until(() => done(H) || done(L)); if (!ms.over && !(done(H) && done(L))) chatter(ms.ops, 'One down. The other one is not leaving.'); })();
     } else if (plot === 'carrier') {
-      hunt(inbound('hive', rand(-.5, .5), { cap: 4 + (c.diff >> 1) }), 'k', 'CARRIER'); say(ms.hnd, `${c.contact.last}. A ${F} carrier is inbound on ${c.site}. She will sit off the depot and bury it in drones. Everything she launches she can replace — so kill the carrier.`);
+      hunt(inbound('hive', rand(-.5, .5), { cap: 3 + (c.diff >> 1) }), 'k', 'CARRIER'); say(ms.hnd, `${c.contact.last}. A ${F} carrier is inbound on ${c.site}. She will sit off the depot and bury it in drones. Everything she launches she can replace — so kill the carrier.`);
       (async () => { await after(26); chatter(ms.ops, 'She keeps her distance, so go to her. Engines are at the stern, and she has point defence under both hulls.'); })();
     } else {
       hunt(inbound('lev', rand(-.5, .5)), 'k', 'CRUISER'); say(ms.hnd, `${c.contact.last}. A ${F} gun cruiser is inbound on ${c.site}. She will be overhead inside a minute and she will take the depot apart. Bring her down.`);
-      (async () => { await after(20); chatter(ms.ops, 'The belly turrets are what will hurt you. The engines are what will hurt her: outboard, at the stern, a fifth of the hull each. When the prow lights up, move.'); })();
+      (async () => { await after(20); chatter(ms.ops, 'The belly turrets are what will hurt you. The engines are what will hurt her: outboard, at the stern, a quarter of the hull each. When the prow lights up, move.'); })();
     }
-    if (c.diff >= 3) (async () => { await after(45); if (!ms.over) { say(ms.ops, 'Dropship under her, coming in low. They are putting a ground party on the depot.'); dropNear(150, .45); } })();
+    if (c.diff >= 4) (async () => { await after(60); if (!ms.over) { say(ms.ops, 'Dropship under her, coming in low. They are putting a ground party on the depot.'); dropNear(150, .35); } })();
     await until(() => ships.every(done)); const fled = ships.filter(s => s.flee && !s.dead).length, down = ships.length - fled;
     note(down ? `${down > 1 ? 'Both ships' : 'The ' + ships.find(s => s.dead).name} came down over ${c.site}. The depot was at ${pct()}.` : `No ship came down over ${c.site}, but none stayed either.`);
     if (down) bonus('Hull bounty', c.pay * .12 * down);
@@ -113,8 +113,9 @@ TWISTS.worm = async function (ms) {
 /* a field works off to one side, feeding the fight until somebody goes and stops it */
 TWISTS.works = async function (ms) {
   const c = ms.c, p = ms.W; if (!p) return; await after(rand(22, 55));
-  const F = mkFactory(p.x, p.z, 1, { ry: Math.atan2(ms.A.x - p.x, ms.A.z - p.z), every: 24 - c.diff * 1.5, cap: 2, tier: c.diff < 3 ? 0 : 1, hpK: .5 + c.diff * .06, name: 'FIELD WORKS', wake: 1e4, first: 3, kid: { skill: .7 + c.diff * .07, hpK: .7 + c.diff * .05 } });
-  look(F, 'FIELD WORKS'); say(ms.ops, 'There is a field works out at the edge of the grid, and its door is open. Everything it builds is coming your way. It is not in the contract — but it is not going to stop either.');
+  const F = mkFactory(p.x, p.z, 1, { ry: Math.atan2(ms.A.x - p.x, ms.A.z - p.z), every: 26 - c.diff * 1.5, cap: 2, tier: c.diff < 3 ? 0 : 1, hpK: .5 + c.diff * .04, name: 'FIELD WORKS', wake: 1e4, first: 3, kid: { skill: .7 + c.diff * .07, hpK: .7 + c.diff * .05 }, stock: 2 + c.diff,
+    dry: () => { if (ms.over || F.dead) return; unnav('fw'); setObj('fw', null, 3); F.name += ' (SPENT)'; chatter(ms.ops, 'That field works has stopped building. It has used up whatever it was brought with — forget it.'); } });
+  look(F, 'FIELD WORKS'); say(ms.ops, 'There is a field works out at the edge of the grid, and its door is open. Everything it builds is coming your way. It is not in the contract, and it only has the stock it was brought with — but every machine it finishes is one more on you. Kill it early or outlast it.');
   setObj('fw', 'Destroy the field works', 0, true); nav('fw', F, 'WORKS', '#7fe7ff'); F.onKill = () => { unnav('fw'); if (ms.over) return; setObj('fw', null, 1); bonus('Field works', 24000 + c.diff * 5000); note('You destroyed a field works that was feeding the fight.'); };
 };
 /* settle the books after a sortie: returns the debrief the XO reads out */

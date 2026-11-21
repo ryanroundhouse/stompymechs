@@ -73,12 +73,16 @@ const bayParts = b => SLOTS.filter(s => b[s]).length;
 const invN = k => YARD.inv[k] | 0;
 const invAdd = (k, n = 1) => { const v = invN(k) + n; if (v > 0) YARD.inv[k] = Math.min(999, v); else delete YARD.inv[k]; };
 const invCount = () => Object.values(YARD.inv).reduce((a, b) => a + b, 0);
+/* the mech dealer's terms (415_mech_dealer.js): what a machine on the lot costs against its parts at list, the one marked down, the premium on one built to order, how many stand on the lot */
+const DEAL_K = { lot: [1, 1.14], special: .9, order: 1.35, n: 6 };
+/* a lot out of a save file: only machines that exist, at a price, and no more of them than a lot holds */
+const dealClean = m => m && Array.isArray(m.mechs) ? m.mechs.filter(e => e && Number.isInteger(e.p) && e.p >= 0 && e.p < PRESETS.length && e.price > 0).slice(0, DEAL_K.n).map(e => ({ p: e.p, price: e.price | 0, tag: typeof e.tag === 'string' ? e.tag.slice(0, 24) : '' })) : null;
 /* load the company's hardware from a save blob (or found a new one): a single light mech, two empty bays */
 function yardApply(s) {
   const v2 = s && s.v === 2, c = (v2 && s.company) || {}; YARD.name = cleanName(c.name, CO_DEF_NAME); if (s && s.game === GAME_WAS && YARD.name === GAME_WAS) YARD.name = CO_DEF_NAME;   /* a company still under the old default name takes the new one */ YARD.logo = cleanLogo(c.logo); YARD.logoV++; YARD.founded = v2 ? c.founded !== false : !!s;
   YARD.inv = {}; if (v2 && s.inventory) { for (const k in s.inventory) if (itemOk(k) && s.inventory[k] > 0) YARD.inv[k] = Math.min(999, s.inventory[k] | 0); } else YARD.inv = { 'gear.kit': Math.max(0, s && s.kit != null ? s.kit | 0 : 1), 'gear.cool': 1 };
   YARD.bays = [0, 1, 2].map(i => cleanBay(v2 && Array.isArray(s.bays) ? s.bays[i] : i ? null : starterMech(), i)); YARD.act = v2 ? clamp(s.activeBay | 0, 0, 2) : 0;
-  const m = v2 && s.market; YARD.shop = m && Array.isArray(m.stock) ? { rot: m.rot | 0, stock: m.stock.filter(e => e && itemOk(e.key) && e.qty > 0 && e.price > 0).map(e => ({ key: e.key, qty: e.qty | 0, price: e.price | 0, tag: e.tag || '' })) } : { rot: -1, stock: [] };
+  const m = v2 && s.market; YARD.shop = m && Array.isArray(m.stock) ? { rot: m.rot | 0, stock: m.stock.filter(e => e && itemOk(e.key) && e.qty > 0 && e.price > 0).map(e => ({ key: e.key, qty: e.qty | 0, price: e.price | 0, tag: e.tag || '' })), mechs: dealClean(m), mrot: m.mrot | 0 } : { rot: -1, stock: [] };
 }
 const BOOT = (() => { try { const s = JSON.parse(lsGet('co') || 'null'); return s && typeof s === 'object' ? s : null; } catch (e) { return null; } })();
 yardApply(BOOT);
@@ -100,6 +104,8 @@ function mechStats(c) {
 const CAP_N = { 45: 'LIGHT', 65: 'MEDIUM', 85: 'HEAVY' };
 /* the types a second machine is recommended for a step earlier than the rest */
 const OPS_HEAVY = ['assault', 'intercept', 'garrison'];
+/* the types where the player has something to stand by and keep alive */
+const OPS_HOLD = ['garrison', 'intercept', 'escort'];
 function capFor(type, diff) {
   const r = Math.random(), n = k => CO.board.filter(c => c.cap === k).length;
   let cap = diff === 1 ? (r < .5 ? 45 : r < .8 ? 65 : 0) : diff === 2 ? (r < .3 ? 45 : r < .6 ? 65 : 0) : diff === 3 ? (r < .12 ? 45 : r < .35 ? 65 : r < .5 ? 85 : 0) : diff === 4 ? (r < .25 ? 85 : 0) : 0;
@@ -113,7 +119,8 @@ const capWord = c => `${c.cap} T · ${CAP_N[c.cap]}${c.cap > 45 ? ' OR LIGHTER' 
 /* a harder job says so before launch: bring a second machine. Not where a company's lance is already beside you, and not at the races */
 const wingRec = c => !!c && (c.story ? c.diff >= 4 && c.story !== 'derby' : c.cok !== 'joint' && (c.diff >= 4 || c.diff === 3 && OPS_HEAVY.includes(c.type)));
 const capKv = c => (c.cap ? `<div class="kv">WEIGHT LIMIT <b style="color:var(--am)">${capWord(c)}</b></div>` : '') + (wingRec(c) ? '<div class="kv">LANCE <b style="color:var(--hot)">WINGMAN RECOMMENDED</b></div>' : '');
-const capTag = c => (c.cap ? ` · <span style="color:var(--am)">≤${c.cap} T</span>` : '') + (wingRec(c) ? ' · <span style="color:var(--hot)">+WING</span>' : '');
+/* what a card says a job asks for, on a line of its own under the rest so that it is never cut short */
+const capTag = c => { const L = []; if (c.cap) L.push(`<span style="color:var(--am)">LIMIT ${c.cap} T · ${CAP_N[c.cap]}</span>`); if (wingRec(c)) L.push('<span style="color:var(--hot)">WINGMAN RECOMMENDED</span>'); return L.length ? `<s>${L.join(' · ')}</s>` : ''; };
 /* now and then a pilot shoots at a part of you rather than the middle of you */
 const aimZ = (tg, sx, sy) => { if (tg !== PE || Math.random() > .3 || !player.zg || !player.zg.length) return aimAt(tg, sx, sy); zoneW(player, pick(player.zg), _c); _c.x += rand(-sx, sx) * .6; _c.y += rand(-sy, sy) * .6; _c.z += rand(-sx, sx) * .6; return _c; };
 function mechReady(c, biome, ct) {
@@ -169,7 +176,7 @@ function saveBlob() {
   return {
     game: GAME_ID, v: 2, saved: new Date().toISOString(), company: { name: YARD.name, logo: { ...YARD.logo }, founded: YARD.founded },
     ledger: { cb: Math.round(CO.cb), day: CO.day, hour: +CO.hour.toFixed(2), rep: { ...CO.rep }, done: CO.done, fails: CO.fails, seed: CO.seed, ...rivSave() },
-    inventory: { ...YARD.inv }, bays: YARD.bays.map(b => ({ ...b })), activeBay: YARD.act, market: { rot: YARD.shop.rot, stock: YARD.shop.stock.map(e => ({ ...e })) },
+    inventory: { ...YARD.inv }, bays: YARD.bays.map(b => ({ ...b })), activeBay: YARD.act, market: { rot: YARD.shop.rot, stock: YARD.shop.stock.map(e => ({ ...e })), mechs: YARD.shop.mechs ? YARD.shop.mechs.map(e => ({ ...e })) : undefined, mrot: YARD.shop.mrot },
     board: CO.board.filter(c => !c.story).map(c => ({ ...c })), active: CO.active && !CO.active.story ? CO.active.id : null, news: CO.news.slice(0, 9),
     pilots: PILOTS.map(p => ({ fee: p.fee, until: p.until, hag: !!p.hag })), wing: CO.wing ? { i: PILOTS.indexOf(CO.wing.p), share: CO.wing.share, s: CO.wing.p.seed || 0, paid: CO.wing.paid || 0 } : null, bar: barSave(), story: storySave(), tut: tutSave(),
   };
@@ -187,10 +194,10 @@ function ledgerApply(s) {
 function boardApply(s) {
   CO.board = []; CO.news = []; CO.active = CO.sel = null;
   const ok = c => c && !c.story && TYPES[c.type] && TYPES[c.type].plots.includes(c.plot) && FAC[c.emp] && FAC[c.foe] && BIOMES[c.biome] && PERSONA[c.persona] && c.contact && c.contact.name && Array.isArray(c.pos) && typeof c.pay === 'number' && typeof c.seed === 'number';
-  if (s && Array.isArray(s.board)) for (const c of s.board) if (ok(c)) { c.twists = (c.twists || []).filter(t => TWISTS[t]); rivClean(c); c.intel = Array.isArray(c.intel) ? c.intel : []; c.diff = clamp(c.diff | 0, 1, 5); c.cap = [45, 65, 85].includes(c.cap) ? c.cap : 0; CO.board.push(c); cid = Math.max(cid, c.id | 0); }
+  if (s && Array.isArray(s.board)) for (const c of s.board) if (ok(c)) { c.twists = (c.twists || []).filter(t => TWISTS[t]); rivClean(c); c.intel = Array.isArray(c.intel) ? c.intel : []; c.diff = clamp(c.diff | 0, 1, 5); c.cap = [45, 65, 85].includes(c.cap) ? c.cap : 0; c.mood = c.mood ? 1 : 0; if (!TOD_KEYS.includes(c.tod)) c.tod = todDeal(c.biome, CO.board.map(b => b.tod)); CO.board.push(c); cid = Math.max(cid, c.id | 0); }
   if (s && Array.isArray(s.news)) CO.news = s.news.filter(n => typeof n === 'string').slice(0, 9);
   if (s && s.active != null) CO.active = CO.board.find(c => c.id === s.active) || null;
-  if (!CO.board.length) { fillBoard(); news(tutLock() ? TUT_WIRE() : `${YARD.name} mercenary company is open for contracts.`); } else fillBoard();
+  if (!CO.board.length) { fillBoard(); news(tutLock() ? TUT_WIRE() : `${YARD.name} mercenary company is open for contracts.`); } else { boardSpread(); fillBoard(); }
   if (YARD.shop.rot < 0) shopRoll(true); CO.dirty = true;
 }
 function pilotsApply(s) {

@@ -6,7 +6,7 @@ function brandSync() {
   document.title = YARD.name === CO_DEF_NAME ? GAME_NAME : YARD.name + ' — ' + GAME_NAME; if (HG.brand) HG.brand(); CO.dirty = true;
 }
 function gfxApply() {
-  const pr = Math.min(devicePixelRatio, 1.5) * CFG.scale; renderer.setPixelRatio(pr); POST.bloom = CFG.bloom;
+  const pr = Math.min(devicePixelRatio, 1.5) * CFG.scale; renderer.setPixelRatio(pr); POST.bloom = CFG.bloom; if (GLOWL.on !== CFG.wlight) glowLights(CFG.wlight);
   for (const s of [HG.scene, FD.scene, HQ.scene, BAR.scene, BRF.scene]) s.traverse(o => { if (o.isLight && (o.castShadow || o.userData.sh)) { o.userData.sh = 1; o.castShadow = CFG.shadow; } });
   dispatchEvent(new Event('resize'));
 }
@@ -75,11 +75,11 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
     $('sTut').onclick = () => { TUT.hints = !TUT.hints; if (!TUT.hints) tutEnd(); saveCO(); sfx.play('ui'); settingsDraw(); }; $('sTutAgain').onclick = () => { tutAgain(); sfx.play('ok'); settingsDraw(); };
     bindR('sSens', v => { CFG.sens = v / 100; }, sx); bindT('sInv', 'invY'); $('sHold').querySelectorAll('button').forEach(b => b.onclick = () => { CFG.hold = +b.dataset.v; cfgSave(); sfx.play('ui'); settingsDraw(); });
   } else if (tab === 'display') {
-    B.innerHTML = `<div class="sh">RENDERING</div><div class="sg">${rng('sScale', 'RENDER SCALE', CFG.scale * 100, 50, 150, 10, pc)}${tog('sBloom', 'BLOOM AND GLOW', CFG.bloom)}${tog('sShadow', 'DYNAMIC SHADOWS', CFG.shadow)}</div>
+    B.innerHTML = `<div class="sh">RENDERING</div><div class="sg">${rng('sScale', 'RENDER SCALE', CFG.scale * 100, 50, 150, 10, pc)}${tog('sBloom', 'BLOOM AND GLOW', CFG.bloom)}${tog('sShadow', 'DYNAMIC SHADOWS', CFG.shadow)}${tog('sWlight', 'LIGHT FROM WEAPONS FIRE', CFG.wlight)}</div>
 <p class="snt">If the field runs slowly, drop the render scale first, then shadows. Changes apply at once.</p>
 <div class="sh">THE OPENING</div><div class="gm"><button id="sIntro"${fld || mode === 'brief' ? ' disabled' : ''}><b>▶ WATCH IT AGAIN</b><small>${fld || mode === 'brief' ? 'Not in the middle of a sortie or a briefing' : 'Eleven seconds. Any key ends it'}</small></button></div>`;
     $('sIntro').onclick = () => { sfx.play('ui'); settingsClose(); introOpen(); };
-    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply);
+    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply); bindT('sWlight', 'wlight', gfxApply);
   } else if (tab === 'company') {
     const L = YARD.logo, ink = (k, label) => `<label>${label}</label><div class="ink" data-k="${k}">${LOGO_INKS.map(c => `<button data-c="${c}" class="${L[k] === c ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>`;
     B.innerHTML = `${F ? `<p class="snt big">The paperwork is filed and the hangar lease is paid through the season. All the outfit needs now is a name and a mark to paint on the door.<br><b>You start with ${fmt(CO.cb)}, one light mech — the KESTREL — a repair kit, a coolant flush, and two empty bays.</b> Everything else you will have to buy, earn, or pull out of a wreck.</p>` : ''}

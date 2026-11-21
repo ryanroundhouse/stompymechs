@@ -333,8 +333,9 @@ function mkStruct(sk, x, z, team = 1, o = {}) {
   const e = { kind: 'struct', sk, team, name: o.name || name, obj: g, pos: g.position, cy, r, hp: hp * (o.hpK || 1), col: addCol({ x, z, r: r * .85, top: g.position.y + top }), blast: sk === 'fuel' ? 28 : 0, update() { } };
   e.max = e.hp; FD.ents.push(e); return e;
 }
-/* ---- THE ASSEMBLY PLANT: a works that builds what it is defended by. While it stands, something new walks, drives or flies out of the door every quarter of a minute, up to `cap` at a time ---- */
-STRUCT.fab = ['ASSEMBLY PLANT', 2200, 13, 7, 17, g => {
+/* ---- THE ASSEMBLY PLANT: a works that builds what it is defended by. While it stands, something new walks, drives or flies out of the door every quarter of a minute, up to `cap` at a time
+   (and, given `stock`, no more than that many altogether: `dry(e)` is called when the last has left) ---- */
+STRUCT.fab = ['ASSEMBLY PLANT', 1500, 13, 7, 17, g => {
   box(g, EM.corr, 26, 12, 20, 0, 6, -2); for (let i = 0; i < 4; i++) { tbox(g, M.dark, 6.4, 3, 20, .1, 1, -9.6 + i * 6.4, 13.5, -2); noShadow(box(g, M.amber, .2, 1.6, 18, -12.7 + i * 6.4, 13.3, -2, 0, 0, .2)); }
   box(g, M.girder, 27, .6, 21, 0, 12.1, -2); box(g, M.dark, 12, 9.4, 1, 0, 4.7, 8.3); box(g, M.hazard, 13.4, .8, 1.2, 0, 9.6, 8.3); for (const s of [-1, 1]) box(g, M.hazard, .8, 9.4, 1.2, s * 6.4, 4.7, 8.3);
   for (const [sx, h] of [[-9, 24], [-5, 20]]) { cyl(g, M.rust, 1.5, 1.9, h, sx, h / 2, -9, 0, 0, 0, 12); cyl(g, M.hazard, 1.56, 1.56, 1.2, sx, h - 2, -9, 0, 0, 0, 12); cyl(g, M.black, 1.2, 1.2, .3, sx, h, -9, 0, 0, 0, 12); }
@@ -342,12 +343,14 @@ STRUCT.fab = ['ASSEMBLY PLANT', 2200, 13, 7, 17, g => {
   cyl(g, M.blue, 3, 3, 8, 16.5, 4, -4, 0, 0, 0, 14); cyl(g, M.dark, 3.1, 3.1, .5, 16.5, 6, -4, 0, 0, 0, 14); box(g, M.rust, 4, 3, 4, -16, 1.5, 2, 0, .3); box(g, M.dark, 5, 5, 6, -16, 2.5, -6);
 }];
 function mkFactory(x, z, team = 1, o = {}) {
-  const e = mkStruct('fab', x, z, team, o), g = e.obj, ry = o.ry || 0, K = { every: o.every || 15, cap: o.cap || 4, tier: o.tier ?? 0 }, door = glowMat(0xffa030, 1.2), sm = [];
+  const e = mkStruct('fab', x, z, team, o), g = e.obj, ry = o.ry || 0, K = { every: o.every || 15, cap: o.cap || 4, tier: o.tier ?? 0, stock: o.stock || 0 }, door = glowMat(0xffa030, 1.2), sm = [];
   noShadow(box(g, door, 10.6, 8.6, .3, 0, 4.5, 8.86)); for (const [sx, h] of [[-9, 24], [-5, 20]]) { g.updateMatrixWorld(true); const em = { p: g.localToWorld(V3(sx, h + 1, -9)), kind: 'smoke' }; FD.emit.push(em); sm.push(em); }
   e.kids = []; e.big = true; e.blast = 24; e.built = 0; let t = o.first ?? 9, told = false; const px = x + Math.sin(ry) * 22, pz = z + Math.cos(ry) * 22;
   e.update = dt => {
     if (e.kids.length) e.kids = e.kids.filter(k => !k.dead); const on = !e.pacify && (e.alert || e.pos.distanceTo(P.pos) < (o.wake || 430)); door.emissiveIntensity = damp(door.emissiveIntensity, on && t < 2.5 ? 7 : 1.2, 4, dt);
     if (!on || (t -= dt) > 0) return; if (e.kids.length >= K.cap) { t = 2; return; } t = K.every * rand(.85, 1.15); e.built++;
+    /* a works with a stock builds that many and no more: the door stays open and nothing else comes out of it */
+    if (K.stock && e.built >= K.stock) { e.pacify = true; if (o.dry) o.dry(e); }
     const r = Math.random(), sp = r < .45 ? { mech: 1 } : r < .8 ? { tank: 1 } : { drone: 2 }, L = spawn({ ...sp, tier: K.tier }, px, pz, 0, 4, team, MS.on ? fopt(o.kid) : {});
     for (const k of L) { k.alert = true; if (k.yaw !== undefined) k.yaw = ry; e.kids.push(k); } _v.set(px, heightAt(px, pz) + 2, pz); puff(FD.fx, _v, 14, 4, .5, .4, 3, 8); if (e.pos.distanceTo(P.pos) < 380) sfx.play('door', .6);
     if (!told && team === 1) { told = true; msg(`THE ${e.name} IS BUILDING — KILL IT OR KEEP KILLING WHAT IT MAKES`, 4.5); }
@@ -357,11 +360,13 @@ function mkFactory(x, z, team = 1, o = {}) {
 }
 
 /* ---- CAPITAL SHIPS. A hull the length of a city block, sixty metres up, with parts of its own to shoot at: belly turrets that can be silenced one at a time, and engine nacelles
-   that each take a fifth of the hull with them and leave her slower. S: the hull's hit spheres, where the parts hang, how she moves, what she fights with ---- */
+   that each take a quarter of the hull with them and leave her slower. S: the hull's hit spheres, where the parts hang, how she moves, what she fights with ---- */
+/* what an engine takes with it when it goes: a quarter of the hull. Two engines and the guns are most of a ship, which is what makes aiming worth more than weight of fire */
+const SHIP_ENG_K = .25;
 const CAPS = {
   /* LEVIATHAN: a gunship cruiser. She closes, circles, rakes the ground with four turrets and puts a spinal gun into wherever you are standing */
   lev: {
-    name: 'LEVIATHAN', hp: 4800, r: 15, alt: 62, sp: 8, turn: .16, far: 240, near: 120, belly: 10, gun: 'BELLY TURRET', shot: { type: 'bullet', dmg: 7, speed: 175, big: 1.3, snd: 'cannon' },
+    name: 'LEVIATHAN', hp: 3100, r: 15, alt: 56, sp: 8, turn: .16, far: 240, near: 120, belly: 10, gun: 'BELLY TURRET', shot: { type: 'bullet', dmg: 6, speed: 175, big: 1.3, snd: 'cannon' },
     hs: [[0, 0, -42, 12], [0, 0, -21, 14], [0, 0, 0, 15], [0, 0, 21, 14], [0, 0, 42, 11]], subs: [['gun', 9, -8.5, 24], ['gun', -9, -8.5, 24], ['gun', 9, -8.5, -16], ['gun', -9, -8.5, -16], ['eng', 16, 1, -44], ['eng', -16, 1, -44]],
     build(g, team) {
       const col = teamMat(team); tbox(g, M.dark, 22, 9, 96, .7, .82, 0, 0, 0); tbox(g, col, 15, 5, 82, .55, .8, 0, -7, 0, PI); cyl(g, M.dark, .6, 9.6, 26, 0, -.4, 60, Z, PI / 4, 0, 4); box(g, M.hazard, 22.2, .8, 96.2, 0, -3.6, 0);
@@ -372,7 +377,7 @@ const CAPS = {
   },
   /* HIVE: a carrier. She keeps her distance and keeps the air full: everything she launches has to be shot down again until she is */
   hive: {
-    name: 'HIVE CARRIER', hp: 3800, r: 14, alt: 78, sp: 10, turn: .2, far: 330, near: 210, belly: 8, gun: 'POINT DEFENCE', shot: { type: 'bolt', dmg: 6, speed: 130 },
+    name: 'HIVE CARRIER', hp: 2500, r: 14, alt: 64, sp: 10, turn: .2, far: 250, near: 150, belly: 8, gun: 'POINT DEFENCE', shot: { type: 'bolt', dmg: 6, speed: 130 },
     hs: [[-20, 0, -18, 12], [-20, 0, 14, 12], [20, 0, -18, 12], [20, 0, 14, 12], [0, 1, -4, 13]], subs: [['gun', 20, -6, 22], ['gun', -20, -6, 22], ['gun', 0, -3.4, -22], ['eng', 20, 0, -40], ['eng', -20, 0, -40]],
     build(g, team) {
       const col = teamMat(team);
@@ -391,7 +396,7 @@ function mkCapital(v, x, z, team = 1, o = {}) {
     const sg = grp(g, sx, sy, sz), gun = type === 'gun'; let br = null, glow = null;
     if (gun) { sph(sg, M.dark, 2.6, 0, 0, 0, 1, .7, 1); cyl(sg, teamMat(team), 2.7, 2.7, .5, 0, .9, 0, 0, 0, 0, 12); br = grp(sg, 0, -.8, 0); for (const s of [-1, 1]) cyl(br, M.black, .24, .28, 4.4, s * .7, 0, 2.2, Z); sph(br, M.girder, 1.2); }
     else { cyl(sg, M.girder, 3.6, 4, 13, 0, 0, 0, Z, 0, 0, 12); cyl(sg, M.dark, 4.2, 4.2, 2.4, 0, 0, 3, Z, 0, 0, 12); cyl(sg, M.black, 3.2, 2.4, 2, 0, 0, -7.4, Z, 0, 0, 12); glow = noShadow(cyl(sg, M.cyan, 2.3, 2.3, .2, 0, 0, -8.46, Z, 0, 0, 12)); for (let i = 0; i < 4; i++) box(sg, M.hazard, .5, 8.2, 1, 0, 0, -2 + i, 0, 0, i * PI / 4); }
-    const s = { kind: 'turret', team, name: gun ? S.gun : 'ENGINE NACELLE', obj: sg, pos: V3(), cy: 0, r: gun ? 3.6 : 4.8, hp: (gun ? 220 : 400) * hpK, nw: true, of: e, gun, fireT: rand(1, 4), burst: 0, vk: 'sub' }; s.max = s.hp; sg.getWorldPosition(s.pos);
+    const s = { kind: 'turret', team, name: gun ? S.gun : 'ENGINE NACELLE', obj: sg, pos: V3(), cy: 0, r: gun ? 3.6 : 4.8, hp: (gun ? 170 : 290) * hpK, nw: true, of: e, gun, fireT: rand(1, 4), burst: 0, vk: 'sub' }; s.max = s.hp; sg.getWorldPosition(s.pos);
     s.update = dt => {
       sg.getWorldPosition(s.pos); s.alert = s.alert || e.alert; if (!gun) { if (Math.random() < dt * 12) { _v.set(0, 0, -9).applyQuaternion(g.quaternion).add(s.pos); FD.fx.spark.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), rand(.3, .6), rand(3, 5), 1.2, 2.8, 5, .5, 0, 0, -.6); } return; }
       const tg = seek(s, dt); if (!tg || e.pacify) return; const d = s.pos.distanceTo(tg.pos); if (d > 360 && !e.alert) return; e.alert = true; br.lookAt(tg.pos.x, tg.pos.y + tg.cy, tg.pos.z);
@@ -399,7 +404,7 @@ function mkCapital(v, x, z, team = 1, o = {}) {
     };
     s.crash = owner => {
       sg.visible = false; const at = s.pos.clone(); explode(FD.fx, at, 2); FD.tick.push(dt => { if (e.dead) return false; if (Math.random() < dt * 10) { sg.getWorldPosition(_v); FD.fx.smoke.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(1, 4), rand(-1, 1), rand(1.5, 3), rand(3, 5), .1, .1, .1, .5, -.2, .3, 2); } return true; });
-      if (gun || e.dead) return; e.sp *= .55; msg(`${e.name} — ENGINE OUT`, 3); const inv = e.inv; e.inv = false; damage(e, e.max * .2, null, owner); e.inv = inv;
+      if (gun || e.dead) return; e.sp *= .55; msg(`${e.name} — ENGINE OUT`, 3); const inv = e.inv; e.inv = false; damage(e, e.max * SHIP_ENG_K, null, owner); e.inv = inv;
     };
     FD.ents.push(s); e.subs.push(s);
   }
@@ -414,10 +419,10 @@ function mkCapital(v, x, z, team = 1, o = {}) {
     if (v === 'lev') {
       /* the spinal gun: a ranging beam from the prow to the ground, and the ground goes up when it has shrunk to nothing */
       if ((e.fireT -= dt) < 0) { e.fireT = rand(8, 11); const F = e.focus && !e.focus.dead && e.focus.team !== e.team && (e.alt = ((e.alt | 0) + 1) % 3) ? e.focus : tg, lead = F === PE ? P.v * 1.8 : 0, bx = F.pos.x + Math.sin(P.yaw) * lead + rand(-8, 8), bz = F.pos.z + Math.cos(P.yaw) * lead + rand(-8, 8), bm = hot(0xff4030, 6); bm.transparent = true; bm.blending = THREE.AdditiveBlending; bm.depthWrite = false;
-        port.getWorldPosition(_o); addBeam(_o.clone(), V3(bx, heightAt(bx, bz), bz), bm, .5, 2.6); shell(bx, bz, F.kind === 'struct' ? 110 : 55, 15, 2.6, e.team); if (e.pos.distanceTo(P.pos) < 420) sfx.play('ion', .8); }
+        port.getWorldPosition(_o); addBeam(_o.clone(), V3(bx, heightAt(bx, bz), bz), bm, .5, 2.6); shell(bx, bz, F.kind === 'struct' ? 80 : 55, 15, 2.6, e.team); if (e.pos.distanceTo(P.pos) < 420) sfx.play('ion', .8); }
     } else if ((e.bayT -= dt) < 0) {
       /* the flight deck: one or two more in the air, up to as many as she can run at once */
-      e.kids = e.kids.filter(k => !k.dead); e.bayT = rand(8, 11); const cap = o.cap || 5; if (e.kids.length >= cap) return; port.getWorldPosition(_o); const P0 = _o.clone();
+      e.kids = e.kids.filter(k => !k.dead); e.bayT = rand(10, 14); const cap = o.cap || 4; if (e.kids.length >= cap) return; port.getWorldPosition(_o); const P0 = _o.clone();
       for (let i = 0; i < Math.min(2, cap - e.kids.length); i++) { const k = mkDrone(P0.x + rand(-8, 8), P0.z + rand(-8, 8), team, pick(o.wing || ['hunter', 'hunter', 'scr', 'scr', 'shr', 'hrp'])); k.pos.y = P0.y - 6; k.alert = true; if (k.vel) k.vel.set(0, -10, 0); if (e.focus && !e.focus.dead && i % 2 === 0) k.focus = e.focus; e.kids.push(k); }
       if (e.pos.distanceTo(P.pos) < 420) sfx.play('jet', 1);
     }
@@ -498,6 +503,6 @@ function spawnWave(n) {
 }
 function clearField() {
   for (const e of FD.ents) { FD.scene.remove(e.obj); delCol(e.col); } FD.ents.length = 0; for (const s of FD.shots) FD.scene.remove(s.m); FD.shots.length = 0; for (const b of FD.beams) FD.scene.remove(b.m); FD.beams.length = 0;
-  for (const w of FD.wrecks) { FD.scene.remove(w.obj); w.em.life = 0; delCol(w.col); } FD.wrecks.length = 0; for (const o of FD.misc) FD.scene.remove(o); FD.misc.length = 0; FD.tick.length = 0; ftw.length = 0; FD.t0.length = FD.t1.length = 0;
+  for (const w of FD.wrecks) { FD.scene.remove(w.obj); w.em.life = 0; delCol(w.col); } FD.wrecks.length = 0; for (const o of FD.misc) FD.scene.remove(o); FD.misc.length = 0; FD.tick.length = 0; ftw.length = 0; FD.t0.length = FD.t1.length = 0; glowClear();
 }
 

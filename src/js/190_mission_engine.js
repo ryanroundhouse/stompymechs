@@ -186,8 +186,8 @@ function shipProp(p, yaw) {
 }
 function beginMission(c) {
   const ST = c.story ? storyLay(c) : null, R = mulberry(c.seed), a = ST ? ST.a : R() * TAU, pt = (ang, r) => [Math.sin(ang) * r, Math.cos(ang) * r], lz = ST ? ST.lz : pt(a, 300), A = ST ? ST.A : pt(a + PI + (R() - .5), 110 + R() * 110), B = ST ? ST.B : pt(a + PI / 2 + (R() - .5) * .6, 200 + R() * 70), C = ST ? ST.C : pt(a - PI / 2 + (R() - .5) * .6, 200 + R() * 70);
-  const Wk = !ST && c.twists.includes('works') ? pt(a + PI * .72, 310) : null;
-  buildEnv(c.biome, c.seed, ST ? ST.env : { pads: [[...lz, 36], [...A, 54], [...B, 40], [...C, 40], ...(Wk ? [[...Wk, 34]] : [])], mood: c.mood });
+  const Wk = !ST && c.twists.includes('works') ? pt(a + PI * .72, OPS_HOLD.includes(c.type) ? 235 : 310) : null;   /* where there is something to stand by, the works is near enough to go and deal with */
+  buildEnv(c.biome, c.seed, ST ? ST.env : { pads: [[...lz, 36], [...A, 54], [...B, 40], [...C, 40], ...(Wk ? [[...Wk, 34]] : [])], mood: c.mood, tod: c.tod });
   Object.assign(MS, { on: true, k: MS.k + 1, c, t: 0, over: false, ok: false, partial: 0, obj: [], navs: [], wait: [], log: [], bonus: [], repD: {}, relD: {}, payK: 1, payer: c.emp, v: {}, who: {}, evt: null, dirty: true, jam: false, abort: false, endText: '',
     LZ: gpos(...lz), A: gpos(...A), B: gpos(...B), C: gpos(...C), foePaint: FAC[c.foe].paint, allyPaint: FAC[c.emp].paint, ops: CREW.xo, hnd: c.contact, foe: mkChar(c.seed + 5, FAC[c.foe].short + ' COMMANDER', FAC[c.foe].col, 'Maj.') });
   MS.W = Wk ? gpos(...Wk) : null; commReset(); if (ST) ST.ready(MS);

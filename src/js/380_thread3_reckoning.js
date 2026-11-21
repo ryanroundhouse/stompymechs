@@ -16,7 +16,7 @@ STORY.dead = {
   end: 'Mira will not say thank you. She has halved her rates instead, which from her is the same thing.',
   ch: [{
     /* ---------------- I ---------------- */
-    title: 'Dead Reckoning', kind: 'recon', biome: 'lunar', mood: 0, seed: 93011, diff: 2, pay: 90000, salv: 25, site: 'Kaldur Secundus', op: 'NIGHT LIGHT',
+    title: 'Dead Reckoning', kind: 'recon', biome: 'lunar', mood: 0, tod: 'night', seed: 93011, diff: 2, pay: 90000, salv: 25, site: 'Kaldur Secundus', op: 'NIGHT LIGHT',
     tease: 'Six years ago a Helion deep-survey lance went silent on the dark side of Kaldur\'s second moon. One of its pilots was Kenji Sato. Eleven days ago a survey beacon carrying his personal key began to transmit from that surface — and then a second, a hundred metres on. Something is laying a trail. Mira is not asking the company to take a contract. She is asking.',
     wire: 'Mira Sato has asked for an hour of the commander\'s time, off the record. She has never asked for anything.',
     sites: { lz: [-560, 440, 40, 'LZ'], b1: [-300, 190, 34, 'BEACON'], b2: [-40, 250, 40, 'BEACON'], b3: [190, -30, 34, 'BEACON'], b4: [450, -250, 36, 'BEACON'], ridge: [610, -400, 50, 'THE TERMINATOR'] },
@@ -182,7 +182,7 @@ STORY.dead = {
     prize(D, add) { stGift(D, 'gear.cool', 1); add('Ordo Ferrum, pilgrims\' purse', 16000); repAdd('ord', 4, 'walked with the Vigil through Ashbrook'); },
   }, {
     /* ---------------- IV ---------------- */
-    title: 'Lights On', kind: 'garrison', biome: 'desert', mood: 0, seed: 41, diff: 4, pay: 160000, salv: 40, site: 'the Yard', op: 'PORCH LIGHT', home: true,
+    title: 'Lights On', kind: 'garrison', biome: 'desert', mood: 0, tod: 'night', seed: 41, diff: 4, pay: 160000, salv: 40, site: 'the Yard', op: 'PORCH LIGHT', home: true,
     tease: 'LANTERN is one morning\'s walk from the yard: the ground Kenji Sato told it was home. Director Castellan cannot allow it to arrive, and has stopped pretending this is a recovery. Everything Helion Special Recovery owns is coming over the hills at first light. We will be fighting on our own apron, in front of our own hangar, for a machine with nobody in it. The XO has not asked whether we want to.',
     wire: 'Helion Special Recovery has filed a flight plan that ends at our front gate. Commander Varga has recalled all hands.',
     sites: { lz: [0, 22, 0, ''], home: [40, -250, 0, 'THE OLD HOUSE'], north: [70, -770, 0, 'NORTH FLATS'], east: [740, -120, 0, 'EAST RIDGE'], west: [-720, -40, 0, 'WEST WASH'], yard: [0, 30, 0, 'THE YARD'] },
@@ -206,7 +206,7 @@ STORY.dead = {
       const pads = stTick(() => { if (ms.over) return false; if (near(apron, 34) && !P.dead && P.armor < P.max * .97 && (ms.v.mendT || 0) < ms.t) { ms.v.mendT = ms.t + 24; stMend(.45, 'BAY CREWS ARE ON YOU — ARMOUR PATCHED'); chatter(dutch, pick(['Hold still. HOLD STILL. ...Done. Go.', 'Thirty seconds, like I said. Twenty-eight. Go on.', "That's my weld. It'll outlast the rest of you. Go!"])); } return true; });
       const wave = (n, k, from, o = {}) => { const W = stFrom(k, S[from], stAng(S[from], S.yard), 40, { ...hp, focus: n % 2 ? L : null, ...o }); look(W[0], `HELION — WAVE ${n}`); msg(`WAVE ${n} — ${from.toUpperCase()}`, 3); sfx.play('alarm'); return W; };
       setObj('m', () => `Hold the yard until LANTERN is home — ${Math.round(stDist(L.pos, S.home) / 10) * 10} m · frame ${Math.round(L.hp / L.max * 100)}%`); setObj('d', 'Return to the apron when damaged — Dutch will patch you', 0, true);
-      applyAtmo(1.7, .34, null); weatherShift(1, 1, null, 260);   /* it starts before sunrise, and the sun comes up on it */
+      applyAtmo(1.5, .8, null); weatherShift(1, 1, null, 140); todShift('dawn', 250);   /* it starts before sunrise, and the sun comes up on it */
       await after(3); chatter(PILOTS[0].ch, "Rook, on your wing. For the record, boss, I'd have done this one for free. Don't tell Varga."); await after(4);
       let W = wave(1, 1, 'east'); await tell(xo, 'First wave, east ridge. This is our ground and I want it to cost them. All units: weapons free.');
       await until(() => alive(W) <= 1); W = W.concat(wave(2, 1.1, 'west')); chatter(PILOTS[1].ch, 'Anvil. West wash. I see them. They are walking over where I park.');

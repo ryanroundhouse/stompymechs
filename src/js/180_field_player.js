@@ -34,7 +34,7 @@ function fieldUnits(dt, t) {
 }
 function fieldFx(dt, t) {
   updateEnvFx(dt, t);
-  updateShots(dt);
+  updateShots(dt); glowTick(dt);
   for (let i = FD.emit.length - 1; i >= 0; i--) {
     const e = FD.emit[i]; if (e.life !== undefined && (e.life -= dt) <= 0) { FD.emit.splice(i, 1); continue; } if (Math.random() > dt * 14) continue;
     if (e.kind === 'flare') FD.fx.spark.emit(e.p.x + rand(-.5, .5), e.p.y, e.p.z + rand(-.5, .5), rand(-1, 1), rand(5, 10), rand(-1, 1), rand(.4, .9), rand(4, 7), 5, 2.2, .5, .8, -3, .5, -.5);

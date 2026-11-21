@@ -3,9 +3,11 @@ const keys = {};
 const P = { pos: V3(), yaw: PI, v: 0, vy: 0, twist: 0, pitch: 0, heat: 0, armor: 100, max: 100, fuel: 1, cd: { armL: 0, armR: 0, back: 0 }, shut: 0, cam: 0, air: false, shake: 0, kills: 0, wave: 0, dead: false, aim: V3(), md: [false, false, false], waveT: 0, center: false, stepT: 0 };
 const PE = { pos: P.pos, cy: 6, r: 4, isPlayer: true, team: 0, name: 'PLAYER', get dead() { return P.dead; } };   // the player as a target for hostile fire
 const hot = (hex, k) => { const m = new THREE.MeshBasicMaterial({ color: hex, fog: false }); m.color.multiplyScalar(k); return m; };
-const SM = { tracer: hot(0xffc766, 5), etracer: hot(0xff4a2a, 5), plasma: hot(0x66e0ff, 6), eplasma: hot(0xff5a3a, 6), bolt: hot(0xff3a2a, 6) };
+const SM = { tracer: glowM(0xffc766, 7, .8), etracer: glowM(0xff4a2a, 7, .8), plasma: glowM(0x66e0ff, 7, .9, 1.2), eplasma: glowM(0xff5a3a, 7, .9, 1.2), bolt: glowM(0xff3a2a, 8, .8) };
+/* the colour of a weapon's light, where it is not the machine's own glow */
+const WEP_HUE = { rail: 0xbfe6ff, bullet: 0xffb060, flak: 0xffb060, missile: 0xff9a50, lob: 0xffa860, ion: 0x9fd0ff, arc: 0xa8d4ff, flame: 0xff8030 };
 const SND = { laser: 'laser', rail: 'gauss', bullet: 'cannon', flak: 'flak', plasma: 'plasma', missile: 'missile', bolt: 'laser', beam: 'beam', flame: 'flame', arc: 'zap', ion: 'ion', lob: 'mortar', melee: 'swing' };
-SM.ion = hot(0x9fd0ff, 7);
+SM.ion = glowM(0x9fd0ff, 8, .9, 1.2);
 let msgT = 0; const msg = (s, d = 2.5) => { $('msg').textContent = s; $('msg').style.opacity = 1; msgT = d; };
 
 function inSolid(p) {
@@ -110,7 +112,7 @@ function rayHit(o, d, maxD, owner) {
   for (let t = 3; t < best; t += 3 + t * .03) { _p.copy(o).addScaledVector(d, t); if (inSolid(_p)) { let a = t - (3 + t * .03), b = t; for (let i = 0; i < 5; i++) { const m = (a + b) / 2; _p.copy(o).addScaledVector(d, m); inSolid(_p) ? b = m : a = m; } best = Math.max(0, a); ent = null; break; } }
   return { t: best, ent, zone: ent ? zoneRay(ent, o, d) : null };
 }
-function addBeam(a, b, mat, w, life) { const m = new THREE.Mesh(UB, mat); m.position.copy(a).add(b).multiplyScalar(.5); m.scale.set(w, w, a.distanceTo(b)); m.lookAt(b); FD.scene.add(m); FD.beams.push({ m, w, life, max: life }); }
+function addBeam(a, b, mat, w, life) { const m = new THREE.Mesh(GEO.tube, mat); m.position.copy(a).add(b).multiplyScalar(.5); m.scale.set(w, w, a.distanceTo(b)); m.lookAt(b); FD.scene.add(m); FD.beams.push({ m, w, life, max: life }); }
 /* a shield going up for a moment round whatever it saved */
 function shFlash(e) {
   if (e.shF > 0) return; e.shF = .2; const mat = hot(0x7fd8ff, 2.2); mat.transparent = true; mat.opacity = .3; mat.blending = THREE.AdditiveBlending; mat.depthWrite = false;
@@ -146,10 +148,10 @@ function entTick(e, dt, t) {
 }
 
 /* ---- one round leaving one muzzle, whoever fired it. o and d are where from and which way; aim is the point it was meant for (a lobbed shell needs it) ---- */
-function arcBolt(a, b, mat) { const L = a.distanceTo(b), n = clamp(Math.round(L / 13), 2, 8); let p = a.clone(); for (let i = 1; i <= n; i++) { const q = a.clone().lerp(b, i / n); if (i < n) q.add(_v.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).multiplyScalar(L * .03 + .6)); addBeam(p, q, mat, .17, .24); p = q; } }
+function arcBolt(a, b, mat) { const L = a.distanceTo(b), n = clamp(Math.round(L / 13), 2, 8); let p = a.clone(); for (let i = 1; i <= n; i++) { const q = a.clone().lerp(b, i / n); if (i < n) q.add(_v.set(rand(-1, 1), rand(-1, 1), rand(-1, 1)).multiplyScalar(L * .03 + .6)); addBeam(p, q, mat, .5, .24); p = q; } }
 function arcShot(O, D, w, owner) {
-  const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), mat = () => { const m = hot(0xa8d4ff, 7); m.transparent = true; m.blending = THREE.AdditiveBlending; m.depthWrite = false; return m; };
-  arcBolt(O, end, mat()); sparks(FD.fx, end, 12, 8, 2, 3.4, 6); if (!h.ent) return;
+  const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), mat = () => glowM(0xa8d4ff, 9, .9);
+  arcBolt(O, end, mat()); sparks(FD.fx, end, 12, 8, 2, 3.4, 6); flashAt(O, 0xa8d4ff, 110, 70, .16); flashAt(end, 0xa8d4ff, 130, 70, .2); if (!h.ent) { scarAt(end, 1.3, .7); return; }
   let cur = h.ent, dmg = w.dmg, from = end; const seen = [cur]; damage(cur, dmg, end, owner, h.zone);
   for (let n = 0; n < (w.chain || 0); n++) {
     let nx = null, bd = 70; for (const e of targetsOf(owner)) { if (e.dead || seen.includes(e) || e.team === 2) continue; const d = e.pos.distanceTo(cur.pos); if (d < bd) { bd = d; nx = e; } }
@@ -158,6 +160,7 @@ function arcShot(O, D, w, owner) {
 }
 function flameJet(O, D, w, owner) {
   const v = w.range / .42; for (let i = 0; i < 3; i++) FD.fx.spark.emit(O.x, O.y, O.z, (D.x + rand(-.12, .12)) * v, (D.y + rand(-.09, .13)) * v, (D.z + rand(-.12, .12)) * v, rand(.4, .62), rand(.7, 1.3), 5, 2.1, .45, .9, -4, 1.2, 4);
+  flashAt(_p.copy(O).addScaledVector(D, w.range * .4), 0xff8030, 70, 60, .12);
   if (Math.random() < .25) FD.fx.smoke.emit(O.x + D.x * w.range * .6, O.y + D.y * w.range * .6, O.z + D.z * w.range * .6, rand(-1, 1), rand(2, 5), rand(-1, 1), rand(1, 2), rand(2, 4), .1, .1, .1, .3, -.3, .5, 2);
   for (const e of targetsOf(owner)) {
     if (e.dead) continue; _c.copy(e.pos); _c.y += e.cy; _c.sub(O); const dist = _c.length(), tca = _c.dot(D); if (tca < 0 || dist - e.r > w.range) continue;
@@ -167,17 +170,21 @@ function flameJet(O, D, w, owner) {
 function emitShot(o, d, w, owner, lock, glow, aim) {
   const t = w.type, foe = owner === 1, O = o.clone(), D = d.clone();
   if (t === 'laser' || t === 'rail' || t === 'beam') {
-    const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), rail = t === 'rail', bm = hot(rail ? 0xbfe6ff : glow, rail ? 7 : 6); bm.transparent = true; bm.blending = THREE.AdditiveBlending; bm.depthWrite = false;
-    addBeam(O, end, bm, w.bw || (rail ? .28 : .2), w.bl || (rail ? .5 : .14)); sparks(FD.fx, O, t === 'beam' ? 1 : 5, 3, 5, 3.4, 1.4);
-    if (h.ent) damage(h.ent, w.dmg, end, owner, h.zone); else if (h.t < w.range) { sparks(FD.fx, end, t === 'beam' ? 3 : 10, 6); if (t !== 'beam') puff(FD.fx, end, 2, 1.5, .4, .3); }
+    const h = rayHit(O, D, w.range, owner), end = O.clone().addScaledVector(D, h.t), rail = t === 'rail', hue = rail ? WEP_HUE.rail : glow, bw = (w.bw || (rail ? .28 : .2)) * 3, bl = w.bl || (rail ? .5 : .14), held = t === 'beam';
+    /* a white-hot line inside a wide soft one, a flare at the muzzle, and light at both ends */
+    addBeam(O, end, glowM(hue, rail ? 9 : 8, 1), bw, bl); addBeam(O, end, glowM(hue, 1.5, 0, 1), bw * 3.4, bl * .8); sparks(FD.fx, O, held ? 1 : 5, 3, 5, 3.4, 1.4);
+    if (held) { if (Math.random() < .5) flashAt(_p.copy(O).addScaledVector(D, 2), hue, 45, 50, .12); } else muzzleAt(O, D, hue, rail ? 150 : 60, rail ? 1.5 : 1);
+    flashAt(_p.copy(end).addScaledVector(D, -1.5), hue, rail ? 190 : held ? 60 : 85, 60, rail ? .22 : .14);
+    { const c = _c2.setHex(hue); for (let i = 0; i < (held ? 1 : rail ? 7 : 3); i++) FD.fx.spark.emit(end.x, end.y, end.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), rand(.08, .16), rand(1.2, 2.4) * (rail ? 1.6 : 1), c.r * 4 + 1.5, c.g * 4 + 1.5, c.b * 4 + 1.5, .9, 0, 0, .7); }
+    if (h.ent) damage(h.ent, w.dmg, end, owner, h.zone); else if (h.t < w.range) { sparks(FD.fx, end, held ? 3 : 10, 6); if (!held) puff(FD.fx, end, 2, 1.5, .4, .3); if (!held || Math.random() < .12) scarAt(end, rail ? 1.5 : .8, held ? .5 : .8); }
     if (rail) for (let k = 0; k < h.t; k += 5) FD.fx.spark.emit(O.x + D.x * k, O.y + D.y * k, O.z + D.z * k, rand(-.4, .4), rand(-.4, .4), rand(-.4, .4), rand(.4, .9), .5, 1.5, 2.6, 5, .7, 0, 0, 1);
     return;
   }
   if (t === 'arc') return arcShot(O, D, w, owner);
   if (t === 'flame') return flameJet(O, D, w, owner);
   const S1 = geoC.s1 || (geoC.s1 = new THREE.SphereGeometry(1, 12, 8)), big = w.big || 1, vel = D.clone().multiplyScalar(w.speed); let m, life = w.life || 3, arm = .25;
-  if (t === 'plasma') { m = new THREE.Mesh(S1, foe ? SM.eplasma : SM.plasma); m.scale.setScalar(w.big || .75); }
-  else if (t === 'ion') { m = new THREE.Mesh(S1, SM.ion); m.scale.set(.3 * big, .3 * big, 1.9 * big); }
+  if (t === 'plasma') { m = new THREE.Mesh(GEO.ball, foe ? SM.eplasma : SM.plasma); m.scale.setScalar((w.big || .75) * 1.7); }
+  else if (t === 'ion') { m = new THREE.Mesh(GEO.ball, SM.ion); m.scale.set(.55 * big, .55 * big, 3 * big); }
   else if (t === 'lob') {
     m = new THREE.Mesh(S1, M.black); m.scale.setScalar(.42 * big); const dx = aim.x - O.x, dz = aim.z - O.z, dh = Math.hypot(dx, dz) || 1, k = Math.min(1, (w.reach || 400) / dh), T = clamp(dh * k / w.speed, .8, 8);
     vel.set(dx * k / T, (aim.y - O.y) * k / T + .5 * LOB_G * T, dz * k / T); life = T + 4;
@@ -186,10 +193,11 @@ function emitShot(o, d, w, owner, lock, glow, aim) {
     m = new THREE.Mesh(UB, M.steel); m.scale.set(.3, .3, 1.5); life = w.life || 6; if (w.loft) { const k = clamp(O.distanceTo(aim || O) / 260, .12, 1); D.y += w.loft * k; D.normalize(); arm = .25 + .45 * k; }   /* a lofted salvo climbs in proportion to how far it has to go: straight up at something close and it never comes round */ vel.copy(D).multiplyScalar(w.speed * rand(.55, .8));
     if (w.turn === 0 || (lock && lock.ecm && Math.random() < .7)) lock = null;
   }
-  else { m = new THREE.Mesh(UB, t === 'bolt' ? SM.bolt : foe ? SM.etracer : SM.tracer); const k = w.small ? .6 : big; m.scale.set(.13 * k, .13 * k, (t === 'flak' ? 1.2 : 2.6) * (w.small ? .7 : Math.sqrt(big))); if (!w.life && t === 'flak') life = .9; }
+  else { m = new THREE.Mesh(GEO.tube, t === 'bolt' ? SM.bolt : foe ? SM.etracer : SM.tracer); const k = w.small ? .6 : big; m.scale.set(.4 * k, .4 * k, (t === 'flak' ? 2.2 : 5.5) * (w.small ? .7 : Math.sqrt(big))); if (!w.life && t === 'flak') life = .9; }
   m.position.copy(O); m.lookAt(_p.copy(O).add(vel)); FD.scene.add(m);
-  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w });
-  sparks(FD.fx, O, w.small ? 2 : 5, 3, 5, 3.4, 1.4);
+  const hue = t === 'plasma' ? (foe ? 0xff5a3a : 0x66e0ff) : t === 'bolt' ? 0xff3a2a : WEP_HUE[t] || (foe ? 0xff6a3a : 0xffb060);
+  FD.shots.push({ t, m, vel, life, dmg: w.dmg, owner, lock: t === 'missile' ? lock : null, max: w.speed, arm, w, hue });
+  sparks(FD.fx, O, w.small ? 2 : 5, 3, 5, 3.4, 1.4); muzzleAt(O, D, hue, w.small ? 30 : clamp(36 + w.dmg * 2.2, 40, 150), w.small ? .6 : Math.min(1.8, .8 + w.dmg / 60));
 }
 /* things that hit rather than shoot. A saw bites every tick it is held against something; anything else swings, and lands a third of a second later on whatever is still in reach */
 function meleeHit(mech, u, w, owner, aim) {
@@ -224,8 +232,8 @@ function updateShots(dt) {
       s.arm -= dt; const tg = s.lock && !s.lock.dead ? s.lock : null, sp = Math.min(s.max * 1.5, s.vel.length() + 60 * dt), turn = w.turn ?? 3.2;
       if (tg && s.arm < 0 && turn) { _c.copy(tg.pos); _c.y += tg.cy; _d.copy(_c).sub(p).normalize(); s.vel.normalize().lerp(_d, Math.min(1, turn * dt)).normalize(); } else s.vel.normalize();
       s.vel.multiplyScalar(sp); s.m.lookAt(_p.copy(p).add(s.vel)); if (!(w.salvo > 6) || Math.random() < .45) FD.fx.smoke.emit(p.x, p.y, p.z, rand(-.5, .5), rand(-.2, .8), rand(-.5, .5), rand(.6, 1.3), 1.1, .8, .8, .8, .35, -.2, .5, 2); FD.fx.spark.emit(p.x, p.y, p.z, 0, 0, 0, .12, 1.3, 5, 2.6, .7);
-    } else if (s.t === 'plasma') { const c = s.owner !== 1 ? [1.4, 4, 6] : [6, 1.6, 1]; FD.fx.spark.emit(p.x + rand(-.3, .3), p.y + rand(-.3, .3), p.z + rand(-.3, .3), 0, 0, 0, .35, 1.6, ...c, .8, 0, 0, -.6); }
-    else if (s.t === 'ion') FD.fx.spark.emit(p.x, p.y, p.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), .22, 1.1, 2.4, 3.6, 6, .8, 0, 0, -.7);
+    } else if (s.t === 'plasma') { flashAt(p, s.hue, 55, 46, .1); const c = s.owner !== 1 ? [1.4, 4, 6] : [6, 1.6, 1]; FD.fx.spark.emit(p.x + rand(-.3, .3), p.y + rand(-.3, .3), p.z + rand(-.3, .3), 0, 0, 0, .35, 1.6, ...c, .8, 0, 0, -.6); }
+    else if (s.t === 'ion') { flashAt(p, s.hue, 50, 46, .1); FD.fx.spark.emit(p.x, p.y, p.z, rand(-1, 1), rand(-1, 1), rand(-1, 1), .22, 1.1, 2.4, 3.6, 6, .8, 0, 0, -.7); }
     else if (s.t === 'lob') { s.vel.y -= LOB_G * dt; if (Math.random() < .5) FD.fx.smoke.emit(p.x, p.y, p.z, 0, .3, 0, rand(.5, 1), .9, .5, .5, .5, .3, -.1, .4, 1.5); }
     const steps = Math.ceil(s.vel.length() * dt / 2.5), sd = dt / steps;
     for (let k = 0; k < steps && !hit && !boom; k++) {
@@ -236,11 +244,11 @@ function updateShots(dt) {
     if (!hit && !boom) continue;
     const bl = w.blast ?? (s.t === 'missile' ? 6 : s.t === 'plasma' ? 9 : 0);
     if (bl) { explode(FD.fx, p, clamp(bl / 7, .45, 2.6)); splash(p, bl, s.dmg, s.owner); if (hit && w.stun) stunEnt(hit, w.stun, s.owner); const dd = p.distanceTo(P.pos); if (dd < 220) sfx.play('boom', clamp(bl / 12, .3, 1.1)); if (bl > 10 && dd < 120) P.shake += (1 - dd / 120) * .5; }
-    else if (hit) { if (s.t === 'ion') sparks(FD.fx, p, 16, 9, 2, 3.4, 6); damage(hit, s.dmg, p, s.owner, zoneAt(hit, p)); if (w.stun) stunEnt(hit, w.stun, s.owner); }
-    else if (s.life > 0) { sparks(FD.fx, p, 4, 5); puff(FD.fx, p, 1, 1.2, .45, .3); }
+    else if (hit) { if (s.t === 'ion') sparks(FD.fx, p, 16, 9, 2, 3.4, 6); flashAt(p, s.hue, clamp(24 + s.dmg * 2, 30, 120), 50, .1); damage(hit, s.dmg, p, s.owner, zoneAt(hit, p)); if (w.stun) stunEnt(hit, w.stun, s.owner); }
+    else if (s.life > 0) { sparks(FD.fx, p, 4, 5); puff(FD.fx, p, 1, 1.2, .45, .3); flashAt(p, s.hue, 30, 40, .08); if (!w.small && Math.random() < .35) scarAt(p, .7, .4); }
     FD.scene.remove(s.m); FD.shots.splice(i, 1);
   }
-  for (let i = FD.beams.length - 1; i >= 0; i--) { const b = FD.beams[i]; b.life -= dt; const k = Math.max(0, b.life / b.max); b.m.scale.x = b.m.scale.y = b.w * k; if (b.life <= 0) { FD.scene.remove(b.m); b.m.material.dispose(); FD.beams.splice(i, 1); } }
+  for (let i = FD.beams.length - 1; i >= 0; i--) { const b = FD.beams[i]; b.life -= dt; const k = Math.max(0, b.life / b.max); b.m.scale.x = b.m.scale.y = b.w * k; if (b.life <= 0) { FD.scene.remove(b.m); if (!b.m.material.userData.keep) b.m.material.dispose(); FD.beams.splice(i, 1); } }
 }
 
 /* ---- units: team 0 = ours, 1 = hostile, 2 = neutral (never auto-targeted, but our fire still hits it) ---- */

@@ -58,6 +58,7 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
     if (mode === 'field' && mapKey(e)) return; keys[e.code] = true; if (mode !== 'field') return; if (e.code === 'Space' || e.code === 'Tab') e.preventDefault();
     if (e.code.startsWith('Digit')) commKey(+e.code[5] - 1);
     if (e.code === 'KeyR' && locked && CO.kit > 0 && !P.dead && (P.armor < P.max * .98 || Object.keys(P.lost).length)) { CO.kit--; P.armor = Math.min(P.max, P.armor + P.max * .4); const n = zoneMend(); msg(`REPAIR KIT USED${n ? ` — ${n} COMPONENT${n > 1 ? 'S' : ''} BACK ON LINE` : ''} — ${CO.kit} LEFT`, 2.5); sfx.play('ok'); }
+    if (e.code === 'KeyB' && locked && !e.repeat) sunCall();
     if (e.code === 'KeyV' && locked && !P.dead && invN('gear.cool') > 0 && P.heat > 20) { invAdd('gear.cool', -1); P.heat = Math.max(0, P.heat - 60); msg(`COOLANT FLUSH — ${invN('gear.cool')} LEFT`, 2.5); sfx.play('steam'); }
     if (e.code === 'KeyC') P.cam = 1 - P.cam; if (e.code === 'KeyX') P.center = true; if (e.code === 'KeyH') withdrawKey(); if (e.code === 'Escape' && soft) { soft = false; setLock(false); }
   });

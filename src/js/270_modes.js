@@ -4,14 +4,14 @@ function startField() {
   mode = 'field'; HG.alarmOn = false; HG.walk = 0; FD.scene.add(player.root); player.root.rotation.set(0, PI, 0); player.gait.amt = 0;
   Object.assign(P, { yaw: PI, v: 0, vy: 0, twist: 0, pitch: 0, heat: 0, armor: player.stats.armor * 1.5, max: player.stats.armor * 1.5, fuel: 1, shut: 0, air: false, shake: 0, kills: 0, wave: 0, dead: false, waveT: 1, center: false, camInit: false, cam: 0, leaving: false });
   P.cd = { armL: 0, armR: 0, back: 0 }; P.md = [false, false, false]; const c = CO.active; fieldScale(c && c.story ? STK : 1); clearField(); YARD.loot = []; P.carry = false; MS.on = MS.over = false; MS.navs.length = 0;
-  if (c) { beginMission(c); sortieGuard(true); } else { if (!EV.home) buildEnv('desert', 41, { home: true }); P.pos.set(0, 0, 22); P.yaw = PI; }
+  if (c) { beginMission(c); sortieGuard(true); } else { if (!EV.home || EV.pads !== HOME_PADS || EV.sky !== skyOf('desert', 0, 'day') || FD.fogK !== 1) buildEnv('desert', 41, { home: true, tod: 'day' });   /* the proving ground is always the yard at noon (or under whatever the campaign has done to the sun), whatever was last flown there */ P.pos.set(0, 0, 22); P.yaw = PI; }
   player.root.rotation.set(0, P.yaw, 0); player.run = RUN; player.gait.sk = 1.15; FD.camera.position.copy(P.pos); music.track(scoreFor(EV.key)); MAPV.wp = null; scoreH = scoreT = 0;
   $('objW').classList.toggle('hid', !!c); $('objM').classList.toggle('hid', !c); $('btnHangar').textContent = c ? 'WITHDRAW — ABANDON CONTRACT' : 'RETURN TO HANGAR'; $('navs').innerHTML = ''; $('tgt').classList.add('hid');
-  $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.mood[0]}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
+  $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.sky}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
   player.onStep = L => { L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
-  buildWepHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
+  P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);
 }
 async function toHangar() {

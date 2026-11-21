@@ -69,7 +69,7 @@ const MISSIONS = {
   },
 
   async garrison(ms) {
-    const c = ms.c, A = ms.A, E = FAC[c.emp].short, F = FAC[c.foe].short, base = mkStruct('hq', A.x, A.z, 0, { name: `${c.site} FIELD HQ` }), D = [...spawn({ turret: 2 }, A.x, A.z, 24, 32, 0), ...spawn({ tank: 1 }, A.x, A.z, 32, 42, 0)];
+    const c = ms.c, A = ms.A, E = FAC[c.emp].short, F = FAC[c.foe].short, base = mkStruct('hq', A.x, A.z, 0, { name: `${c.site} FIELD HQ`, hpK: 1 + c.diff * .25 }), D = [...spawn({ turret: 2 + (c.diff > 3 ? 1 : 0) }, A.x, A.z, 24, 32, 0), ...spawn({ tank: 1 + (c.diff > 2 ? 1 : 0) }, A.x, A.z, 32, 42, 0)];   /* the harder the contract, the more the client has dug in: the waves grow faster than one machine's guns do */
     const pct = () => Math.max(0, base.hp / base.max * 100).toFixed(0) + '%'; base.onKill = () => { if (!ms.v.turn && !ms.v.evac) lose(`${c.site} field HQ was destroyed.`, .1); };
     setObj('m', () => `Defend the field HQ — integrity ${pct()}`); nav('b', base, 'HQ', '#8dff6a');
     say(ms.hnd, `Mercenary, ${c.contact.last}. ${F} armor is massing against ${c.site}. Get to the HQ and hold it.`);

@@ -2,8 +2,8 @@
 const ST = { open: false, mode: 'inv', slot: null, cat: 'all', sort: 'name', dir: 1, find: '', salv: null, picked: new Set(), done: null };
 const uiModal = () => !!document.querySelector('.ovl:not(.hid)');
 function storesOpen(o = {}) {
-  Object.assign(ST, { open: true, mode: o.mode || 'inv', slot: o.slot || null, salv: o.salv || null, done: o.done || null, find: '', picked: new Set(), sure: 0 }); ST.cat = 'all'; $('stFind').value = '';
-  if (ST.mode === 'shop' || ST.mode === 'inv') shopRoll(); $('stores').classList.remove('hid'); storesDraw();
+  Object.assign(ST, { open: true, mode: o.mode || 'inv', slot: o.slot || null, salv: o.salv || null, done: o.done || null, find: '', picked: new Set(), sure: 0, mSaid: '', mArm: null }); ST.cat = 'all'; $('stFind').value = '';
+  if (ST.mode === 'shop' || ST.mode === 'inv' || ST.mode === 'mech') shopRoll(); if (ST.mode === 'mech') { ST.sort = 'lot'; ST.dir = 1; } $('stores').classList.remove('hid'); storesDraw();
 }
 function storesClose() {
   if (!ST.open) return; if (ST.mode === 'salv') { for (const i of ST.picked) invAdd(ST.salv.pool[i], 1); saveCO(); }
@@ -45,24 +45,28 @@ function storesRows() {
   if (ST.mode === 'fit') L = L.filter(r => r.it.cat === CAT[ST.slot]);
   return L;
 }
+/* the three tabs along the top: what we own, what the quartermaster has, and the dealer's whole machines */
+function storesTabs() {
+  $('stTabs').innerHTML = [['inv', `INVENTORY · ${invCount()} ITEMS`], ['shop', `MARKET · ${YARD.shop.stock.length} LOTS`], ['mech', `MECH DEALER · ${dealLot().length} ON THE LOT`]].map(([k, l]) => `<button data-k="${k}" class="${k === ST.mode ? 'on' : ''}">${l}</button>`).join('');
+  $('stTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); ST.mode = b.dataset.k; ST.cat = 'all'; ST.mSaid = ''; if (ST.mode === 'mech') { ST.sort = 'lot'; ST.dir = 1; } storesDraw(); });
+}
 function storesDraw() {
-  if (!ST.open) return; const M0 = ST.mode, fit = M0 === 'fit', salv = M0 === 'salv', all = storesRows(), f = ST.find.trim().toUpperCase(), sk = ST.sort, cur = fit ? player.cfg[ST.slot] : null;
+  if (!ST.open) return; $('stGrid').classList.toggle('mkg', ST.mode === 'mech'); $('stFind').classList.toggle('hid', ST.mode === 'mech'); storesTabs(); if (ST.mode === 'mech') return dealDraw(); const M0 = ST.mode, fit = M0 === 'fit', salv = M0 === 'salv', all = storesRows(), f = ST.find.trim().toUpperCase(), sk = ST.sort, cur = fit ? player.cfg[ST.slot] : null;
   /* the part in the slot heads the list when fitting: it is what everything else is measured against */
   const ref = cur ? itemInfo(CAT[ST.slot] + '.' + cur) : null, now0 = ref ? { key: ref.key, qty: 1, price: sellValue(ref.key), it: ref, cur: true } : null;
   let L = all.filter(r => (ST.cat === 'all' || r.it.cat === ST.cat) && (!f || (r.it.name + ' ' + r.it.desc + ' ' + ICAT[r.it.cat].label + ' ' + (r.it.wclass || '')).toUpperCase().includes(f)));
   const val = r => sk === 'name' ? r.it.name : sk === 'price' ? r.price : r.it.s[sk];
   L.sort((a, b) => { const x = val(a), y = val(b); if (x == null || y == null) return (x == null) - (y == null) || a.it.name.localeCompare(b.it.name); return (sk === 'name' ? x.localeCompare(y) : x - y) * ST.dir || ICAT_KEYS.indexOf(a.it.cat) - ICAT_KEYS.indexOf(b.it.cat) || a.it.name.localeCompare(b.it.name); });
   $('stTitle').textContent = fit ? `FIT ${SLOT_LABEL[ST.slot]} — ${bayTitle()}` : salv ? `SALVAGE — ${ST.salv.site.toUpperCase()}` : 'COMPANY STORES'; $('stFunds').textContent = salv ? `SALVAGE RIGHTS ${ST.salv.pct}%` : 'FUNDS ' + fmt(CO.cb);
-  $('stTabs').classList.toggle('hid', fit || salv); $('stTabs').innerHTML = [['inv', `INVENTORY · ${invCount()} ITEMS`], ['shop', `MARKET · ${YARD.shop.stock.length} LOTS`]].map(([k, l]) => `<button data-k="${k}" class="${k === M0 ? 'on' : ''}">${l}</button>`).join('');
-  $('stTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); ST.mode = b.dataset.k; ST.cat = 'all'; storesDraw(); });
+  $('stTabs').classList.toggle('hid', fit || salv);
   $('stCats').classList.toggle('hid', fit); $('stCats').innerHTML = ['all', ...ICAT_KEYS].map(k => { const n = k === 'all' ? all.length : all.filter(r => r.it.cat === k).length; return `<button data-k="${k}" class="${k === ST.cat ? 'on' : ''}" ${n ? '' : 'disabled'} style="--c:${k === 'all' ? '#ffb21a' : ICAT[k].col}">${iconSvg(k, 16, 'currentColor')}${k === 'all' ? 'ALL' : ICAT[k].label}<i>${n}</i></button>`; }).join('');
   $('stCats').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); ST.cat = b.dataset.k; storesDraw(); });
   const has = new Set(); for (const r of all) { has.add('name'); has.add('price'); for (const k in r.it.s) has.add(k); } if (!has.has(sk)) ST.sort = 'name';
   $('stSort').innerHTML = SORTS.filter(([k]) => has.has(k) || k === 'name').map(([k, l]) => `<option value="${k}" ${k === ST.sort ? 'selected' : ''}>${k === 'price' && (M0 === 'inv' || fit) ? 'SELL VALUE' : l}</option>`).join(''); $('stDir').textContent = ST.dir > 0 ? '▲ LOW → HIGH' : '▼ HIGH → LOW';
   $('stNote').innerHTML = fit ? (cur ? `Fitted now: <b>${ref.name}</b>, shown first. Every other part is marked against it — <i class="fup">▲▼ green</i> is better than what is fitted, <i class="fdn">▲▼ red</i> is worse — and its second line is what the swap does to the whole machine.` : `Nothing fitted. Pick a ${ICAT[CAT[ST.slot]].one.toLowerCase()} from stores; the second line of each is what it does to the machine.`)
     : salv ? `The recovery crews pulled <b>${ST.salv.pool.length}</b> intact pieces off the field. The contract lets us keep <b>${ST.salv.picks}</b>. Choose.`
-      : M0 === 'shop' ? `The quartermaster's stock turns over in <b>${shopEta().toFixed(0)} h</b>. Weapons and equipment come and go — <b>chassis parts are rare</b>, so buy them when you see them.`
-        : `Everything not bolted to a mech. Anything here sells for <b>${SELL_K * 100}%</b> of list. Fitted components must come off in the bay first.`;
+      : M0 === 'shop' ? `The quartermaster's stock turns over in <b>${shopEta().toFixed(0)} h</b>. Weapons and equipment come and go — <b>chassis parts are rare</b>, so buy them when you see them, or buy a whole machine from the <b>MECH DEALER</b> tab.`
+        : `Everything not bolted to a mech. Anything here sells for <b>${SELL_K * 100}%</b> of list. Fitted components must come off in the bay first. For a whole machine rather than its parts, see the <b>MECH DEALER</b> tab.`;
   const act = r => r.cur ? '<button data-a="rem">REMOVE</button>' : fit ? (r.it.id === cur ? '<button disabled>FITTED</button>' : `<button data-a="fit" data-k="${r.it.id}">FIT</button>`) : salv ? `<button data-a="pick" data-i="${r.i}" class="${ST.picked.has(r.i) ? 'on' : ''}" ${!ST.picked.has(r.i) && ST.picked.size >= ST.salv.picks ? 'disabled' : ''}>${ST.picked.has(r.i) ? '✔ CLAIMED' : 'CLAIM'}</button>` : M0 === 'shop' ? `<button data-a="buy" data-i="${r.i}" ${CO.cb < r.price ? 'disabled' : ''}>BUY</button>` : `<button data-a="sell" data-k="${r.key}">SELL</button>`;
   const plain = it => it.chips.map(([l, v, k]) => `<span class="${k === sk ? 'on' : ''}">${l} <b>${v}</b></span>`).join('');
   const row = r => {

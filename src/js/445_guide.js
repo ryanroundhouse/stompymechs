@@ -46,7 +46,7 @@ const TOURS = {
     { t: "There's a drinking contest and an arm-wrestling table, if you fancy your liver or your elbow against the regulars. Or take a seat and do nothing at all. The lift is that way when you've had enough.", at: '#barBar' },
   ] },
   stores: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode !== 'salv', steps: [
-    { t: 'Stores, boss. The tabs along the top are what we own, and the market: what is for sale today, and what they will give us for ours. It changes every day.', at: '#stTabs' },
+    { t: 'Stores, boss. The tabs along the top are what we own, the market: what is for sale today, and what they will give us for ours. It changes every day. The third is the dealer: whole machines, when you have the money and not the patience.', at: '#stTabs' },
     { t: 'Click a part to read its card. Anything you buy goes on the shelf; to bolt it to her, close this and click the slot it belongs in.', at: '#stGrid', pos: 'low' },
   ] },
 };

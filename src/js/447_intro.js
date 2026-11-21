@@ -119,7 +119,7 @@ const INTRO_SHOTS = [
     at: 4, init(S) {
       buildEnv('urban', 31, { pads: [[0, 40, 170]] }); applyAtmo(1.25, .5, 'rain'); S.hit = 1.38;
       S.us = [[2, -24, 2, 5], [9, 30, -4, 0], [13, 52, 14, 2], [1, -50, 12, 0], [12, -78, 26, 5]].map(([i, x, z, p]) => introMech(i, x, z, 0, 0, p, { ai: 'hold' }));
-      const sh = S.ship = mkCapital('lev', 0, 300, 1, { yaw: -1.9, alert: true }); sh.hp = sh.max = 1e7; sh.update = () => { }; for (const s of sh.subs) s.hp = s.max = 1e7;
+      const sh = S.ship = mkCapital('lev', 0, 300, 1, { yaw: -1.9, alert: true, alt: 62 }); sh.hp = sh.max = 1e7; sh.update = () => { }; for (const s of sh.subs) s.hp = s.max = 1e7;
       for (let i = 0; i < 6; i++) introDrone(-70 + i * 28, 90 + (i & 1) * 40, 1, 'hunter');
       S.at = V3(-6, 0, 84); S.at.y = heightAt(S.at.x, S.at.z); S.fall = u => {
         const q = Math.max(0, S.hit - u), g = sh.obj; g.position.set(S.at.x - Math.sin(sh.yaw) * 24 * q, S.at.y + 9 + 11 * q * q + 13 * q, S.at.z - Math.cos(sh.yaw) * 24 * q); g.rotation.set(0, sh.yaw, 0); g.rotateX(.34 - .1 * q); g.rotateZ(.5 - .12 * q);

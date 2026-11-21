@@ -1,12 +1,12 @@
 /* ============ FIELD: ENVIRONMENT (biomes, baked heightmap, colliders, weather) ============ */
-const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null };
+const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null, lit: 1, expo: 1, glow: .42 };
 FD.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, .5, 1600);
 FD.env = grp(FD.scene);
-FD.fx = { spark: new Particles(FD.scene, 2600, true), smoke: new Particles(FD.scene, 1600, false), wx: new Particles(FD.scene, 3000, false) };
+FD.fx = { spark: new Particles(FD.scene, 4200, true), smoke: new Particles(FD.scene, 2400, false), wx: new Particles(FD.scene, 3000, false) };
 const hash2 = (x, z) => { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); };
 function vnoise(x, z) { const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf); return lerp(lerp(hash2(xi, zi), hash2(xi + 1, zi), u), lerp(hash2(xi, zi + 1), hash2(xi + 1, zi + 1), u), v); }
 const HOME_PADS = [[0, 40, 85], [-170, -150, 48], [175, -70, 30], [40, -250, 55], [-210, 110, 30], [230, 170, 34]];   // flattened build sites [x,z,r]
-const EV = { key: '', B: null, seed: 0, home: false, ox: 0, oz: 0, pads: HOME_PADS, padH: [], wl: null, cr: [], mood: null };
+const EV = { key: '', B: null, seed: 0, home: false, ox: 0, oz: 0, pads: HOME_PADS, padH: [], wl: null, cr: [], mood: null, tod: null, sky: '', cv: .4 };
 
 /* colliders {x,z,r | hw,hd, top} live in a coarse grid so rays and movement only test what is nearby */
 const CG = new Map(), CS = 40, NOCOL = [];
@@ -46,12 +46,21 @@ function floorAt(p) {
   sc.fog = new THREE.FogExp2(0xcfa77e, .0021); sc.background = new THREE.Color(0xcfa77e); sc.environment = ENV;
   FD.sunDir = V3(.45, .42, -.6).normalize();
   FD.sky = new THREE.Mesh(new THREE.SphereGeometry(1400, 24, 14), new THREE.ShaderMaterial({
-    side: THREE.BackSide, depthWrite: false, uniforms: { sun: { value: FD.sunDir }, hz: { value: new THREE.Color() }, zn: { value: new THREE.Color() }, sg: { value: new THREE.Color() }, st: { value: 0 }, sk: { value: 1 } },
+    side: THREE.BackSide, depthWrite: false, uniforms: { sun: { value: FD.sunDir }, hz: { value: new THREE.Color() }, zn: { value: new THREE.Color() }, sg: { value: new THREE.Color() }, cc: { value: new THREE.Color() }, cs: { value: new THREE.Color() }, gd: { value: new THREE.Color() },
+      st: { value: 0 }, sk: { value: 1 }, cv: { value: 0 }, tm: { value: 0 }, mo: { value: 0 }, ec: { value: 0 }, eg: { value: 1 } },
     vertexShader: `varying vec3 vP;void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
-    fragmentShader: `varying vec3 vP;uniform vec3 sun,hz,zn,sg;uniform float st,sk;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-void main(){vec3 d=normalize(vP);float h=max(d.y,0.);vec3 c=mix(hz,zn,pow(h,.5));float s=max(dot(d,sun),0.);c+=(sg*pow(s,24.)*.5+vec3(1.,.95,.85)*pow(s,1200.)*9.)*sk;
-if(st>0.){vec2 q=d.xz/(abs(d.y)+.35)*70.;vec2 f=fract(q)-.5;float r=h21(floor(q));c+=st*step(.955,r)*smoothstep(.16,0.,length(f))*(.5+2.5*fract(r*37.))*smoothstep(0.,.12,d.y);}
-gl_FragColor=vec4(c,1.);}`
+    /* horizon to zenith, the glow round the sun, a sun or a moon, stars, and a layer of cloud: one noise field on a plane overhead, sampled a second time a little towards the sun to find which side of it is lit.
+       cv is how much of the sky the cloud covers, cc and cs its lit and shaded colours, gd what lies under the horizon (only a reflection ever sees that), eg a gain for when this is drawn as the environment map */
+    fragmentShader: `varying vec3 vP;uniform vec3 sun,hz,zn,sg,cc,cs,gd;uniform float st,sk,cv,tm,mo,ec,eg;float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
+float fbm(vec2 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*vn(p);p=p*2.07+vec2(13.7,7.1);a*=.5;}return s;}
+void main(){vec3 d=normalize(vP);float h=max(d.y,0.);vec3 c=mix(hz,zn,pow(h,.5));float s=max(dot(d,sun),0.);float ca=0.;vec3 cl=vec3(0.);
+if(cv>0.&&d.y>0.){vec2 q=d.xz/(d.y+.16)*1.25+vec2(tm*.004,tm*.0017);float n=fbm(q)+.2*(fbm(q*3.3+7.)-.5),e=1.-cv;ca=smoothstep(e,e+.22,n)*smoothstep(0.,.14,d.y);cl=mix(cc,cs,clamp((fbm(q+sun.xz*.09)-n)*4.+.45*ca,0.,1.))+sg*pow(s,5.)*.3*sk;}
+c+=sg*pow(s,24.)*.5*sk;
+if(st>0.){vec2 q=d.xz/(abs(d.y)+.35)*70.;vec2 f=fract(q)-.5;float r=h21(floor(q));c+=st*(1.-ca)*step(.955,r)*smoothstep(.16,0.,length(f))*(.5+2.5*fract(r*37.))*smoothstep(0.,.12,d.y);}
+c+=(mo>.5?vec3(.8,.88,1.)*smoothstep(.9993,.99955,s)*(1.3+1.4*vn(d.xy*70.+3.)):vec3(1.,.95,.85)*pow(s,1200.)*9.*(1.-ec))*sk;
+if(ec>.01){float rg=smoothstep(.99895,.9993,s)*(1.-smoothstep(.99935,.9996,s));c=c*(1.-ec*smoothstep(.99935,.9995,s))+(vec3(1.,.66,.34)*rg*3.6+vec3(1.,.42,.16)*pow(s,180.)*.7)*ec*max(sk,.5);}
+c=mix(c,cl,ca*.9);c=mix(c,gd,smoothstep(0.,-.12,d.y));gl_FragColor=vec4(c*eg,1.);}`
   })); FD.sky.frustumCulled = false; sc.add(FD.sky);
   const pt = labelTex(128, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#f2ead8'); gr.addColorStop(.5, '#b9763c'); gr.addColorStop(1, '#1a0f0a'); g.fillStyle = gr; g.fillRect(0, 0, w, h); for (let i = 0; i < 22; i++) { g.fillStyle = `rgba(${pick([255, 120, 60])},${pick([220, 90, 40])},${pick([180, 60, 30])},.22)`; g.fillRect(0, rand(h), w, rand(2, 9)); } });
   FD.planet = new THREE.Mesh(new THREE.SphereGeometry(190, 32, 20), new THREE.MeshBasicMaterial({ map: pt, fog: false })); FD.planet.position.set(-520, 430, -900); FD.planet.rotation.z = .4; FD.planet.visible = false; FD.sky.add(FD.planet);
@@ -62,16 +71,30 @@ gl_FragColor=vec4(c,1.);}`
   const rn = 1200, rgeo = new THREE.BufferGeometry(); rgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(rn * 6), 3));
   FD.rain = new THREE.LineSegments(rgeo, new THREE.LineBasicMaterial({ color: 0xa8c0d0, transparent: true, opacity: .3, depthWrite: false })); FD.rain.frustumCulled = false; FD.rain.visible = false; sc.add(FD.rain); FD.rainP = Float32Array.from({ length: rn * 3 }, () => Math.random());
   const g = new THREE.PlaneGeometry(S, S, HN, HN); g.rotateX(-PI / 2); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3));
-  const gt = ctex(256, 256, (x, w, h) => { x.fillStyle = '#b9b9b9'; x.fillRect(0, 0, w, h); speckle(x, w, h, 9000, .1); for (let i = 0; i < 120; i++) { x.fillStyle = `rgba(0,0,0,${rand(.03, .1)})`; x.beginPath(); x.arc(rand(w), rand(h), rand(1, 5), 0, TAU); x.fill(); } }, 110, 110);
-  FD.ter = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, map: gt, roughness: .96, metalness: 0, envMapIntensity: .15 })); FD.ter.receiveShadow = true; FD.ter.frustumCulled = false; sc.add(FD.ter);
+  /* the ground's colour comes from its vertices; its grain and its relief are a picture and a normal map made for the biome (groundTex), which buildEnv puts here. Until the first theatre is built there is a blank pair.
+     Close to, the picture is seen at its own size; further off the same picture is used four times larger, so that the eye never finds the grid it repeats on */
+  const blank = (r, g2, b) => { const t = new THREE.DataTexture(new Uint8Array([r, g2, b, 255]), 1, 1); t.needsUpdate = true; return t; }, tm = new THREE.MeshStandardMaterial({ vertexColors: true, map: blank(185, 185, 185), normalMap: blank(128, 128, 255), roughness: .96, metalness: 0, envMapIntensity: .15 });
+  tm.map.colorSpace = THREE.SRGBColorSpace;
+  tm.onBeforeCompile = sh => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+	vec4 tNear = texture2D( map, vMapUv ), tFar = texture2D( map, vMapUv * .23 + .37 ); float tK = smoothstep( 30., 150., vViewPosition.z );
+	diffuseColor *= mix( tNear * ( .55 + .9 * tFar.g ), tFar, tK );
+#endif`).replace('#include <normal_fragment_maps>', `#ifdef USE_NORMALMAP_TANGENTSPACE
+	vec3 mapN = mix( texture2D( normalMap, vNormalMapUv ).xyz, texture2D( normalMap, vNormalMapUv * .23 + .37 ).xyz, smoothstep( 30., 150., vViewPosition.z ) ) * 2.0 - 1.0;
+	mapN.xy *= normalScale * ( 1. - .6 * smoothstep( 250., 700., vViewPosition.z ) );
+	normal = normalize( tbn * mapN );
+#endif`);
+  };
+  FD.ter = new THREE.Mesh(g, tm); FD.ter.receiveShadow = true; FD.ter.frustumCulled = false; sc.add(FD.ter);
   const flatPlane = m => { const p = new THREE.Mesh(new THREE.PlaneGeometry(S * 1.4, S * 1.4), m); p.rotation.x = -PI / 2; p.visible = false; sc.add(p); return p; };
-  FD.water = flatPlane(new THREE.MeshStandardMaterial({ color: 0x2f5a52, transparent: true, opacity: .8, roughness: .06, metalness: .35, envMapIntensity: .9 }));
-  const lavaT = ctex(256, 256, (x, w, h) => {
-    x.fillStyle = '#ff7a12'; x.fillRect(0, 0, w, h);
-    for (let i = 0; i < 90; i++) { const lc = pick([[255, 214], [255, 130], [215, 70], [130, 24]]); x.fillStyle = `rgba(${lc[0]},${lc[1]},0,${rand(.2, .6)})`; x.beginPath(); x.ellipse(rand(w), rand(h), rand(8, 44), rand(5, 22), rand(PI), 0, TAU); x.fill(); }
-    for (let i = 0; i < 50; i++) { x.fillStyle = `rgba(22,8,4,${rand(.5, .92)})`; x.beginPath(); x.ellipse(rand(w), rand(h), rand(8, 30), rand(6, 20), rand(PI), 0, TAU); x.fill(); }
-  }, 30, 30);
-  FD.lava = flatPlane(new THREE.MeshBasicMaterial({ map: lavaT })); FD.lava.material.color.setScalar(2.4);
+  /* water takes its ripples from a normal map that drifts (updateEnvFx), and its colour from the sky it reflects */
+  FD.water = flatPlane(new THREE.MeshStandardMaterial({ color: 0x2f5a52, transparent: true, opacity: .82, roughness: .07, metalness: .35, envMapIntensity: 1.1, normalMap: hfNormal(hfNoise(512, 5, 5, 77, .6), 512, 34, 96, 96), normalScale: new THREE.Vector2(.42, .42) }));
+  /* lava: plates of dark crust with the melt showing white-hot in the cracks between them */
+  const ln = hfNoise(512, 6, 4, 31), lavaT = dtex(512, d => hfCells(512, 9, 47, (i, e, v) => {
+    const o = i * 4, c = smooth(clamp((e - .015) / (.16 + ln[i] * .2), 0, 1)) * (.55 + .45 * v), hot = 1 - c, k = hot * hot;
+    d[o] = 34 + 221 * Math.min(1, hot * 1.5); d[o + 1] = 9 + 236 * k * (.55 + .45 * hot); d[o + 2] = 4 + 120 * k * k * k; d[o + 3] = 255;
+  }), 30, 30, true);
+  FD.lava = flatPlane(new THREE.MeshBasicMaterial({ map: lavaT })); FD.lava.material.color.setScalar(2.6);
 }
 
 /* the field comes in two sizes. An ordinary contract area is a kilometre across; a story theatre is STK times that, on a grid of about the same fineness.
@@ -79,15 +102,17 @@ gl_FragColor=vec4(c,1.);}`
 function fieldScale(k) {
   if (FD.k === k) return; FD.k = k; FD.size = 1000 * k; HN = k > 1 ? 480 : 220; HM = new Float32Array((HN + 1) * (HN + 1)); EV.home = false; MAPV.key = '';
   const g = new THREE.PlaneGeometry(FD.size, FD.size, HN, HN); g.rotateX(-PI / 2); g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3));
-  FD.ter.geometry.dispose(); FD.ter.geometry = g; FD.ter.material.map.repeat.set(110 * k, 110 * k); for (const p of [FD.water, FD.lava]) p.scale.set(k, k, 1); FD.lava.material.map.repeat.set(30 * k, 30 * k);
+  FD.ter.geometry.dispose(); FD.ter.geometry = g; for (const p of [FD.water, FD.lava]) p.scale.set(k, k, 1); FD.lava.material.map.repeat.set(30 * k, 30 * k); FD.water.material.normalMap.repeat.set(96 * k, 96 * k);   /* buildEnv sets the ground's own repeat */
   FD.camera.far = k > 1 ? 3600 : 1600; FD.camera.updateProjectionMatrix();
 }
 
 /* ---- shared prop geometry + materials ---- */
 const flatM = (c, o) => new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true, envMapIntensity: .1, ...o });
+/* a faceted rock with the rock's grain on it. The picture darkens what it covers, so the colour is raised to keep the rock as bright as it was */
+const rockM = (c, o) => { const m = flatM(c, { map: TX.rock, normalMap: TX_MATE.get(TX.rock.source).nm, ...o }); m.color.multiplyScalar(1.6); return m; };
 const EM = {
-  rock: flatM(0x6a5b4c), bark: flatM(0x3b2a1c), pine: flatM(0x1f4424, { side: 2 }), jleaf: flatM(0x1f5a24), palm: flatM(0x417f2c, { side: 2 }), fern: flatM(0x2f6a28, { side: 2 }),
-  ice: flatM(0xa9daf2, { roughness: .2, metalness: .1, emissive: 0x0e3a55, emissiveIntensity: .5 }), basalt: flatM(0x1d1a1b), moon: flatM(0x7b7b80), snow: flatM(0xd9e4ec),
+  rock: rockM(0x6a5b4c), bark: flatM(0x3b2a1c), pine: flatM(0x1f4424, { side: 2 }), jleaf: flatM(0x1f5a24), palm: flatM(0x417f2c, { side: 2 }), fern: flatM(0x2f6a28, { side: 2 }),
+  ice: flatM(0xa9daf2, { roughness: .2, metalness: .1, emissive: 0x0e3a55, emissiveIntensity: .5 }), basalt: rockM(0x1d1a1b), moon: rockM(0x7b7b80), snow: rockM(0xd9e4ec, { roughness: .8 }),
   lamp: glowMat(0xffd9a0, 4), stone: std({ map: TX.concrete, color: 0x6f7a5a, roughness: .95 }), conc: std({ map: TX.concrete, color: 0x8a8378, roughness: .95 }),
 };
 const GEO = {};
@@ -105,9 +130,28 @@ const GEO = {};
   GEO.pole = up(new THREE.CylinderGeometry(.12, .2, 9, 5), 4.5);
   GEO.head = up(new THREE.BoxGeometry(1.8, .25, .6), 9);
 }
-const BLD = [[0x6b7078, '#ffd98a'], [0x4f555e, '#bfe2ff'], [0x7d7468, '#ffe9b8']].map(([wall, lit], n) => {
-  const mk = em => ctex(128, 128, (g, w, h) => { g.fillStyle = em ? '#000' : '#b8b8b8'; g.fillRect(0, 0, w, h); if (!em) speckle(g, w, h, 900, .06); for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { const on = hash2(i * 3.1 + n * 17, j * 7.7 + n) < .3; if (em && !on) continue; g.fillStyle = on ? lit : '#0d1116'; g.fillRect(i * 16 + 3.5, j * 16 + 3, 9, 10); } });
-  return std({ color: wall, map: mk(false), emissiveMap: mk(true), emissive: 0xffffff, emissiveIntensity: 1, metalness: .25, roughness: .7 });
+/* a building's face: eight floors of eight windows to the tile. The wall is cladding with a seam at every floor and streaks under every sill; a window is a frame, a sill and glass that mirrors the sky.
+   Three in ten are lit, each in its own way (how bright, blinds down, half curtained). Four pictures drawn together: colour, light, height, and the map that makes glass smooth and wall rough */
+const BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d7468', [255, 233, 184]]].map(([wall, lit], n) => {
+  const N = 512, C = N / 8, a = txCan(N, wall), e = txCan(N, '#000'), h = txCan(N, '#8c8c8c'), r = txCan(N, 'rgb(0,255,64)'); speckle(a, N, N, 9000, .05);
+  for (let j = 0; j < 8; j++) { for (const [g, col] of [[a, 'rgba(0,0,0,.34)'], [h, '#3c3c3c']]) { g.fillStyle = col; g.fillRect(0, j * C + C - 2, N, 2.5); } a.fillStyle = 'rgba(255,255,255,.1)'; a.fillRect(0, j * C, N, 1.5); }
+  for (let i = 0; i < 8; i++) { for (const [g, col] of [[a, 'rgba(0,0,0,.2)'], [h, '#5a5a5a']]) { g.fillStyle = col; g.fillRect(i * C, 0, 1.5, N); } }
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+    const k = hash2(i * 3.1 + n * 17, j * 7.7 + n), on = k < .3, q = hash2(i * 5.3 + n, j * 2.9 + 4), x = i * C + 14, y = j * C + 11, w = 36, hh = 41;
+    { const gr = a.createLinearGradient(0, y + hh, 0, y + hh + 20); gr.addColorStop(0, 'rgba(20,16,12,.3)'); gr.addColorStop(1, 'rgba(20,16,12,0)'); a.fillStyle = gr; a.fillRect(x + 3 + q * 8, y + hh + 3, 4 + q * 9, 20); }
+    for (const [g, col] of [[a, '#22262b'], [h, '#b4b4b4'], [r, 'rgb(0,150,140)']]) { g.fillStyle = col; g.fillRect(x - 3, y - 3, w + 6, hh + 6); }
+    for (const [g, col] of [[a, '#3a3f45'], [h, '#d0d0d0']]) { g.fillStyle = col; g.fillRect(x - 5, y + hh + 2, w + 10, 4); }
+    { const gr = a.createLinearGradient(x, y, x + w, y + hh); gr.addColorStop(0, '#a9bccd'); gr.addColorStop(.5, '#7f93a6'); gr.addColorStop(1, '#93a7ba'); a.fillStyle = gr; a.fillRect(x, y, w, hh); }
+    h.fillStyle = '#4a4a4a'; h.fillRect(x, y, w, hh); r.fillStyle = 'rgb(0,34,236)'; r.fillRect(x, y, w, hh);
+    for (const g of [a, h]) { g.fillStyle = g === a ? '#22262b' : '#b4b4b4'; g.fillRect(x + w / 2 - 1, y, 2, hh); if (q > .5) g.fillRect(x, y + hh * .42, w, 2); }
+    if (!on) continue;
+    const b = .55 + .45 * hash2(i * 9.7, j * 4.1 + n), gr = e.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, `rgb(${lit.map(v => v * b | 0)})`); gr.addColorStop(1, `rgb(${lit.map(v => v * b * .62 | 0)})`); e.fillStyle = gr; e.fillRect(x, y, w, hh);
+    e.fillStyle = '#000'; e.fillRect(x + w / 2 - 1, y, 2, hh); if (q > .5) e.fillRect(x, y + hh * .42, w, 2);
+    if (q < .3) { e.fillStyle = 'rgba(0,0,0,.42)'; for (let s = y + 2; s < y + hh * (.4 + q * 2); s += 4) e.fillRect(x, s, w, 2); } else if (q > .78) { e.fillStyle = 'rgba(0,0,0,.6)'; e.fillRect(x + (q > .9 ? 0 : w / 2), y, w / 2, hh); }
+    a.fillStyle = `rgba(${lit},.5)`; a.fillRect(x, y, w, hh);
+  }
+  const hf = hfBlur(hfOf(h, N), N), em = txOf(e.canvas, 1, 1, true), orm = txOf(r.canvas);
+  return new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
 });
 
 /* ---- placement helpers ---- */
@@ -153,7 +197,28 @@ function building(x, z, w, h, d, mat) {
   for (let i = 0; i < 24; i++) { const f = i >> 2; if (f === 2 || f === 3) uv.setXY(i, .02, .02); else uv.setXY(i, uv.getX(i) * (f < 2 ? d : w) / 24, uv.getY(i) * h / 24); }
   const m = new THREE.Mesh(g, mat), y = heightAt(x, z); m.position.set(x, y + h / 2 - 1, z); m.castShadow = m.receiveShadow = true; FD.env.add(m); rect(x, z, w / 2, d / 2, y + h - 1); return m;
 }
-/* ---- biomes: n = [amp1,freq1,amp2,freq2,amp3,freq3,base,rim]; pal = [flat, noise, steep, low]; wx = [name, fogK, sunK, particles] ---- */
+/* ---- the hour. A biome's own sky, fog and sun are its noon, and an hour bends them: `air` multiplies the horizon and the fog and `zen` the zenith, and both then go `mix` of the way to `tone` (the zenith a
+   third as far); `sun` and `sunK` tint and scale the sun (at night it is the moon), `el` is how high it stands, in radians (null: where the biome has it), and `turn` how far round from the biome's bearing;
+   `amb` scales the fill from the sky, `dark` is the light level that lamps, windows and smoke read, `star` the stars, `expo` the exposure and `glow` the bloom.
+   A contract carries one as `c.tod`; with none it is the fifth entry of its weather, or day ---- */
+const TOD = {
+  dawn: { name: 'DAWN', air: [1.02, .8, .7], zen: [.6, .62, .85], tone: [.78, .47, .36], mix: .4, sg: [1, .6, .34], sun: [1, .76, .56], sunK: .74, el: .2, turn: .5, amb: .66, dark: .68, star: .04, moon: 0, ring: 0, expo: 1.04, glow: .46 },
+  day: { name: 'DAY', air: [1, 1, 1], zen: [1, 1, 1], tone: [1, 1, 1], mix: 0, sg: null, sun: [1, 1, 1], sunK: 1, el: null, turn: 0, amb: 1, dark: 1, star: 0, moon: 0, ring: 0, expo: 1, glow: .42 },
+  dusk: { name: 'DUSK', air: [1.05, .64, .46], zen: [.5, .42, .68], tone: [.72, .34, .2], mix: .45, sg: [1, .42, .18], sun: [1, .6, .36], sunK: .68, el: .15, turn: 2.6, amb: .58, dark: .6, star: .08, moon: 0, ring: 0, expo: 1.06, glow: .48 },
+  night: { name: 'NIGHT', air: [.1, .12, .18], zen: [.06, .08, .15], tone: [.016, .024, .05], mix: .8, sg: [.3, .4, .62], sun: [.5, .62, 1], sunK: .22, el: .62, turn: 1.9, amb: .34, dark: .13, star: 1, moon: 1, ring: 0, expo: 1.2, glow: .58 },
+  /* not an hour at all: the Daybreak Array turned edge-on across the sun. Nothing deals it; the campaign puts it over the whole sector (sunDim) */
+  ecl: { name: 'ECLIPSE', air: [.42, .2, .16], zen: [.1, .06, .12], tone: [.1, .05, .05], mix: .8, sg: [1, .46, .2], sun: [1, .58, .36], sunK: .3, el: .52, turn: .25, amb: .42, dark: .2, star: .7, moon: 0, ring: 1, expo: 1.2, glow: .58 },
+};
+const TOD_KEYS = Object.keys(TOD), TOD_ODDS = [['day', .4], ['night', .28], ['dusk', .17], ['dawn', .15]];
+/* an hour's key for a biome, a mood and whatever a contract says (a save may say anything) */
+const todKey = (b, mood, tod, raw) => { if (!raw && sunDim()) return 'ecl';   /* while the campaign has the sun shut out, every sky in the sector is the same one; `raw` is a script that means the hour it names */ const B = BIOMES[b], m = B.wx[mood | 0] || B.wx[0], k = TOD_KEYS.includes(tod) ? tod : m[4] || 'day'; return B.tods && !B.tods.includes(k) ? 'day' : k; };
+const TOD_GLYPH = { dawn: '◐', day: '☀', dusk: '◑', night: '☾', ecl: '◉' }, todTag = c => { const k = todKey(c.biome, c.mood, c.tod); return `<span class="tod ${k}" title="${TOD[k].name[0] + TOD[k].name.slice(1).toLowerCase()}">${TOD_GLYPH[k]}</span>`; };
+const skyOf = (b, mood, tod) => `${TOD[todKey(b, mood, tod)].name} · ${(BIOMES[b].wx[mood | 0] || BIOMES[b].wx[0])[0]}`;
+function todDeal(b, have = []) {
+  const ok = BIOMES[b].tods || TOD_KEYS; for (const k of ['night', 'day']) if (ok.includes(k) && !have.includes(k) && Math.random() < .5) return k;   /* a board with no night on it, or no day, is likely to get one */
+  let r = Math.random(); for (const [k, p] of TOD_ODDS) if ((r -= p) < 0) return ok.includes(k) ? k : 'day'; return 'day';
+}
+/* ---- biomes: n = [amp1,freq1,amp2,freq2,amp3,freq3,base,rim]; pal = [flat, noise, steep, low]; wx = [name, fogK, sunK, particles, the hour it comes with]; tods = the hours it has, if not all ---- */
 const lowTint = (c, y, r, g, b, band = 1.6) => { if (EV.wl != null && y < EV.wl + band) c.lerp(_c1.setRGB(r, g, b), clamp((EV.wl + band - y) / band, 0, 1)); };
 const BIOMES = {
   desert: {
@@ -165,7 +230,7 @@ const BIOMES = {
     name: 'URBAN', css: '#b8a8d8', note: 'Dense city blocks. Buildings stop fire — and you.', n: [12, .004, 4, .02, .4, .07, -6, 60], hi: 40, lo: -30, pal: [[.3, .3, .31], [.25, .25, .26], [.28, .27, .26], [.2, .2, .2]],
     shape: (h, x, z) => h * smooth(clamp((Math.hypot(x, z) - 275 * FD.k) / 110, 0, 1)),
     tint: (c, x, y, z) => { if (Math.hypot(x, z) < 305 * FD.k) { const u = ((x % 64) + 64) % 64, v = ((z % 64) + 64) % 64; if (u < 15 || v < 15) c.setRGB(.1, .1, .11); else c.setRGB(.33, .33, .32); } },
-    sky: [[.75, .42, .3], [.16, .16, .34], [1, .6, .35]], fog: [0x8a6f78, .0026], hemi: [0x9aa4c8, 0x3a3238, .85], sun: [0xffb890, 2.7, [-.6, .24, -.5]], wx: [['DUSK', 1, .62, null], ['NIGHT RAIN', 1.5, .14, 'rain']], storm: ['DOWNPOUR', 2.2, .3, 'rain'],
+    sky: [[.62, .68, .76], [.2, .32, .56], [1, .85, .65]], fog: [0x8f98a6, .0026], hemi: [0xaab8d4, 0x40383c, .95], sun: [0xffe6c8, 3.0, [-.6, .5, -.5]], wx: [['CLEAR', 1, .92, null, 'dusk'], ['RAIN', 1.5, .62, 'rain', 'night']], storm: ['DOWNPOUR', 2.2, .4, 'rain'],
     props: R => {
       const L = [];
       const nb = Math.ceil(5 * FD.k);
@@ -183,7 +248,7 @@ const BIOMES = {
   forest: {
     name: 'FOREST', css: '#7fc46a', note: 'Tall conifers break line of sight. Lakes cool a hot reactor.', n: [30, .006, 9, .02, 1.5, .07, -12, 90], hi: 26, lo: -9, pal: [[.2, .3, .13], [.27, .31, .14], [.33, .31, .28], [.2, .2, .12]],
     shape: h => Math.max(h, -17), tint: (c, x, y) => lowTint(c, y, .36, .32, .2), wl: -13, liq: 'water', wcol: 0x2a4a4c,
-    sky: [[.7, .8, .86], [.22, .42, .7], [1, .9, .7]], fog: [0xa9c2c4, .003], hemi: [0xbcd4ee, 0x3c4a2c, 1.05], sun: [0xfff0d0, 3.0, [.5, .55, .4]], wx: [['CLEAR', 1, 1, null], ['DAWN FOG', 2.3, .62, null]], storm: ['GROUND FOG', 3, .6, null], cool: 1.05,
+    sky: [[.7, .8, .86], [.22, .42, .7], [1, .9, .7]], fog: [0xa9c2c4, .003], hemi: [0xbcd4ee, 0x3c4a2c, 1.05], sun: [0xfff0d0, 3.0, [.5, .55, .4]], wx: [['CLEAR', 1, 1, null], ['FOG', 2.3, .88, null, 'dawn']], storm: ['GROUND FOG', 3, .6, null], cool: 1.05,
     props: R => { plant(R, 1500, GEO.pineT, GEO.pineL, EM.bark, EM.pine, .8, 1.7); rocks(R, 90, EM.rock, .1); }
   },
   jungle: {
@@ -214,21 +279,72 @@ const BIOMES = {
     name: 'LUNAR', css: '#c8c8d8', note: 'Low gravity: jump jets carry three times as far. No air to shed heat: cooling −25%.', n: [22, .005, 8, .017, 1.2, .07, -8, 70], hi: 40, lo: -99, pal: [[.42, .42, .44], [.34, .34, .36], [.27, .27, .29], [.3, .3, .3]],
     init: R => { for (let i = 0; i < 18 * FD.k * FD.k; i++) EV.cr.push([(R() - .5) * 760 * FD.k, (R() - .5) * 760 * FD.k, 22 + R() * 55]); },
     shape: (h, x, z) => { for (const c of EV.cr) { const d = Math.hypot(x - c[0], z - c[1]) / c[2]; if (d < 1.5) h += (d < 1 ? -c[2] * .2 * (1 - d * d) : 0) + c[2] * .09 * Math.exp(-(d - 1) * (d - 1) / .03); } return h; },
-    sky: [[.012, .012, .018], [0, 0, .004], [1, .95, .85]], fog: [0x030305, .0003], hemi: [0x8fa0c0, 0x202024, .42], sun: [0xffffff, 4.4, [.6, .35, .3]], wx: [['HARD VACUUM', 1, 1, null]], storm: null, stars: true, grav: 9, cool: .75,
+    sky: [[.012, .012, .018], [0, 0, .004], [1, .95, .85]], fog: [0x030305, .0003], hemi: [0x8fa0c0, 0x202024, .42], sun: [0xffffff, 4.4, [.6, .35, .3]], wx: [['HARD VACUUM', 1, 1, null]], tods: ['day', 'night', 'ecl'], storm: null, stars: true, grav: 9, cool: .75,
     props: R => { rocks(R, 260, EM.moon, .14); }
   },
 };
 const BIOME_KEYS = Object.keys(BIOMES);
+/* ---- the ground underfoot: one picture and one normal map per kind of ground, a thousand and twenty-four texels to sixteen metres, made the first time a theatre needs it.
+   Each is a height field (broad noise, fine noise, and whatever the ground is known by: ripples, tufts, plates, craters, cracks) with its colour taken from its own hollows ---- */
+const GROUND = {}, GROUND_OF = { desert: 'sand', urban: 'tar', forest: 'soil', jungle: 'soil', glacial: 'snow', volcanic: 'slag', lunar: 'dust' }, GROUND_REP = 64;
+function groundTex(kind) {
+  if (GROUND[kind]) return GROUND[kind];
+  const N = 1024, n1 = hfNoise(N, 4, 5, 101), n2 = hfNoise(N, 32, 4, 202), h = new Float32Array(N * N), R = mulberry(909); let k = 40, con = 150, tint = [0, 0, 0], grain = 14;
+  if (kind === 'sand') {
+    for (let y = 0, i = 0; y < N; y++) for (let x = 0; x < N; x++, i++) h[i] = n1[i] * .55 + (.5 + .5 * Math.sin((x / N * 26 + y / N * 4 + n1[i] * 5.2) * TAU)) * .13 * (.35 + n2[i] * 1.2) + n2[i] * .1;
+    for (let j = 0; j < 520; j++) hfStamp(h, N, R() * N, R() * N, 2 + R() * 4, d => .1 * (1 - d * d)); k = 30; con = 120; tint = [7, 0, -10];
+  } else if (kind === 'soil') {
+    const n3 = hfNoise(N, 128, 3, 303); for (let i = 0; i < h.length; i++) h[i] = n2[i] * .45 + n3[i] * .35 + n1[i] * .25;
+    for (let j = 0; j < 3000; j++) hfStamp(h, N, R() * N, R() * N, 3 + R() * 7, d => .13 * (1 - d) * (1 - d)); k = 40; con = 150; tint = [-5, 4, -12]; grain = 18;
+  } else if (kind === 'snow') {
+    for (let y = 0, i = 0; y < N; y++) for (let x = 0; x < N; x++, i++) h[i] = n1[i] * .7 + n2[(y * N + ((x >> 2) + y * 3) % N)] * .035 + n2[i] * .06; k = 24; con = 70; tint = [-7, -1, 8]; grain = 9;
+  } else if (kind === 'slag') {
+    hfCells(N, 13, 77, (i, e, v) => { h[i] = smooth(clamp(e / .09, 0, 1)) * .5 + v * .22 + n2[i] * .16 + n1[i] * .1; }); k = 58; con = 250; tint = [5, 0, -4]; grain = 16;
+  } else if (kind === 'dust') {
+    const n3 = hfNoise(N, 128, 2, 404); for (let i = 0; i < h.length; i++) h[i] = n1[i] * .4 + n2[i] * .25 + n3[i] * .2;
+    for (let j = 0; j < 110; j++) hfStamp(h, N, R() * N, R() * N, 5 + R() * R() * 34, d => d < .78 ? -.2 * (1 - (d / .78) ** 2) : .1 * (1 - Math.abs(d - .89) / .11)); k = 36; con = 110; tint = [0, 0, 2];
+  } else {
+    const n3 = hfNoise(N, 128, 2, 505); for (let i = 0; i < h.length; i++) h[i] = n3[i] * .22 + n2[i] * .09 + n1[i] * .24;
+    for (let j = 0; j < 14; j++) { let x = R() * N, y = R() * N, a = R() * TAU; for (let s = 0; s < 150; s++) { a += (R() - .5) * .7; x += Math.cos(a) * 2; y += Math.sin(a) * 2; hfStamp(h, N, x, y, 2.2, d => -.09 * (1 - d)); } } k = 20; con = 130; tint = [0, 0, 2]; grain = 12;
+  }
+  let m = 0; for (let i = 0; i < h.length; i++) m += h[i]; m /= h.length;
+  const map = dtex(N, d => { for (let i = 0, o = 0; i < h.length; i++, o += 4) { const v = 185 + (h[i] - m) * con + (Math.random() - .5) * grain; d[o] = v + tint[0]; d[o + 1] = v + tint[1]; d[o + 2] = v + tint[2]; d[o + 3] = 255; } }, GROUND_REP, GROUND_REP, true);
+  return GROUND[kind] = { map, nm: hfNormal(h, N, k, GROUND_REP, GROUND_REP) };
+}
 
+/* an hour made ready for this biome (its own sun height and glow where the hour leaves them alone), and one part of the way from one hour to another.
+   The light changes hands half-way: the sun is down before the moon is up, so its strength dips to nothing there and the shadows never swing round */
+function todFor(key, raw) { const B = EV.B, b = B.sun[2], k = todKey(EV.key, 0, key, raw), T = TOD[k]; return { ...T, key: k, el: T.el ?? Math.asin(b[1] / Math.hypot(b[0], b[1], b[2])), sg: T.sg || B.sky[2] }; }
+function todMix(A, Z, k) {
+  const o = { ...(k < .5 ? A : Z) }; for (const f in A) { const a = A[f], z = Z[f]; if (f === 'el' || f === 'turn') continue; if (typeof a === 'number') o[f] = lerp(a, z, k); else if (Array.isArray(a)) o[f] = a.map((v, i) => lerp(v, z[i], k)); }
+  if (A.el !== Z.el || A.turn !== Z.turn) o.sunK *= Math.abs(2 * k - 1) ** .7; return o;
+}
+const _ta = new THREE.Color(), _tb = new THREE.Color(), cAdd = (c, d, k) => { c.r += d.r * k; c.g += d.g * k; c.b += d.b * k; return c; };
 function applyAtmo(fk, sk, wx) {
-  const B = EV.B, dk = lerp(.12, 1, sk), f = FD.scene.fog, u = FD.sky.material.uniforms;
-  f.color.setHex(B.fog[0]).multiplyScalar(dk); FD.scene.background.copy(f.color); f.density = B.fog[1] * fk;
-  u.hz.value.setRGB(...B.sky[0]).multiplyScalar(dk); u.zn.value.setRGB(...B.sky[1]).multiplyScalar(dk); u.sg.value.setRGB(...B.sky[2]); u.st.value = B.stars ? 1 : sk < .3 ? .7 : 0; u.sk.value = fk > 1.6 ? .15 : sk;
+  const B = EV.B, T = EV.tod, dk = lerp(.12, 1, sk), lit = T.dark * dk, f = FD.scene.fog, u = FD.sky.material.uniforms, tone = _ta.setRGB(...T.tone), bend = (c, m, mx) => c.multiply(_tb.setRGB(...m)).lerp(tone, mx).multiplyScalar(dk);
+  bend(f.color.setHex(B.fog[0]), T.air, T.mix); FD.scene.background.copy(f.color); f.density = B.fog[1] * fk;
+  bend(u.hz.value.setRGB(...B.sky[0]), T.air, B.stars ? 0 : T.mix); bend(u.zn.value.setRGB(...B.sky[1]), T.zen, B.stars ? 0 : T.mix * .35);   /* no air, no colour in the sky */ u.sg.value.setRGB(...T.sg); u.st.value = B.stars ? 1 : T.star * (fk > 1.6 ? .1 : 1); u.sk.value = fk > 1.6 ? .15 : sk; u.mo.value = T.moon; u.ec.value = T.ring || 0;
   if (fk > 1.6) { const k = clamp((fk - 1.6) / 1.2, 0, .92); u.hz.value.lerp(f.color, k); u.zn.value.lerp(f.color, k * .9); }
-  FD.hemi.color.setHex(B.hemi[0]); FD.hemi.groundColor.setHex(B.hemi[1]); FD.hemi.intensity = B.hemi[2] * lerp(.3, 1, sk);
-  FD.sun.color.setHex(sk < .3 ? 0x8fa8d8 : B.sun[0]); FD.sun.intensity = B.sun[1] * Math.max(sk, .1) * (fk > 2 ? .7 : 1);
-  FD.lamp.intensity = sk < .3 ? 1300 : 0; for (const m of BLD) m.emissiveIntensity = sk < .3 ? 1.35 : sk < .7 ? .95 : .25; EM.lamp.emissiveIntensity = sk < .7 ? 2.6 : .2;
-  FD.fogK = fk; FD.sunK = sk; FD.wx = wx;
+  /* the fill takes the hour's colour but not its darkness: `amb` is what dims it */
+  const hue = _tb.setRGB(...T.tone).multiplyScalar(1 / Math.max(...T.tone, .001)); FD.hemi.color.setHex(B.hemi[0]).lerp(hue, T.mix * .6); FD.hemi.groundColor.setHex(B.hemi[1]).lerp(hue, T.mix * .4); FD.hemi.intensity = B.hemi[2] * lerp(.3, 1, sk) * T.amb;
+  FD.sun.color.setHex(B.sun[0]).multiply(_tb.setRGB(...T.sun)); FD.sun.intensity = B.sun[1] * T.sunK * Math.max(sk, .1) * (fk > 2 ? .7 : 1);
+  const b = B.sun[2], az = Math.atan2(b[0], b[2]) + T.turn; FD.sunDir.set(Math.sin(az) * Math.cos(T.el), Math.sin(T.el), Math.cos(az) * Math.cos(T.el));
+  /* cloud: more of it in bad weather, none where there is no air. Lit by the sun and the horizon, shaded by the sky above */
+  u.cv.value = B.stars ? 0 : clamp(EV.cv + (fk - 1) * .4 + (wx === 'rain' || wx === 'snow' ? .25 : 0), 0, .96);
+  cAdd(u.cc.value.copy(u.hz.value).multiplyScalar(.5), _tb.copy(FD.sun.color).multiplyScalar(.5).addScalar(.5), .72 * lit); u.cs.value.copy(u.hz.value).add(u.zn.value).multiplyScalar(.35); u.gd.value.copy(f.color).multiplyScalar(.6);
+  FD.lamp.intensity = lit < .3 ? 1300 : 0; for (const m of BLD) m.emissiveIntensity = lit < .3 ? 1.35 : lit < .7 ? .95 : .12; EM.lamp.emissiveIntensity = lit < .7 ? 2.6 : .2;
+  /* smoke and weather are not lit by anything, so they are told how bright the day is */
+  const L = cAdd(_tb.copy(FD.hemi.color).multiplyScalar(FD.hemi.intensity * .55), FD.sun.color, FD.sun.intensity * .22); for (const k of ['smoke', 'wx']) FD.fx[k].mat.uniforms.uL.value.set(Math.min(1.1, L.r), Math.min(1.1, L.g), Math.min(1.1, L.b));
+  FD.fogK = fk; FD.sunK = sk; FD.wx = wx; FD.lit = lit; FD.expo = T.expo; FD.glow = T.glow; SKYENV.dirty = true;
+}
+/* the hour moves on while the sortie is flown: a night that ends in a dawn */
+function todShift(key, dur = 40) { const A = EV.tod, Z = todFor(key, true); return ftween(dur, k => { EV.tod = k >= 1 ? Z : todMix(A, Z, k); applyAtmo(FD.fogK, FD.sunK, FD.wx); if (k >= 1) EV.sky = `${Z.name} · ${EV.mood[0]}`; }, ease.lin); }
+/* what the machines reflect is the sky they stand under: the dome drawn into a cube and filtered, again whenever the light has changed (and at most every second and a half while it is changing).
+   SKY_GAIN is there because every material's share of its surroundings was set against the bright room the bay reflects */
+const SKYENV = { pm: null, sc: null, rt: null, dirty: false, t: 0 }, SKY_GAIN = 1.7;
+function skyEnv() {
+  if (!SKYENV.pm) { SKYENV.pm = new THREE.PMREMGenerator(renderer); SKYENV.sc = new THREE.Scene(); SKYENV.sc.add(new THREE.Mesh(new THREE.SphereGeometry(30, 24, 14), FD.sky.material)); }
+  const u = FD.sky.material.uniforms, old = SKYENV.rt; u.eg.value = SKY_GAIN; SKYENV.rt = SKYENV.pm.fromScene(SKYENV.sc, 0, 1, 100); u.eg.value = 1; FD.scene.environment = SKYENV.rt.texture; if (old) old.dispose(); SKYENV.dirty = false; SKYENV.t = 1.5;
 }
 /* storms roll in over a few seconds of field time */
 function weatherShift(fk, sk, wx, dur = 9) { const f0 = FD.fogK, s0 = FD.sunK; return ftween(dur, k => applyAtmo(lerp(f0, fk, k), lerp(s0, sk, k), k > .35 ? wx : FD.wx), ease.lin); }
@@ -251,22 +367,24 @@ function buildEnv(key, seed, o = {}) {
     c.setRGB(...p[0]).lerp(_c1.setRGB(...p[2]), clamp(sl * 3.2 + (y > B.hi ? (y - B.hi) / 40 : 0), 0, 1)).lerp(_c2.setRGB(...p[1]), n * .5); if (y < B.lo) c.lerp(_c1.setRGB(...p[3]), clamp((B.lo - y) / 10, 0, .7));
     if (B.tint) B.tint(c, x, y, z, sl); ca.setXYZ(i, c.r, c.g, c.b);
   }
-  ca.needsUpdate = true; FD.ter.material.roughness = B.rough ?? .96;
+  ca.needsUpdate = true; FD.ter.material.roughness = B.rough ?? .96; { const G = groundTex(GROUND_OF[key] || 'sand'), tm = FD.ter.material; for (const t of [G.map, G.nm]) t.repeat.set(GROUND_REP * FD.k, GROUND_REP * FD.k); tm.map = G.map; tm.normalMap = G.nm; }
   FD.water.visible = B.liq === 'water'; FD.lava.visible = B.liq === 'lava';
   if (B.liq === 'water') { FD.water.position.y = EV.wl; FD.water.material.color.setHex(B.wcol); } else if (B.liq === 'lava') FD.lava.position.y = EV.wl;
   FD.planet.visible = !!B.stars; FD.sunDir.set(...B.sun[2]).normalize();
-  EV.mood = B.wx[o.mood || 0] || B.wx[0]; applyAtmo(EV.mood[1], EV.mood[2], EV.mood[3]);
+  EV.mood = B.wx[o.mood || 0] || B.wx[0]; EV.tod = todFor(o.tod || EV.mood[4]); EV.sky = `${EV.tod.name} · ${EV.mood[0]}`; EV.cv = .3 + hash2(seed * .37, 7.7) * .26; applyAtmo(EV.mood[1], EV.mood[2], EV.mood[3]); skyEnv();
   FD.grav = B.grav || 24; FD.coolK = B.cool || 1;
   if (o.home) propsHome(); else B.props(R);
 }
 
 /* per-frame environment effects: weather around the camera, lava embers, falling trees */
 function updateEnvFx(dt, t) {
-  const w = FD.wx, c = FD.camera.position, fx = FD.fx.wx;
+  const w = FD.wx, c = FD.camera.position, fx = FD.fx.wx; FD.sky.material.uniforms.tm.value = t; if (SKYENV.dirty && (SKYENV.t -= dt) <= 0) skyEnv();
   if (EV.B.liq === 'lava') {
     const m = FD.lava.material.map; m.offset.x = t * .004; m.offset.y = t * .0025;
+
     if (Math.random() < dt * 50) { const x = c.x + rand(-150, 150), z = c.z + rand(-150, 150); if (heightAt(x, z) < EV.wl) FD.fx.spark.emit(x, EV.wl, z, rand(-1, 1), rand(3, 9), rand(-1, 1), rand(1, 2.4), rand(.3, .8), 5, 1.8, .3, 1, 1.5, .3); }
   }
+  if (EV.B.liq === 'water') FD.water.material.normalMap.offset.set(t * .011, t * .006);
   FD.rain.visible = w === 'rain';
   if (w === 'rain') { const a = FD.rain.geometry.attributes.position, q = FD.rainP; for (let i = 0; i < q.length / 3; i++) { const x = c.x + (q[i * 3] - .5) * 130, z = c.z + (q[i * 3 + 2] - .5) * 130, y = c.y + (1 - (q[i * 3 + 1] + t * 1.3) % 1) * 62 - 16; a.setXYZ(i * 2, x, y, z); a.setXYZ(i * 2 + 1, x + .3, y + 2.8, z + .1); } a.needsUpdate = true; }
   else if (w) {
@@ -320,7 +438,7 @@ function propsHome() {
   for (const i of [4, 5]) { const [x, z] = PADS[i]; tank(x - 8, z, 5, 8, M.blue); tank(x + 6, z + 8, 4, 11, M.rust); crates(x + 6, z - 12, 5, R); FD.blips.push([x, z, 'DEPOT']); }
   /* rocks (instanced) */
   const rg = new THREE.IcosahedronGeometry(1, 1), rp = rg.attributes.position; for (let i = 0; i < rp.count; i++) { const k = 1 + (hash2(rp.getX(i) * 9.1, rp.getY(i) * 7.3 + rp.getZ(i) * 3.7) - .5) * .5; rp.setXYZ(i, rp.getX(i) * k, rp.getY(i) * k * .8, rp.getZ(i) * k); } rg.computeVertexNormals();
-  const rocks = new THREE.InstancedMesh(rg, new THREE.MeshStandardMaterial({ color: 0x6a5b4c, roughness: 1, flatShading: true, envMapIntensity: .1 }), 240), mx = new THREE.Matrix4(), e = new THREE.Euler();
+  const rocks = new THREE.InstancedMesh(rg, EM.rock, 240), mx = new THREE.Matrix4(), e = new THREE.Euler();
   for (let i = 0; i < 240; i++) { let x, z; do { x = (R() - .5) * 760; z = (R() - .5) * 760; } while (PADS.some(p => Math.hypot(x - p[0], z - p[1]) < p[2] + 6)); const s = R() < .12 ? 5 + R() * 8 : .8 + R() * 3; e.set(R() * 3, R() * 6, R() * 3); mx.compose(_v.set(x, heightAt(x, z) + s * .15, z), _q.setFromEuler(e), _v2.set(s, s * (.6 + R() * .6), s)); rocks.setMatrixAt(i, mx); if (s > 3) circ(x, z, s * .85, heightAt(x, z) + s * .7); }
   rocks.castShadow = rocks.receiveShadow = true; sc.add(rocks);
   /* a long-dead wreck for flavour */

@@ -43,6 +43,7 @@ function talkChief() {
   dlg(d, pick(['She is fuelled and the welds are still warm. What do you need?', 'Boss. Try to bring this one back with both arms.', 'Bay three is ready when you are.']), [
     [c ? `How will she handle ${BIOMES[c.biome].name.toLowerCase()} ground?` : 'Terrain advice (select a contract first)', () => dlg(d, terr(), back), !c],
     [`Open the market — ${YARD.shop.stock.length} lots, restock in ${shopEta().toFixed(0)} h`, () => { dlgClose(); storesOpen({ mode: 'shop' }); }],
+    [`See the mech dealer — ${dealLot().length} whole machines on the lot`, () => { dlgClose(); storesOpen({ mode: 'mech' }); }],
     [`What is in stores? (${invCount()} items, ${CO.kit} repair kit${CO.kit === 1 ? '' : 's'})`, () => { dlgClose(); storesOpen({ mode: 'inv' }); }],
     ['What is on the turntable?', () => { const rd = mechReady(cfg, c && c.biome, c); dlg(d, !bayParts(cfg) ? 'Nothing. The stand is empty — bring up a bay with a machine in it, or build one from stores.' : !rd.ok ? `${mechName}, and she is going nowhere: ${rd.block.join(', ').toLowerCase()}. Fit what is missing from stores, or watch the market — chassis parts do not come up often.` : `${mechName}: ${st.cls.toLowerCase()} class, ${st.tons.toFixed(0)} tons, ${st.armor} armor, ${(st.speed * RUN * 3.6).toFixed(0)} kph flat out. ${st.jets ? 'Jump jets fitted.' : 'No jump jets.'} ${rd.warn.length ? 'I would not sign her out as she is: ' + rd.warn.join('; ').toLowerCase() + '.' : 'Within limits, and cleared to launch.'} That is her on the stand there. Change anything you like down in the bay.`, back); }],
     ['Carry on, Dutch', dlgClose]], HQ.P.chief);
@@ -210,7 +211,7 @@ function renderDetail() {
 function contractDetail(c, el) {
   const T = TYPES[c.type], B = BIOMES[c.biome], m = B.wx[c.mood] || B.wx[0], h = Math.max(0, c.exp - now()), act = c === CO.active;
   el.innerHTML = `<h2>CONTRACT DETAIL <small>OP. ${c.op}</small></h2><div class="dsc"><h3>${T.name.toUpperCase()} — ${c.site.toUpperCase()}</h3><div class="sub">${T.desc}</div>
-<div class="kv">CLIENT <b style="color:${FAC[c.emp].col}">${FAC[c.emp].name}</b></div>${c.co && RIV[c.co] ? `<div class="kv">${c.cok === 'sub' ? 'PRIME CONTRACTOR' : 'FLYING WITH'} <b style="color:${RIV[c.co].col}">${RIV[c.co].name}${c.share ? ` · ${Math.round(c.share * 100)}% SHARE` : ''}</b></div>` : ''}<div class="kv">OPPOSITION <b style="color:${FAC[c.foe].col}">${FAC[c.foe].name}</b></div><div class="kv">THEATRE <b style="color:${B.css}">${B.name} · ${m[0]}</b></div>
+<div class="kv">CLIENT <b style="color:${FAC[c.emp].col}">${FAC[c.emp].name}</b></div>${c.co && RIV[c.co] ? `<div class="kv">${c.cok === 'sub' ? 'PRIME CONTRACTOR' : 'FLYING WITH'} <b style="color:${RIV[c.co].col}">${RIV[c.co].name}${c.share ? ` · ${Math.round(c.share * 100)}% SHARE` : ''}</b></div>` : ''}<div class="kv">OPPOSITION <b style="color:${FAC[c.foe].col}">${FAC[c.foe].name}</b></div><div class="kv">THEATRE <b style="color:${B.css}">${B.name}</b></div><div class="kv">CONDITIONS <b class="tod ${todKey(c.biome, c.mood, c.tod)}">${skyOf(c.biome, c.mood, c.tod)}</b></div>
 <div class="kv">THREAT <b class="pips">${pipStr(c.diff)}</b></div>${capKv(c)}<div class="kv">FEE <b>${fmt(c.pay)}</b></div><div class="kv">SALVAGE <b>${c.salv}%</b></div><div class="kv">SUPPORT <b>${c.support ? 'REPAIR DROP' : 'NONE'}</b></div><div class="kv">${act ? 'STATUS' : 'OFFER CLOSES IN'} <b>${act ? 'ACCEPTED' : h.toFixed(0) + ' h'}</b></div>
 <p>${c.brief}</p><p class="nt">${B.note}</p>${c.intel.map(i => `<div class="intel${i.src === 'contact' || i.src === 'bar' ? ' q' : ''}">${i.src === 'contact' ? 'CLIENT CLAIMS' : i.src === 'bar' ? 'BAR TALK' : i.src === 'terms' ? 'TERMS' : 'CONFIRMED'} — ${i.s}</div>`).join('')}</div>
 <div class="dact"><div class="row"><button id="dNeg">OPEN CHANNEL — ${dealer(c).name.toUpperCase()}</button></div><div class="row"><button id="dAcc">${act ? 'ABANDON CONTRACT' : 'ACCEPT AS OFFERED'}</button><button id="dGo">TO THE MECH BAY ▶</button></div></div>`;
@@ -220,16 +221,16 @@ function contractDetail(c, el) {
 function renderBoard() {
   for (const b of $('hqTabs').children) b.classList.toggle('on', b.dataset.t === HQV.tab); $('cards').classList.toggle('hid', HQV.tab !== 'board'); $('stand').classList.toggle('hid', HQV.tab !== 'stand'); if (HQV.tab === 'stand') renderStand();
   $('cards').innerHTML = '';
-  for (const c of [...CO.board.filter(c => c.story), ...CO.board.filter(c => !c.story)]) {
+  for (const c of [...CO.board.filter(c => c.story && STORY[c.story].main), ...CO.board.filter(c => c.story && !STORY[c.story].main), ...CO.board.filter(c => !c.story)]) {
     const d = document.createElement('div'), T = TYPES[c.type], B = BIOMES[c.biome], h = c.exp - now(); d.className = 'card' + (c === CO.sel ? ' on' : '') + (c === CO.active ? ' act' : '') + (c.story ? ' stc' : '');
-    if (c.story) { d.style.setProperty('--sc', STORY[c.story].col); d.innerHTML = storyCard(c, h); } else d.innerHTML = `<span class="tg" style="color:${FAC[c.emp].col}">${T.tag}</span><b>${T.name} · ${c.site}</b><em>${fmt(c.pay)}</em><small>${FAC[c.emp].short} ▸ ${FAC[c.foe].short} · <span style="color:${B.css}">${B.name}</span> · <span class="pips">${pipStr(c.diff)}</span>${capTag(c)}</small><u${c.co && RIV[c.co] && c !== CO.active ? ` style="color:${RIV[c.co].col}"` : ''}>${c === CO.active ? 'ACCEPTED' : c.co && RIV[c.co] ? (c.cok === 'sub' ? 'VIA ' : 'WITH ') + RIV[c.co].short : c.upd || (h < 6 ? 'CLOSING' : '')}</u>`;
+    if (c.story) { d.style.setProperty('--sc', STORY[c.story].col); d.innerHTML = storyCard(c, h); } else d.innerHTML = `<span class="tg" style="color:${FAC[c.emp].col}">${T.tag}</span><b>${T.name} · ${c.site}</b><em>${fmt(c.pay)}</em><small>${FAC[c.emp].short} ▸ ${FAC[c.foe].short} · <span style="color:${B.css}">${B.name}</span> ${todTag(c)}</small><i class="pips" title="Threat ${c.diff} of 5">${pipStr(c.diff)}</i>${capTag(c)}<u${c.co && RIV[c.co] && c !== CO.active ? ` style="color:${RIV[c.co].col}"` : ''}>${c === CO.active ? 'ACCEPTED' : c.co && RIV[c.co] ? (c.cok === 'sub' ? 'VIA ' : 'WITH ') + RIV[c.co].short : c.upd || (h < 6 ? 'CLOSING' : '')}</u>`;
     d.onclick = () => { sfx.play('ui'); CO.sel = c; CO.dirty = true; }; $('cards').appendChild(d);
   }
   if (tutLock()) $('cards').insertAdjacentHTML('beforeend', '<div class="tlk"><b>NO OTHER OFFERS</b>The brokers will not write paper for a company whose only machine is announcing a student driver on an open channel. Fly the shakedown, and the board opens.</div>');
   renderDetail(); renderHangarContract();
   const host = $('tags'); host.innerHTML = ''; HQ.tagL = [];
   const mk = (cls, html, col, fn, obj) => { const d = document.createElement('div'); d.className = 'tag ' + cls; d.innerHTML = `<span>${html}</span>`; d.style.color = col; d.onclick = () => { sfx.play('ui'); fn(); }; host.appendChild(d); HQ.tagL.push({ d, obj }); };
-  for (const p of HQ.pins) mk((p.c === CO.sel ? 'on' : '') + (p.c.story ? ' stg' : ''), p.c.story ? `★ ${STORY[p.c.story].name}` : `${TYPES[p.c.type].tag} ${'◆'.repeat(p.c.diff)}`, p.c.story ? STORY[p.c.story].col : FAC[p.c.emp].col, () => { HQV.tab = 'board'; CO.sel = p.c; CO.dirty = true; }, p.head);
+  for (const p of HQ.pins) mk((p.c === CO.sel ? 'on' : '') + (p.c.story ? ' stg' : ''), p.c.story ? `★ ${STORY[p.c.story].name}` : `${TYPES[p.c.type].tag} ${pipStr(p.c.diff)}`, p.c.story ? STORY[p.c.story].col : FAC[p.c.emp].col, () => { HQV.tab = 'board'; CO.sel = p.c; CO.dirty = true; }, p.head);
   for (const [k, fn] of [['xo', talkXO], ['intel', talkIntel], ['chief', talkChief], ['p0', () => talkPilot(0)], ['p1', () => talkPilot(1)]]) mk('', HQ.P[k].ch.name.toUpperCase(), HQ.P[k].ch.col, fn, HQ.P[k].head);
 }
 function renderStat() {
@@ -248,7 +249,13 @@ function updateHQ(dt, t) {
   HQ.doorK = damp(HQ.doorK, near ? 1 : 0, 5, dt); HQ.door.position.y = 1.29 + HQ.doorK * 2.62; HQ.seat.rotation.y = HQ.opSeat.seat ? HQ.opSeat.yaw : damp(HQ.seat.rotation.y, -Z + .6, 3, dt);
   const f = hq.focus, sp = Math.sin(hq.ph); if (f) { hq.pos.copy(f.pos); hq.look.copy(f.look); } else { hq.look.set(0, 1.5, 0); hq.pos.set(clamp(hq.r * sp * Math.sin(hq.th), -12, 12), clamp(1.5 + hq.r * Math.cos(hq.ph), 1.3, 6.7), clamp(hq.r * sp * Math.cos(hq.th), -9, 9.2)); }
   hq.cPos.lerp(hq.pos, 1 - Math.exp(-3.5 * dt)); hq.cLook.lerp(hq.look, 1 - Math.exp(-4 * dt)); HQ.camera.position.copy(hq.cPos); HQ.camera.lookAt(hq.cLook); HQ.camera.updateMatrixWorld();
-  for (const g of HQ.tagL || []) { g.obj.getWorldPosition(_v); _v.y += .3; _v.project(HQ.camera); const vis = !dlgCur && _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05; g.d.style.display = vis ? '' : 'none'; if (vis) { g.d.style.left = (_v.x * .5 + .5) * 100 + '%'; g.d.style.top = (-_v.y * .5 + .5) * 100 + '%'; } }
+  /* the labels over the table and the crew: where two would sit on top of each other the later one is lifted clear, so no contract's threat rating is ever behind another label */
+  const tl = HQ.tagL || []; for (let i = 0; i < tl.length; i++) {
+    const g = tl[i]; g.obj.getWorldPosition(_v); _v.y += .3; _v.project(HQ.camera); const vis = g.vis = !dlgCur && _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05; g.d.style.display = vis ? '' : 'none'; if (!vis) continue;
+    g.x = (_v.x * .5 + .5) * innerWidth; g.y = (-_v.y * .5 + .5) * innerHeight; if (!g.w) g.w = g.d.offsetWidth || 60;
+    for (let n = 0; n < 6; n++) { let hit = false; for (let j = 0; j < i; j++) { const o = tl[j]; if (o.vis && Math.abs(o.x - g.x) < (o.w + g.w) / 2 + 3 && Math.abs(o.y - g.y) < 19) { g.y = o.y - 19; hit = true; } } if (!hit) break; }
+    g.d.style.left = g.x + 'px'; g.d.style.top = g.y + 'px';
+  }
 }
 /* ---- moving between the bay and the deck ---- */
 const blackout = on => $('fade').style.background = on ? '#000' : '';

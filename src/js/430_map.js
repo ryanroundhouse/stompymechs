@@ -38,7 +38,7 @@ function mapWaypoint(x, z) { if (x == null) { MAPV.wp = null; unnav('wp'); retur
 function mapTick() { if (MAPV.wp && !MS.navs.some(n => n.id === 'wp')) MAPV.wp = null; if (MAPV.wp && Math.hypot(P.pos.x - MAPV.wp.x, P.pos.z - MAPV.wp.z) < 16) { mapWaypoint(null); msg('WAYPOINT REACHED', 2); sfx.play('ok'); } }
 function mapSide() {
   const c = MS.on ? MS.c : null, rng = sensorRange(), jam = MS.on && MS.jam, vis = e => Math.hypot(e.pos.x - P.pos.x, e.pos.z - P.pos.z) < rng, E = FD.ents, n = (t, f) => E.filter(e => e.team === t && (f || vis(e))).length;
-  $('mapOp').textContent = c ? `OP. ${c.op}` : 'PROVING GROUNDS'; $('mapClk').textContent = c ? $('msClock').textContent : 'FREE SKIRMISH'; $('mapSub').textContent = `${EV.B.name} · ${EV.mood[0]}${c ? ' · ' + c.site.toUpperCase() : ''}`;
+  $('mapOp').textContent = c ? `OP. ${c.op}` : 'PROVING GROUNDS'; $('mapClk').textContent = c ? $('msClock').textContent : 'FREE SKIRMISH'; $('mapSub').textContent = `${EV.B.name} · ${EV.sky}${c ? ' · ' + c.site.toUpperCase() : ''}`;
   $('mapObj').innerHTML = c ? $('objList').innerHTML : '<div class="ob s0">▢ Hold the range against the waves</div>';
   $('mapSen').textContent = jam ? 'JAMMED' : MS.on && MS.v.storm ? 'DEGRADED' : 'NOMINAL'; $('mapSen').style.color = jam ? '#ff5a1f' : MS.on && MS.v.storm ? '#ffb21a' : '';
   $('mapCon').innerHTML = `<div>RANGE <b>${rng.toFixed(0)} m</b></div><div>HOSTILE CONTACTS <b style="color:#ff5a3a">${jam ? '—' : n(1)}</b></div><div>FRIENDLY UNITS <b style="color:#5ac8ff">${n(0, true)}</b></div><div>UNKNOWN / NEUTRAL <b>${jam ? '—' : n(2)}</b></div>`;

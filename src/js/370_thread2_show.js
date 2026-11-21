@@ -72,7 +72,7 @@ STORY.car = {
     prize(D, add) { stGift(D, 'gear.cool', 1); rivRel('car', 10, 'opening night at the Brannoch Arcade'); },
   }, {
     /* ---------------- II ---------------- */
-    title: 'The Last Act', kind: 'strike', biome: 'volcanic', mood: 1, seed: 92027, diff: 4, pay: 240000, salv: 30, site: 'Mirren Caldera', op: 'CURTAIN',
+    title: 'The Last Act', kind: 'strike', biome: 'volcanic', mood: 1, tod: 'dusk', seed: 92027, diff: 4, pay: 240000, salv: 30, site: 'Mirren Caldera', op: 'CURTAIN',
     tease: 'The Understudy has a show of his own now. He has taken the Carnival\'s pyrotechnics, its announcer and a third of its troupe to the floor of Mirren Caldera, built himself a stage on the lava, and gone on air. His ratings are climbing. The Maestro would like his announcer back, and his volcano, and he would like them back live. He is coming too. With real ammunition this time, he says.',
     wire: '"THE GRAND FINALE — one night only, from inside a volcano." A pirate broadcast is taking the Carnival\'s audience, and the Maestro wants his villain back.',
     sites: { lz: [-600, -400, 40, 'LZ'], m1: [-220, 60, 52, 'MAST · PROMPT SIDE'], m2: [220, -320, 52, 'MAST · OPPOSITE PROMPT'], m3: [100, 400, 52, 'MAST · THE GODS'], stage: [540, 100, 96, 'THE STAGE'] },
