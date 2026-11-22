@@ -2,7 +2,9 @@
 const HG = { W: 90, L: 130, H: 38, spin: [], blink: [], vents: [], bays: [], gang: [], scene: new THREE.Scene() };
 HG.camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, .3, 500);
 HG.fx = { spark: new Particles(HG.scene, 1800, true), smoke: new Particles(HG.scene, 700, false) };
-const repMat = (tex, ru, rv, o = {}) => { const t = tex.clone(); t.needsUpdate = true; t.repeat.set(ru, rv); return std({ map: t, metalness: .3, roughness: .7, ...o }); };
+const repMat = (tex, ru, rv, o = {}, mk = std) => { const t = tex.clone(); t.needsUpdate = true; t.repeat.set(ru, rv); return mk({ map: t, metalness: .3, roughness: .7, ...o }); };
+/* everything walked on in the bay is a floor (matFloor): the concrete, the plate of the six bays (HG_PAD), the turntable and its ramps (HG_DECK). As bare metal each mirrored the spotlights, and the mirror slid as the view turned */
+const HG_PAD = matFloor({ color: 0x2b2f34, metalness: .25, roughness: .88 }), HG_DECK = matFloor({ color: 0x70767d, metalness: .35, roughness: .95, map: TX.panel });
 const labelTex = (w, h, draw) => { const t = ctex(w, h, draw); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t; };
 {
   const sc = HG.scene, W = HG.W, L = HG.L, H = HG.H, hw = W / 2, hl = L / 2;
@@ -10,7 +12,7 @@ const labelTex = (w, h, draw) => { const t = ctex(w, h, draw); t.wrapS = t.wrapT
   const flat = (mat, w, d, x, z, y = .03) => { const m = box(sc, mat, w, .05, d, x, y, z); m.castShadow = false; return m; };
 
   /* shell */
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, L), std({ map: TX.concrete, color: 0xa2a2a0, metalness: .2, roughness: .78 })); floor.rotation.x = -PI / 2; floor.receiveShadow = true; sc.add(floor);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, L), matFloor({ map: TX.concrete, color: 0x979795, metalness: .04, roughness: .93 })); floor.rotation.x = -PI / 2; floor.receiveShadow = true; sc.add(floor);
   const wallM = std({ map: TX.corr, color: 0x8d939a, metalness: .6, roughness: .62 }), conc = std({ map: TX.concrete, color: 0x6a6a68, roughness: .9 });
   for (const s of [-1, 1]) { box(sc, wallM, .6, H, L, s * hw, H / 2, 0); box(sc, conc, 1.6, 4, L, s * (hw - .6), 2, 0); box(sc, repMat(TX.hazard, 1, 60), .3, .5, L, s * (hw - 1.5), 4.2, 0); }
   box(sc, wallM, W, H, .6, 0, H / 2, hl); box(sc, conc, W, 4, 1.6, 0, 2, hl - .6);
@@ -46,10 +48,10 @@ const labelTex = (w, h, draw) => { const t = ctex(w, h, draw); t.wrapS = t.wrapT
   /* assembly platform + turntable */
   const plat = HG.plat = grp(sc);
   cyl(plat, M.dark, 10.6, 11.2, .6, 0, .3, 0, 0, PI / 8, 0, 8); noShadow(cyl(plat, repMat(TX.hazard, 7, 7), 10.4, 10.4, .04, 0, .615, 0, 0, PI / 8, 0, 8));
-  for (const s of [-1, 1]) { box(plat, M.steel, 8, .14, 4.2, 0, .3, s * 12.2, s * .146); box(plat, repMat(TX.hazard, 1, 4), .5, .16, 4.2, 4.2, .31, s * 12.2, s * .146); box(plat, repMat(TX.hazard, 1, 4), .5, .16, 4.2, -4.2, .31, s * 12.2, s * .146); }
+  for (const s of [-1, 1]) { box(plat, HG_DECK, 8, .14, 4.2, 0, .3, s * 12.2, s * .146); box(plat, repMat(TX.hazard, 1, 4), .5, .16, 4.2, 4.2, .31, s * 12.2, s * .146); box(plat, repMat(TX.hazard, 1, 4), .5, .16, 4.2, -4.2, .31, s * 12.2, s * .146); }
   HG.turn = grp(plat, 0, .6, 0);
-  const an = new THREE.Mesh(new THREE.RingGeometry(6.1, 8.5, 56), repMat(TX.grate, 9, 9, { metalness: .8, roughness: .5 })); an.rotation.x = -PI / 2; an.position.y = .145; an.receiveShadow = true; HG.turn.add(an);
-  cyl(HG.turn, M.steel, 8.7, 8.7, .1, 0, .04, 0, 0, 0, 0, 40); noShadow(cyl(HG.turn, new THREE.MeshBasicMaterial({ color: 0x020202 }), 6.1, 6.1, .02, 0, .1, 0, 0, 0, 0, 40));   // lift shaft (reads as a dark pit)
+  const an = new THREE.Mesh(new THREE.RingGeometry(6.1, 8.5, 56), repMat(TX.grate, 9, 9, { metalness: .4, roughness: .82 }, matFloor)); an.rotation.x = -PI / 2; an.position.y = .145; an.receiveShadow = true; HG.turn.add(an);
+  cyl(HG.turn, HG_DECK, 8.7, 8.7, .1, 0, .04, 0, 0, 0, 0, 40); noShadow(cyl(HG.turn, new THREE.MeshBasicMaterial({ color: 0x020202 }), 6.1, 6.1, .02, 0, .1, 0, 0, 0, 0, 40));   // lift shaft (reads as a dark pit)
   for (let i = 0; i < 4; i++) box(HG.turn, M.yellow, .5, .06, 3, Math.sin(i * PI / 2) * 6.8, .15, Math.cos(i * PI / 2) * 6.8, 0, i * PI / 2, 0);
   HG.lift = grp(HG.turn, 0, .1, 0); cyl(HG.lift, M.dark, 6, 6, .1, 0, 0, 0, 0, 0, 0, 40); for (let i = 0; i < 4; i++) noShadow(box(HG.lift, M.yellow, .4, .02, 2.2, Math.sin(i * PI / 2 + PI / 4) * 4.6, .055, Math.cos(i * PI / 2 + PI / 4) * 4.6, 0, i * PI / 2 + PI / 4, 0));
   HG.liftGlow = glowMat(0xff9a1a, 1.2); const lr = new THREE.Mesh(new THREE.RingGeometry(6.0, 6.22, 56), HG.liftGlow); lr.rotation.x = -PI / 2; lr.position.y = .16; HG.turn.add(lr);
@@ -155,7 +157,7 @@ class RobotArm {
   HG.berth = [];
   for (let i = 0; i < 6; i++) {
     const s = i % 2 ? 1 : -1, z = -34 + Math.floor(i / 2) * 30, x = s * 33, n = i >> 1;
-    noShadow(box(sc, M.dark, 15, .12, 17, x, .06, z)); for (const dz of [-8.2, 8.2]) noShadow(box(sc, repMat(TX.hazard, 8, 1), 15, .14, .7, x, .07, z + dz)); noShadow(box(sc, repMat(TX.hazard, 1, 9), .7, .14, 17, x - s * 7.4, .07, z));
+    noShadow(box(sc, HG_PAD, 15, .12, 17, x, .06, z)); for (const dz of [-8.2, 8.2]) noShadow(box(sc, repMat(TX.hazard, 8, 1), 15, .14, .7, x, .07, z + dz)); noShadow(box(sc, repMat(TX.hazard, 1, 9), .7, .14, 17, x - s * 7.4, .07, z));
     for (const dz of [-8, 8]) { box(sc, M.yellow, .7, 21, .7, s * (hw - 3), 10.5, z + dz); noShadow(box(sc, M.white, .3, 4, .3, s * (hw - 3.6), 9, z + dz)); }
     box(sc, M.girder, .9, 1.1, 16.7, s * (hw - 3), 21, z);
     const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace;

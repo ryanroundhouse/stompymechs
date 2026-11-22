@@ -50,8 +50,8 @@ playable page. Never hand-edit it.
   `lsGet`/`lsSet`; `115_first_day.js` what a new company has been shown (`TUT`); `117_stats.js`
   the record (`TALLY`, `tal`, `TAL_DEF`, `talRows`) and `345_stat_boards.js` the boards that
   show it (`talBoard`, `talBoards`); `020_post.js`
-  the post chain `POST`; `030_gfx.js` materials and the texture kit (`std`, `hfNoise`,
-  `txPanel`); `050_audio.js` `sfx` and the sound
+  the post chain `POST`; `030_gfx.js` materials and the texture kit (`std`, `matFloor`, `matShine`,
+  `hfNoise`, `txPanel`); `050_audio.js` `sfx` and the sound
   notice; `060_voices.js` and `070_music.js`; `080`/`090` mech parts (`ARM_FAM`, the extra
   chassis); `110_yard.js` the yard, stores, bays, `SPRINT_K`, `capFor`; `150_field_env.js`
   terrain, `fieldScale`, the sky and the hour (`TOD`, `todKey`, `todShift`, `groundTex`);
@@ -418,6 +418,13 @@ playable page. Never hand-edit it.
     36 bearings at three places there and gives the share of the picture brighter than 200 of
     255 at each. What is left of that is lit windows seen from close to; a searchlight on a
     facade should light the wall and leave no flare on the glass.
+- The floors, in `.scratch/floor/`: `shots.sh tag` photographs the bay, the deck and the bar
+  from three low camera positions each with the panels hidden, and
+  `http://127.0.0.1:8766/floor/sheet.html?tag=tag` tiles the nine (`?tag=a,b&room=hq` sets two
+  rounds one above the other). `ff_rooms.js` (`ff.mjs run`, `window.__room`) is one room in
+  Firefox, and says whether the floor compiled with its cap. `err.mjs [url]` loads a page and
+  prints what it throws while starting, for when a build passes `node --check` and every hook
+  is then undefined.
 - Release builds must contain no `window.__` hooks.
 
 ## Conventions
@@ -804,9 +811,22 @@ playable page. Never hand-edit it.
   searchlight, a muzzle flash and the sun straight back, the bloom spread it, and an urban
   street at night strobed white as the view moved. So the panes are rough (`rgb(0,88,196)` in
   that map; it was 34 and 236) and what a building reflects directly from any light is capped
-  at `BLD_SHINE` in the shader (`onBeforeCompile`); the sky in the glass and the light a wall
-  scatters are untouched. After changing either, or `FD.lamp`, look at the city by night and by
-  day: `.scratch/nav/nshots.sh tag`.
+  at `BLD_SHINE` (`matShine`, below); the sky in the glass and the light a wall scatters are
+  untouched. After changing either, or `FD.lamp`, look at the city by night and by day:
+  `.scratch/nav/nshots.sh tag`.
+- Nothing big and flat mirrors a light. What a surface throws straight back from a light slides
+  across it as the camera moves, and scratches in a plate's wear map sparkle on the way.
+  `matShine(material, cap)` (`src/js/030_gfx.js`) caps that in the shader, softly and in the
+  light's own colour, and leaves alone the light the surface scatters and the room or sky
+  mirrored in it; the cap is a uniform, so materials with different caps share a program.
+  `matFloor(o, cap)` is `std(o)` with the cap (`SHINE_FLOOR`) and less of the room mirrored in
+  it, and is what every floor is made of: the bay's concrete, the plate of its six bays
+  (`HG_PAD`), its turntable and ramps (`HG_DECK`), the deck's plate and the bar's
+  (`repMat(tex, ru, rv, o, matFloor)`). A floor is lit by what it scatters, which stays where
+  it is: little metal (a dark metal scatters nothing and shows only its reflections) and a
+  roughness near 1, which over `TX.panel` leaves the scratches a little glossier than the
+  paint. They were bare metal at roughness .42 to .5 and the lights pooled on them. A new
+  room's floor is a `matFloor`; look at it from low down afterwards (`.scratch/floor/shots.sh`).
 - The board is a spread of weights. `diffTop()` is the hardest a company is offered (two
   diamonds at first, five after a dozen contracts), `diffWant()` the six weights a full board
   should hold and `diffDeal()` whichever of them it is short of; `boardSpread()` re-rates a

@@ -128,6 +128,19 @@ const std = o => {
   if (m) { const same = t => { if (t.repeat.equals(o.map.repeat)) return t; const c = t.clone(); c.repeat.copy(o.map.repeat); c.needsUpdate = true; return c; }; x.normalMap = same(m.nm); if (m.orm) { x.roughnessMap = x.metalnessMap = same(m.orm); x.metalness = Math.min(1, (o.metalness ?? 0) / TX_METAL); } }
   return new THREE.MeshStandardMaterial({ envMapIntensity: .32, ...o, ...x });
 };
+/* what a surface throws straight back from a light moves across it as the camera does, and a big flat one under a strong light (a floor, a street of windows) glares and sparkles with it. matShine(m, cap) lets
+   a material reflect a light directly only up to cap, with a soft knee and the light's own colour kept; the light it scatters, and the room or the sky mirrored in it, are untouched. matFloor(o, cap) is a
+   floor: std() with that cap. A floor wants to be lit by what it scatters (little metal, a lot of roughness), which stays put when the camera moves; over a plate's wear map a roughness near 1 leaves the
+   scratches a little glossier than the paint and no more. The cap is a uniform, so materials with different caps share one program */
+const SHINE_FLOOR = .07, matShine = (m, cap = SHINE_FLOOR) => {
+  m.userData.shine = cap;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uShine = { value: cap };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uShine;').replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+	{ float shK = max( reflectedLight.directSpecular.r, max( reflectedLight.directSpecular.g, reflectedLight.directSpecular.b ) ); reflectedLight.directSpecular *= uShine * ( 1. - exp( - shK / uShine ) ) / max( shK, 1e-5 ); }`);
+  };
+  return m;
+}, matFloor = (o, cap) => matShine(std({ envMapIntensity: .16, ...o }), cap);
 const glowMat = (hex, i = 2.2) => new THREE.MeshStandardMaterial({ color: 0x0a0a0a, emissive: hex, emissiveIntensity: i });
 const M = {
   steel: std({ color: 0x70767d, metalness: .85, roughness: .45, map: TX.panel }),

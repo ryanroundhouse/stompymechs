@@ -18,7 +18,7 @@ pilotsApply(BOOT);
 
   const sc = HQ.scene, W = 26, D = 20, H = 7.5, wall = std({ map: TX.panel, color: 0x3a4048, metalness: .7, roughness: .55 }), dk = M.dark;
   sc.background = new THREE.Color(0x05070a); sc.fog = new THREE.Fog(0x05070a, 20, 70); sc.environment = ENV;
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, D), repMat(TX.panel, 13, 10, { metalness: .75, roughness: .42, color: 0x2a2e34 })); fl.rotation.x = -PI / 2; fl.receiveShadow = true; sc.add(fl);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, D), repMat(TX.panel, 13, 10, { metalness: .3, roughness: .95, color: 0x30353c }, matFloor)); fl.rotation.x = -PI / 2; fl.receiveShadow = true; sc.add(fl);
   box(sc, dk, W + 1, .4, D + 1, 0, H + .2, 0); box(sc, wall, W, H, .4, 0, H / 2, D / 2 + .2);
   for (const s of [-1, 1]) { box(sc, wall, .4, H, D, s * (W / 2 + .2), H / 2, 0); for (let z = -8; z <= 8; z += 4) box(sc, M.girder, .5, H, .5, s * (W / 2 - .1), H / 2, z); box(sc, repMat(TX.hazard, 40, 1), .1, .25, D, s * (W / 2 - .05), 1.1, 0); }
   for (let x = -12; x <= 12; x += 6) box(sc, M.girder, .4, .5, D, x, H - .25, 0);

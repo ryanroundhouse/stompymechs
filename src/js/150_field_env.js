@@ -154,11 +154,9 @@ const BLD_SHINE = .2, BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226
   const bm = new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
   /* glass mirrors the sky, which is the same from one frame to the next. It must not mirror a light that is pointed at it: the searchlight, a muzzle flash and the sun each came back off every pane in sight
      as a flare, the bloom spread it, and a street at night strobed white as the view moved. So the panes are rougher and less of a metal than a mirror is (the rgb(0,88,196) drawn into the roughness map above,
-     green the roughness and blue the metal: it was 34 and 236), and what any part of a building throws straight back from a light is capped at BLD_SHINE, which leaves a sheen and no more. The light a wall
+     green the roughness and blue the metal: it was 34 and 236), and what any part of a building throws straight back from a light is capped at BLD_SHINE (matShine), which leaves a sheen and no more. The light a wall
      scatters is untouched, and so is the sky in the glass. Do not make the glass shinier without flying an urban contract at night afterwards (.scratch/nav/nshots.sh) */
-  bm.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
-	reflectedLight.directSpecular = min( reflectedLight.directSpecular, vec3( ${BLD_SHINE.toFixed(3)} ) );`); };
-  return bm;
+  return matShine(bm, BLD_SHINE);
 });
 
 /* ---- placement helpers ---- */

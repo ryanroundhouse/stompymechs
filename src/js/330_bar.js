@@ -8,7 +8,7 @@ const BAR_SEAT = { chair: { h: .47, back: .3 }, stool: { h: .78, back: .16 }, be
   const sc = BAR.scene, W = 18, D = 13, H = 3.8, dk = M.dark, add = THREE.AdditiveBlending;
   const wood = std({ color: 0x5a3519, roughness: .5, metalness: .08 }), woodD = std({ color: 0x2c1b10, roughness: .62, metalness: .1 }), brass = std({ color: 0xb58b3c, metalness: .95, roughness: .28, envMapIntensity: .9 }), hide = std({ color: 0x5c1f1a, roughness: .72 }), wall = std({ map: TX.panel, color: 0x4a3c30, metalness: .45, roughness: .72 });
   sc.background = new THREE.Color(0x070504); sc.fog = new THREE.Fog(0x070504, 16, 44); sc.environment = ENV;
-  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, D), repMat(TX.panel, 9, 6.5, { metalness: .5, roughness: .46, color: 0x4a382c })); fl.rotation.x = -PI / 2; fl.receiveShadow = true; sc.add(fl);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(W, D), repMat(TX.panel, 9, 6.5, { metalness: .22, roughness: .95, color: 0x4a382c }, matFloor)); fl.rotation.x = -PI / 2; fl.receiveShadow = true; sc.add(fl);
   box(sc, dk, W + 1, .4, D + 1, 0, H + .2, 0); for (const z of [-D / 2 - .2, D / 2 + .2]) box(sc, wall, W, H, .4, 0, H / 2, z); for (const x of [-W / 2 - .2, W / 2 + .2]) box(sc, wall, .4, H, D, x, H / 2, 0);
   for (let x = -6; x <= 6; x += 4) box(sc, M.girder, .3, .34, D, x, H - .17, 0); for (const [z, r] of [[-2.4, .09], [2.8, .06], [3.2, .06]]) cyl(sc, M.rust, r, r, W, 0, H - .5, z, 0, 0, PI / 2, 10);
   /* a wooden dado round the room, and a strip of floor lighting under it */
