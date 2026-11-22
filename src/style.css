@@ -114,10 +114,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .pips{letter-spacing:1px;color:var(--hot)}
 /* headquarters */
 #hqUI .pn{font-size:11px}
-#hqStat{right:18px;top:18px;width:340px;display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+#hqStat{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
 #hqStat span{color:#8b8474;letter-spacing:.14em;font-size:9px;display:block}
 #hqStat b{color:#fff;font-weight:400;font-size:12px;letter-spacing:.06em}
-#board{left:18px;top:86px;width:340px;max-height:calc(100vh - 160px);overflow:hidden auto}
+#board{left:18px;top:86px;width:340px;max-height:calc(100vh - 148px);overflow:hidden auto}
 .card{position:relative;border:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.35);padding:7px 9px;margin-bottom:7px;cursor:pointer;display:grid;grid-template-columns:38px 1fr auto;gap:2px 8px;align-items:center}
 .card:hover{border-color:var(--am)}.card.on{border-color:var(--am);background:rgba(255,178,26,.13)}.card.act{border-color:var(--ok)}
 .card .tg{grid-row:1/3;border:1px solid currentColor;text-align:center;padding:7px 0;letter-spacing:.1em;font-size:10px}
@@ -130,7 +130,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .card s{grid-column:2/4;text-decoration:none;font-size:8px;letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card u{position:absolute;top:-6px;right:8px;text-decoration:none;color:var(--hot);font-size:8px;line-height:10px;letter-spacing:.12em;white-space:nowrap;padding:0 5px;background:#0e1114;border:1px solid currentColor}.card u:empty{display:none}
 #cards{padding-top:5px}
-#detail{right:18px;top:112px;width:340px;max-height:calc(100vh - 190px);overflow:auto}
+#detail{flex:0 1 auto;min-height:0;overflow:auto}
 #detail:has(>.dact){display:flex;flex-direction:column;overflow:hidden}
 #detail>.dsc{flex:1 1 auto;min-height:0;overflow:auto;margin-right:-8px;padding-right:8px}
 #detail>.dact{flex:none;margin-top:8px;border-top:1px solid var(--ln);padding-top:2px}
@@ -142,9 +142,17 @@ button:disabled{opacity:.35;cursor:not-allowed}
 #detail .kv b{color:#fff;font-weight:400}
 #detail .intel{color:var(--cy);font-size:10px;margin:4px 0;padding-left:8px;border-left:2px solid var(--cy);line-height:1.4}
 #detail .intel.q{color:#c9a0ff;border-color:#c9a0ff}
-#hqBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#hqBar button{padding:8px 11px;background:var(--bg)}
-#hqBar button:hover{background:var(--am);color:#111}#hqBar button.on{background:var(--bg);color:var(--am)}
+/* the same frame in every room that has people in it. Down the right (.rcol): what the room has to say, and at its foot the way out of it (.rnav), as the bay has it at the foot of its readout.
+   Along the bottom (.tkb): whoever is in the room to talk to. The column stops short of that strip, so the two never meet however wide the row of people is */
+.rcol{position:fixed;right:18px;top:18px;bottom:62px;width:340px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.rcol>.pn{position:static;flex:none;pointer-events:auto}
+.rcol>.rnav{margin-top:auto}.rnav .row:first-child{margin-top:0}
+.tkb{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:max-content;max-width:calc(100vw - 36px);white-space:nowrap}
+.tkb button{position:relative;padding:8px 11px;background:var(--bg)}
+.tkb button:hover{background:var(--am);color:#111}.tkb button.on{background:var(--bg);color:var(--am)}
+/* what somebody has for you just now rides the top edge of their button, as a card's status does */
+.tkb button u{position:absolute;top:-6px;right:7px;text-decoration:none;color:var(--hot);font-size:8px;line-height:10px;letter-spacing:.12em;padding:0 5px;background:#0e1114;border:1px solid currentColor;pointer-events:none}
+.tkb button u:empty{display:none}.tkb button u.dim{color:#8b8474}.tkb button u.ok{color:var(--ok)}
 #tags{position:fixed;inset:0;pointer-events:none}
 .tag{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;font-size:9px;letter-spacing:.12em;padding:2px 6px;background:rgba(6,9,12,.8);border:1px solid currentColor;white-space:nowrap}
 .tag:hover,.tag.on{background:currentColor}.tag:hover span,.tag.on span{color:#0a0c0e}
@@ -272,11 +280,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 #dlg{font-size:11px}
 #barUI .pn{font-size:11px}
 #barTags{position:fixed;inset:0;pointer-events:none}
-#barStat{right:18px;top:18px;width:340px;display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+#barSide{width:360px}
+#barStat{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
 #barStat span{color:#8b8474;letter-spacing:.14em;font-size:9px;display:block}
 #barStat b{color:#fff;font-weight:400;font-size:12px;letter-spacing:.06em}
-#barRoom{left:18px;top:86px;width:330px}
-#barHire{right:18px;top:112px;width:360px;max-height:calc(100vh - 190px);overflow:auto}
+#barHire{flex:0 1 auto;min-height:0;overflow:auto}
 #barHire p{color:#8b8474;font-size:10px;line-height:1.5;margin:6px 0 0}
 .bcard{border:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.35);padding:6px 8px;margin-bottom:6px;cursor:pointer;display:grid;grid-template-columns:54px 1fr auto;gap:0 9px;align-items:center}
 .bcard:hover{border-color:var(--am)}.bcard.on{border-color:var(--ok);background:rgba(141,255,106,.08)}.bcard.out{opacity:.5}
@@ -285,8 +293,6 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 .bcard small{display:block;color:#8b8474;font-size:9px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bcard em{font-style:normal;color:var(--am);text-align:right;font-size:12px;line-height:1.35}.bcard.on em{color:var(--ok);font-size:10px;letter-spacing:.1em}
 .bpw{height:4px;background:rgba(255,255,255,.08);margin:4px 0 3px}.bpw i{display:block;height:100%;background:linear-gradient(90deg,var(--am),var(--hot))}
-#barBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#barBar button{padding:8px 11px;background:var(--bg)}#barBar button:hover{background:var(--am);color:#111}
 #barChill{display:none;position:fixed;left:50%;bottom:30px;transform:translateX(-50%);text-align:center;cursor:pointer;padding:9px 16px;background:rgba(7,9,11,.6);border:1px solid var(--ln);color:#e6dfcf;font-size:11px;letter-spacing:.12em;line-height:1.7}
 #barChill b{color:var(--am);font-weight:400}#barChill small{color:#8b8474;letter-spacing:.08em}
 #barUI.chill>*{display:none}#barUI.chill>#barChill{display:block}
@@ -334,17 +340,15 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 .stp{display:flex;align-items:center;gap:5px}.stp i{width:20px;height:6px;border:1px solid var(--sc);display:block}.stp i.d{background:var(--sc)}.stp i.n{background:color-mix(in srgb,var(--sc) 45%,transparent)}
 .stp em{font-style:normal;margin-left:auto;font-size:9px;letter-spacing:.14em;color:var(--sc)}
 #detail button.stb{padding:9px 6px;letter-spacing:.1em}
+#brfUI .pn{font-size:11px}
 #brfHead{position:fixed;left:18px;top:18px;padding:9px 14px;display:flex;flex-direction:column;gap:3px}
 #brfHead b{font-weight:400;letter-spacing:.26em;font-size:14px}#brfHead span{color:#fff;letter-spacing:.12em;font-size:12px}#brfHead em{font-style:normal;color:#8b8474;font-size:9px;letter-spacing:.16em}
-#brfBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#brfBar button{padding:8px 11px;background:var(--bg)}#brfBar button:hover{background:var(--am);color:#111}
 /* the comm camera: while the view is away from the cockpit the gunsight goes, the dimmer becomes a vignette and the message drops to the lower third */
 #cutTag{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:32;font:700 12px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.78);border:1px solid rgba(255,178,26,.5);padding:7px 12px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 body.cut #cutTag{opacity:1}
 body.cut #ret,body.cut #cock,body.cut #navs,body.cut #tgt,body.cut #msg{opacity:0!important}
 body.cut #commDim{background:radial-gradient(ellipse at center,rgba(4,5,6,0) 38%,rgba(4,5,6,.72))}
 body.cut #comm.hold{top:auto;bottom:3vh;transform:translate(-50%,0)}
-#brfBar{top:18px;right:18px;bottom:auto;left:auto;transform:none}
 /* the browser is holding the sound back until the player does something */
 #sndHint{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:58;font:700 11px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.84);border:1px solid rgba(255,178,26,.5);padding:8px 13px;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
 #sndHint.on{opacity:1}

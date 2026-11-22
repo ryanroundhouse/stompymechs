@@ -62,14 +62,26 @@
 <div id="hqUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>COMMAND DECK // CONTRACT OPERATIONS</span><i></i></div>
  <div id="tags"></div>
- <div id="hqStat" class="pn"></div>
  <div id="board" class="pn"><div id="hqTabs"><button data-t="board" class="on">CONTRACT BOARD</button><button data-t="stand">STANDING</button></div><div id="cards"></div><div id="stand" class="hid"></div></div>
- <div id="detail" class="pn"></div>
- <div id="hqBar"><button id="btnToBay">◀ MECH BAY</button><button id="btnToBar">▼ THE BAR</button><button id="bXO">XO VARGA</button><button id="bIntel">INTEL · SATO</button><button id="bChief">CHIEF · DUTCH</button><button id="bP0">PILOT · ROOK</button><button id="bP1">PILOT · ANVIL</button><button id="bMkt">MARKET</button><button id="bSet">⚙ SETTINGS</button></div>
+ <div id="hqSide" class="rcol">
+  <div id="hqStat" class="pn"></div>
+  <div id="detail" class="pn"></div>
+  <div id="hqNav" class="pn rnav">
+   <div class="row"><button id="bMkt">STORES · MARKET</button><button id="bSet">⚙ SETTINGS</button></div>
+   <div class="row"><button id="btnToBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+   <div class="row"><button id="btnToBar">◆ THE LAST ROUND — BAR</button></div>
+  </div>
+ </div>
+ <div id="hqBar" class="tkb"><button id="bXO">XO VARGA</button><button id="bIntel">INTEL · SATO</button><button id="bChief">CHIEF · DUTCH</button><button id="bP0">PILOT · ROOK<u></u></button><button id="bP1">PILOT · ANVIL<u></u></button></div>
 </div>
 <div id="brfUI" class="hid">
  <div id="brfHead" class="pn"></div>
- <div id="brfBar"><button id="brfBack">▲ COMMAND DECK</button><button id="brfSkip">MECH BAY ▶</button></div>
+ <div id="brfSide" class="rcol">
+  <div id="brfNav" class="pn rnav">
+   <div class="row"><button id="brfBack">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="brfSkip">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
 </div>
 <div id="cutTag"></div>
 <div id="sndHint">♪ SOUND STARTS WITH YOUR FIRST CLICK OR KEY</div>
@@ -77,10 +89,16 @@
 <div id="barUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>THE LAST ROUND // PILOTS' BAR</span><i></i></div>
  <div id="barTags"></div>
- <div id="barStat" class="pn"></div>
- <div id="barRoom" class="pn"><h2>THE ROOM <small>TALK · RUMOURS · GAMES</small></h2><div id="barWho"></div></div>
- <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
- <div id="barBar"><button id="bbHQ">▲ COMMAND DECK</button><button id="bbBay">◀ MECH BAY</button><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
+ <div id="barSide" class="rcol">
+  <div id="barStat" class="pn"></div>
+  <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
+  <div id="barNav" class="pn rnav">
+   <div class="row"><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
+   <div class="row"><button id="bbHQ">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="bbBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
+ <div id="barBar" class="tkb"><button data-k="keep" title="Drinks, and what the room is saying">BARKEEP · MOTHER<u></u></button><button data-k="load" title="Talk: what has been going up on the lifters">LOADMASTER · STRAND<u></u></button><button data-k="sig" title="Talk: what is on the air">SIGNALS · BANERJEE<u></u></button><button data-k="broker" title="Information, at a price: who is behind a name on your board">BROKER · CALLOWAY<u></u></button><button data-k="drink" title="A game: the drinking table, for a stake">DRINKING · BALLAST<u></u></button><button data-k="arm" title="A game: the arm-wrestling table, for a stake">ARM TABLE · VISE<u></u></button></div>
  <div id="barChill"></div>
 </div>
 <div id="barGame" class="ovl hid"><div class="pn"><h2><span id="bgName"></span><small id="bgStake"></small></h2><canvas id="bgCv" width="1440" height="264"></canvas><p id="bgMsg"></p><div class="row"><button id="bgHit"></button><button id="bgQuit">FORFEIT THE STAKE</button></div></div></div>

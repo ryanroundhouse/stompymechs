@@ -197,6 +197,8 @@ function talkRival(k) {
 }
 /* ---- panels ---- */
 const pipStr = n => '◆'.repeat(n) + '◇'.repeat(5 - n);
+/* the people in a room are a row of buttons along the bottom of it (.tkb: #hqBar, #barBar). What one of them has for you rides the top edge of their button, in a <u> */
+function talkChip(b, text, cls = '') { const u = b && b.querySelector('u'); if (u && (u.textContent !== text || u.className !== cls)) { u.textContent = text; u.className = cls; } }
 function renderHangarContract() {
   const c = CO.active; $('ctr').innerHTML = c ? `${c.story ? 'STORY' : 'CONTRACT'} <b>${(c.story ? c.title : TYPES[c.type].name).toUpperCase()} — ${c.site.toUpperCase()}</b><br>${BIOMES[c.biome].name} · ${c.story && STORY[c.story].forS || FAC[c.emp].short} · <span class="pips">${pipStr(c.diff)}</span> · ${fmt(c.pay)}${c.cap ? ` · <span style="color:var(--am)">LIMIT ${c.cap} T</span>` : ''}${wingRec(c) ? ` · <span style="color:var(--${CO.wing ? 'ok' : 'hot'})">${CO.wing ? 'WINGMAN ABOARD' : 'WINGMAN RECOMMENDED'}</span>` : ''}` : 'NO CONTRACT — <b>PROVING GROUNDS</b><br>Visit the command deck to sign one.';
   deployLabel();
@@ -236,6 +238,7 @@ function renderBoard() {
 }
 function renderStat() {
   const h = Math.floor(CO.hour); $('hqStat').innerHTML = `<div><span>FUNDS</span><b>${fmt(CO.cb)}</b></div><div><span>SECTOR TIME</span><b>DAY ${CO.day} · ${String(h).padStart(2, '0')}:${String(Math.floor((CO.hour - h) * 6) * 10).padStart(2, '0')}</b></div><div><span>RECORD</span><b>${CO.done} WON · ${CO.fails} LOST</b></div><div><span>KITS · WING</span><b>${CO.kit} · ${CO.wing ? CO.wing.ch.first.toUpperCase() : 'SOLO'}</b></div>`;
+  PILOTS.forEach((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); talkChip($('bP' + i), on ? 'ON YOUR WING' : out ? 'MED BAY' : '', on ? 'ok' : 'dim'); });
 }
 function updateHQ(dt, t) {
   HQ.holo.rotation.y += dt * .04; HQ.sweep.rotation.y -= dt * .9; HQ.moon.rotation.y += dt * .25; HQ.rim.emissiveIntensity = 1.4 + Math.sin(t * 2) * .4; HQ.drawScr(dt, t); if (HQ.mini) { HQ.mini.root.rotation.y += dt * .4; HQ.mini.update(dt); }

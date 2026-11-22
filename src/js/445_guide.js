@@ -23,7 +23,8 @@ const TOURS = {
     { t: 'Commander on deck. Varga: I run your operations. Everything this company is offered comes through this room, and so does everything it is paid.' },
     { t: 'The contract board. On an ordinary day there are six offers here, and none of them clean. Today there is one, and it came out of our own mech.', at: '#board', act: () => { const c = tutFirst(); if (c && !CO.sel) { CO.sel = c; CO.dirty = true; } } },
     { t: 'Select a card and the terms come up on this side: who is asking, who it is against, what it pays and how dangerous it is. Ordinary offers can be argued with. This one cannot.', at: '#detail', act: () => { const c = tutFirst(); if (c) { CO.sel = c; CO.dirty = true; } } },
-    { t: 'Along the bottom, your people. Me for the board, Mira Sato for intelligence, Dutch, the pilots, the market, and the lifts down to the bay and the bar. Click any of us and we will talk.', at: '#hqBar' },
+    { t: 'Along the bottom, your people, as in any room that has people in it: me for the board, Mira Sato for intelligence, Dutch, and the pilots. Click any of us and we will talk.', at: '#hqBar' },
+    { t: 'And at the foot of this side, where it is in every room, the way out: the market, and the lifts down to the bay and the bar.', at: '#hqNav' },
     { t: 'When you are ready: ACCEPT. I brief an operation like this one in person, next door, and then you take the lift to the bay and launch.', at: () => $('dBrf') || $('detail'), done: () => mode === 'brief' },
   ] },
   field: { by: () => CREW.chief, room: () => mode === 'field' && MS.on && !MS.over && !locked && !P.dead && !$('pause').classList.contains('hid') && $('mapUI').classList.contains('hid'), steps: [
@@ -41,9 +42,9 @@ const TOURS = {
   ] },
   bar: { by: () => BARC.keep, room: () => mode === 'bar' && !BAR.relax && !BAR.game, steps: [
     { t: "New face. Sit anywhere that isn't taken. I'm Brandt. Everybody calls me Mother and I've stopped arguing." },
-    { t: "People in here talk. Click one and buy them a round, and you'll hear what is coming onto your board before it gets there. It's bar talk: sometimes it's even true.", at: '#barRoom' },
+    { t: "People in here talk. The regulars are along the bottom: click one and buy them a round, and you'll hear what is coming onto your board before it gets there. It's bar talk: sometimes it's even true. Ballast and Vise would sooner take a stake off you, at the drinking table and the arm-wrestling table.", at: '#barBar' },
     { t: 'Pilots between jobs drink here too. Hire one and they fly on your wing for the next drop, for a fee or a share. The good ones cost.', at: '#barHire' },
-    { t: "There's a drinking contest and an arm-wrestling table, if you fancy your liver or your elbow against the regulars. Or take a seat and do nothing at all. The lift is that way when you've had enough.", at: '#barBar' },
+    { t: "Or take a seat and do nothing at all. The lift is that way when you've had enough.", at: '#barNav' },
   ] },
   stores: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode !== 'salv', steps: [
     { t: 'Stores, boss. The tabs along the top are what we own, the market: what is for sale today, and what they will give us for ours. It changes every day. The third is the dealer: whole machines, when you have the money and not the patience.', at: '#stTabs' },

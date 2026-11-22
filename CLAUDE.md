@@ -406,6 +406,18 @@ playable page. Never hand-edit it.
   - `.scratch/intro/t_intro.js` has the record in its `snap()`: the opening must count nothing.
     In headless Chrome its "the title is up at 7.8 s" from the deck fails (shot 2), and did
     before the record existed; Firefox passes it.
+- The rooms' frame and the city at night, in `.scratch/nav/`:
+  - `shotat.mjs W H out.png ['js'] [ms]` is a screenshot of the test page at another window
+    size (the frame was checked at 1600 by 813 down to 1000 by 600), and `ff_walk.js`
+    (`ff.mjs run`, the debug page) walks deck, bar and briefing room in Firefox: where the
+    column, the way out and the bottom row sit, a conversation from each bottom row, every
+    button that leaves a room.
+  - `nshots.sh tag` photographs one urban theatre (seed 4242) by night down a street, 18 m and
+    45 m from a facade and under the player's own fire, and by day, into `<tag>_*.png`
+    (`night.js`, `window.__nt`, is one of them). `t_glare.js` (`ev.sh`) sweeps the aim through
+    36 bearings at three places there and gives the share of the picture brighter than 200 of
+    255 at each. What is left of that is lit windows seen from close to; a searchlight on a
+    facade should light the wall and leave no flare on the glass.
 - Release builds must contain no `window.__` hooks.
 
 ## Conventions
@@ -437,6 +449,24 @@ playable page. Never hand-edit it.
   `updateBar`) is built like the deck. The conversation box `#dlg` and `dlg()` serve both rooms;
   `focusOn` hands over to `barFocusOn` in the bar. People there are `Human`s in `BAR.crowd`; the
   regulars are in `BARC`, and seated ones keep their seat through `barStay`.
+- Every room with panels has the same frame, and a new room wants it too.
+  - Down the right is a column, `.rcol` (`#hqSide`, `#barSide`, `#brfSide`): that room's panels
+    from the top, and at its foot the way out of the room, `.rnav` (`#hqNav`, `#barNav`,
+    `#brfNav`; in the bay it is the foot of `#panelR`). The way out is a row of things that are
+    not rooms (the market, SETTINGS, a seat) and then one button to a row for each other room,
+    worded the same wherever it stands: `▲ COMMAND DECK — CONTRACTS`, `◀ MECH BAY — FIT OUT ·
+    LAUNCH`, `◆ THE LAST ROUND — BAR`. No button that leaves a room goes anywhere else.
+  - Along the bottom is `.tkb` (`#hqBar`, `#barBar`): one button for each person in the room who
+    will talk, and nothing but people. What one of them has for you just now rides the top edge
+    of their button in a `<u>`, set with `talkChip(button, text, cls)` (`''` is hot, `dim`,
+    `ok`): the bar's regulars say HAS A STORY, a price or NOTHING NEW, a deck pilot ON YOUR WING
+    or MED BAY. The bar's regulars are the buttons of `#barBar` (`data-k` is a key of `BAR.P`;
+    `barDraw()` sets their chips); the freelance pilots, who come and go, stay in `#barHire`.
+    The bay has nobody to talk to and so no bottom row, and the briefing room's people are
+    spoken for by the briefing.
+  - The column stops 62 px short of the bottom, which is the bottom row's; a panel in it that
+    can grow (`#detail`, `#barHire`) scrolls instead of pushing the way out off the page. The
+    tours ring these by id (`#hqBar`, `#hqNav`, `#barBar`, `#barNav`).
 - The name. `GAME_NAME` ('StompyMechs') is the game wherever it is written out, `GAME_ID` what a
   save file is marked with (`GAME_WAS`, the old mark, is still accepted), `CO_DEF_NAME` the
   company nobody has named yet. Nobody in the game says the game's name: a line that addresses
@@ -768,6 +798,15 @@ playable page. Never hand-edit it.
   ground is `groundTex(kind)` in `src/js/150_field_env.js`, one pair per kind of ground, made
   the first time a theatre needs it. Fine relief sparkles under a low sun: keep the
   high-frequency terms of a height field small (the road was turned down twice for it).
+- The city's buildings are three materials, `BLD` (`src/js/150_field_env.js`), each a picture,
+  lit windows, a normal map and one map for roughness (green) and metal (blue). Glass mirrors the
+  sky and must not mirror a light pointed at it: as a near-mirror every pane threw the
+  searchlight, a muzzle flash and the sun straight back, the bloom spread it, and an urban
+  street at night strobed white as the view moved. So the panes are rough (`rgb(0,88,196)` in
+  that map; it was 34 and 236) and what a building reflects directly from any light is capped
+  at `BLD_SHINE` in the shader (`onBeforeCompile`); the sky in the glass and the light a wall
+  scatters are untouched. After changing either, or `FD.lamp`, look at the city by night and by
+  day: `.scratch/nav/nshots.sh tag`.
 - The board is a spread of weights. `diffTop()` is the hardest a company is offered (two
   diamonds at first, five after a dozen contracts), `diffWant()` the six weights a full board
   should hold and `diffDeal()` whichever of them it is short of; `boardSpread()` re-rates a

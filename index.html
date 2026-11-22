@@ -121,10 +121,10 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .pips{letter-spacing:1px;color:var(--hot)}
 /* headquarters */
 #hqUI .pn{font-size:11px}
-#hqStat{right:18px;top:18px;width:340px;display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+#hqStat{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
 #hqStat span{color:#8b8474;letter-spacing:.14em;font-size:9px;display:block}
 #hqStat b{color:#fff;font-weight:400;font-size:12px;letter-spacing:.06em}
-#board{left:18px;top:86px;width:340px;max-height:calc(100vh - 160px);overflow:hidden auto}
+#board{left:18px;top:86px;width:340px;max-height:calc(100vh - 148px);overflow:hidden auto}
 .card{position:relative;border:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.35);padding:7px 9px;margin-bottom:7px;cursor:pointer;display:grid;grid-template-columns:38px 1fr auto;gap:2px 8px;align-items:center}
 .card:hover{border-color:var(--am)}.card.on{border-color:var(--am);background:rgba(255,178,26,.13)}.card.act{border-color:var(--ok)}
 .card .tg{grid-row:1/3;border:1px solid currentColor;text-align:center;padding:7px 0;letter-spacing:.1em;font-size:10px}
@@ -137,7 +137,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .card s{grid-column:2/4;text-decoration:none;font-size:8px;letter-spacing:.1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card u{position:absolute;top:-6px;right:8px;text-decoration:none;color:var(--hot);font-size:8px;line-height:10px;letter-spacing:.12em;white-space:nowrap;padding:0 5px;background:#0e1114;border:1px solid currentColor}.card u:empty{display:none}
 #cards{padding-top:5px}
-#detail{right:18px;top:112px;width:340px;max-height:calc(100vh - 190px);overflow:auto}
+#detail{flex:0 1 auto;min-height:0;overflow:auto}
 #detail:has(>.dact){display:flex;flex-direction:column;overflow:hidden}
 #detail>.dsc{flex:1 1 auto;min-height:0;overflow:auto;margin-right:-8px;padding-right:8px}
 #detail>.dact{flex:none;margin-top:8px;border-top:1px solid var(--ln);padding-top:2px}
@@ -149,9 +149,17 @@ button:disabled{opacity:.35;cursor:not-allowed}
 #detail .kv b{color:#fff;font-weight:400}
 #detail .intel{color:var(--cy);font-size:10px;margin:4px 0;padding-left:8px;border-left:2px solid var(--cy);line-height:1.4}
 #detail .intel.q{color:#c9a0ff;border-color:#c9a0ff}
-#hqBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#hqBar button{padding:8px 11px;background:var(--bg)}
-#hqBar button:hover{background:var(--am);color:#111}#hqBar button.on{background:var(--bg);color:var(--am)}
+/* the same frame in every room that has people in it. Down the right (.rcol): what the room has to say, and at its foot the way out of it (.rnav), as the bay has it at the foot of its readout.
+   Along the bottom (.tkb): whoever is in the room to talk to. The column stops short of that strip, so the two never meet however wide the row of people is */
+.rcol{position:fixed;right:18px;top:18px;bottom:62px;width:340px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.rcol>.pn{position:static;flex:none;pointer-events:auto}
+.rcol>.rnav{margin-top:auto}.rnav .row:first-child{margin-top:0}
+.tkb{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:max-content;max-width:calc(100vw - 36px);white-space:nowrap}
+.tkb button{position:relative;padding:8px 11px;background:var(--bg)}
+.tkb button:hover{background:var(--am);color:#111}.tkb button.on{background:var(--bg);color:var(--am)}
+/* what somebody has for you just now rides the top edge of their button, as a card's status does */
+.tkb button u{position:absolute;top:-6px;right:7px;text-decoration:none;color:var(--hot);font-size:8px;line-height:10px;letter-spacing:.12em;padding:0 5px;background:#0e1114;border:1px solid currentColor;pointer-events:none}
+.tkb button u:empty{display:none}.tkb button u.dim{color:#8b8474}.tkb button u.ok{color:var(--ok)}
 #tags{position:fixed;inset:0;pointer-events:none}
 .tag{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;font-size:9px;letter-spacing:.12em;padding:2px 6px;background:rgba(6,9,12,.8);border:1px solid currentColor;white-space:nowrap}
 .tag:hover,.tag.on{background:currentColor}.tag:hover span,.tag.on span{color:#0a0c0e}
@@ -279,11 +287,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 #dlg{font-size:11px}
 #barUI .pn{font-size:11px}
 #barTags{position:fixed;inset:0;pointer-events:none}
-#barStat{right:18px;top:18px;width:340px;display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+#barSide{width:360px}
+#barStat{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
 #barStat span{color:#8b8474;letter-spacing:.14em;font-size:9px;display:block}
 #barStat b{color:#fff;font-weight:400;font-size:12px;letter-spacing:.06em}
-#barRoom{left:18px;top:86px;width:330px}
-#barHire{right:18px;top:112px;width:360px;max-height:calc(100vh - 190px);overflow:auto}
+#barHire{flex:0 1 auto;min-height:0;overflow:auto}
 #barHire p{color:#8b8474;font-size:10px;line-height:1.5;margin:6px 0 0}
 .bcard{border:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.35);padding:6px 8px;margin-bottom:6px;cursor:pointer;display:grid;grid-template-columns:54px 1fr auto;gap:0 9px;align-items:center}
 .bcard:hover{border-color:var(--am)}.bcard.on{border-color:var(--ok);background:rgba(141,255,106,.08)}.bcard.out{opacity:.5}
@@ -292,8 +300,6 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 .bcard small{display:block;color:#8b8474;font-size:9px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bcard em{font-style:normal;color:var(--am);text-align:right;font-size:12px;line-height:1.35}.bcard.on em{color:var(--ok);font-size:10px;letter-spacing:.1em}
 .bpw{height:4px;background:rgba(255,255,255,.08);margin:4px 0 3px}.bpw i{display:block;height:100%;background:linear-gradient(90deg,var(--am),var(--hot))}
-#barBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#barBar button{padding:8px 11px;background:var(--bg)}#barBar button:hover{background:var(--am);color:#111}
 #barChill{display:none;position:fixed;left:50%;bottom:30px;transform:translateX(-50%);text-align:center;cursor:pointer;padding:9px 16px;background:rgba(7,9,11,.6);border:1px solid var(--ln);color:#e6dfcf;font-size:11px;letter-spacing:.12em;line-height:1.7}
 #barChill b{color:var(--am);font-weight:400}#barChill small{color:#8b8474;letter-spacing:.08em}
 #barUI.chill>*{display:none}#barUI.chill>#barChill{display:block}
@@ -341,17 +347,15 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 .stp{display:flex;align-items:center;gap:5px}.stp i{width:20px;height:6px;border:1px solid var(--sc);display:block}.stp i.d{background:var(--sc)}.stp i.n{background:color-mix(in srgb,var(--sc) 45%,transparent)}
 .stp em{font-style:normal;margin-left:auto;font-size:9px;letter-spacing:.14em;color:var(--sc)}
 #detail button.stb{padding:9px 6px;letter-spacing:.1em}
+#brfUI .pn{font-size:11px}
 #brfHead{position:fixed;left:18px;top:18px;padding:9px 14px;display:flex;flex-direction:column;gap:3px}
 #brfHead b{font-weight:400;letter-spacing:.26em;font-size:14px}#brfHead span{color:#fff;letter-spacing:.12em;font-size:12px}#brfHead em{font-style:normal;color:#8b8474;font-size:9px;letter-spacing:.16em}
-#brfBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:6px;white-space:nowrap}
-#brfBar button{padding:8px 11px;background:var(--bg)}#brfBar button:hover{background:var(--am);color:#111}
 /* the comm camera: while the view is away from the cockpit the gunsight goes, the dimmer becomes a vignette and the message drops to the lower third */
 #cutTag{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:32;font:700 12px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.78);border:1px solid rgba(255,178,26,.5);padding:7px 12px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 body.cut #cutTag{opacity:1}
 body.cut #ret,body.cut #cock,body.cut #navs,body.cut #tgt,body.cut #msg{opacity:0!important}
 body.cut #commDim{background:radial-gradient(ellipse at center,rgba(4,5,6,0) 38%,rgba(4,5,6,.72))}
 body.cut #comm.hold{top:auto;bottom:3vh;transform:translate(-50%,0)}
-#brfBar{top:18px;right:18px;bottom:auto;left:auto;transform:none}
 /* the browser is holding the sound back until the player does something */
 #sndHint{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:58;font:700 11px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.84);border:1px solid rgba(255,178,26,.5);padding:8px 13px;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
 #sndHint.on{opacity:1}
@@ -457,14 +461,26 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 <div id="hqUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>COMMAND DECK // CONTRACT OPERATIONS</span><i></i></div>
  <div id="tags"></div>
- <div id="hqStat" class="pn"></div>
  <div id="board" class="pn"><div id="hqTabs"><button data-t="board" class="on">CONTRACT BOARD</button><button data-t="stand">STANDING</button></div><div id="cards"></div><div id="stand" class="hid"></div></div>
- <div id="detail" class="pn"></div>
- <div id="hqBar"><button id="btnToBay">◀ MECH BAY</button><button id="btnToBar">▼ THE BAR</button><button id="bXO">XO VARGA</button><button id="bIntel">INTEL · SATO</button><button id="bChief">CHIEF · DUTCH</button><button id="bP0">PILOT · ROOK</button><button id="bP1">PILOT · ANVIL</button><button id="bMkt">MARKET</button><button id="bSet">⚙ SETTINGS</button></div>
+ <div id="hqSide" class="rcol">
+  <div id="hqStat" class="pn"></div>
+  <div id="detail" class="pn"></div>
+  <div id="hqNav" class="pn rnav">
+   <div class="row"><button id="bMkt">STORES · MARKET</button><button id="bSet">⚙ SETTINGS</button></div>
+   <div class="row"><button id="btnToBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+   <div class="row"><button id="btnToBar">◆ THE LAST ROUND — BAR</button></div>
+  </div>
+ </div>
+ <div id="hqBar" class="tkb"><button id="bXO">XO VARGA</button><button id="bIntel">INTEL · SATO</button><button id="bChief">CHIEF · DUTCH</button><button id="bP0">PILOT · ROOK<u></u></button><button id="bP1">PILOT · ANVIL<u></u></button></div>
 </div>
 <div id="brfUI" class="hid">
  <div id="brfHead" class="pn"></div>
- <div id="brfBar"><button id="brfBack">▲ COMMAND DECK</button><button id="brfSkip">MECH BAY ▶</button></div>
+ <div id="brfSide" class="rcol">
+  <div id="brfNav" class="pn rnav">
+   <div class="row"><button id="brfBack">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="brfSkip">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
 </div>
 <div id="cutTag"></div>
 <div id="sndHint">♪ SOUND STARTS WITH YOUR FIRST CLICK OR KEY</div>
@@ -472,10 +488,16 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 <div id="barUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>THE LAST ROUND // PILOTS' BAR</span><i></i></div>
  <div id="barTags"></div>
- <div id="barStat" class="pn"></div>
- <div id="barRoom" class="pn"><h2>THE ROOM <small>TALK · RUMOURS · GAMES</small></h2><div id="barWho"></div></div>
- <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
- <div id="barBar"><button id="bbHQ">▲ COMMAND DECK</button><button id="bbBay">◀ MECH BAY</button><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
+ <div id="barSide" class="rcol">
+  <div id="barStat" class="pn"></div>
+  <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
+  <div id="barNav" class="pn rnav">
+   <div class="row"><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
+   <div class="row"><button id="bbHQ">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="bbBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
+ <div id="barBar" class="tkb"><button data-k="keep" title="Drinks, and what the room is saying">BARKEEP · MOTHER<u></u></button><button data-k="load" title="Talk: what has been going up on the lifters">LOADMASTER · STRAND<u></u></button><button data-k="sig" title="Talk: what is on the air">SIGNALS · BANERJEE<u></u></button><button data-k="broker" title="Information, at a price: who is behind a name on your board">BROKER · CALLOWAY<u></u></button><button data-k="drink" title="A game: the drinking table, for a stake">DRINKING · BALLAST<u></u></button><button data-k="arm" title="A game: the arm-wrestling table, for a stake">ARM TABLE · VISE<u></u></button></div>
  <div id="barChill"></div>
 </div>
 <div id="barGame" class="ovl hid"><div class="pn"><h2><span id="bgName"></span><small id="bgStake"></small></h2><canvas id="bgCv" width="1440" height="264"></canvas><p id="bgMsg"></p><div class="row"><button id="bgHit"></button><button id="bgQuit">FORFEIT THE STAKE</button></div></div></div>
@@ -3751,17 +3773,17 @@ const GEO = {};
 }
 /* a building's face: eight floors of eight windows to the tile. The wall is cladding with a seam at every floor and streaks under every sill; a window is a frame, a sill and glass that mirrors the sky.
    Three in ten are lit, each in its own way (how bright, blinds down, half curtained). Four pictures drawn together: colour, light, height, and the map that makes glass smooth and wall rough */
-const BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d7468', [255, 233, 184]]].map(([wall, lit], n) => {
+const BLD_SHINE = .2, BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d7468', [255, 233, 184]]].map(([wall, lit], n) => {
   const N = 512, C = N / 8, a = txCan(N, wall), e = txCan(N, '#000'), h = txCan(N, '#8c8c8c'), r = txCan(N, 'rgb(0,255,64)'); speckle(a, N, N, 9000, .05);
   for (let j = 0; j < 8; j++) { for (const [g, col] of [[a, 'rgba(0,0,0,.34)'], [h, '#3c3c3c']]) { g.fillStyle = col; g.fillRect(0, j * C + C - 2, N, 2.5); } a.fillStyle = 'rgba(255,255,255,.1)'; a.fillRect(0, j * C, N, 1.5); }
   for (let i = 0; i < 8; i++) { for (const [g, col] of [[a, 'rgba(0,0,0,.2)'], [h, '#5a5a5a']]) { g.fillStyle = col; g.fillRect(i * C, 0, 1.5, N); } }
   for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
     const k = hash2(i * 3.1 + n * 17, j * 7.7 + n), on = k < .3, q = hash2(i * 5.3 + n, j * 2.9 + 4), x = i * C + 14, y = j * C + 11, w = 36, hh = 41;
     { const gr = a.createLinearGradient(0, y + hh, 0, y + hh + 20); gr.addColorStop(0, 'rgba(20,16,12,.3)'); gr.addColorStop(1, 'rgba(20,16,12,0)'); a.fillStyle = gr; a.fillRect(x + 3 + q * 8, y + hh + 3, 4 + q * 9, 20); }
-    for (const [g, col] of [[a, '#22262b'], [h, '#b4b4b4'], [r, 'rgb(0,150,140)']]) { g.fillStyle = col; g.fillRect(x - 3, y - 3, w + 6, hh + 6); }
+    for (const [g, col] of [[a, '#22262b'], [h, '#b4b4b4'], [r, 'rgb(0,190,110)']]) { g.fillStyle = col; g.fillRect(x - 3, y - 3, w + 6, hh + 6); }
     for (const [g, col] of [[a, '#3a3f45'], [h, '#d0d0d0']]) { g.fillStyle = col; g.fillRect(x - 5, y + hh + 2, w + 10, 4); }
     { const gr = a.createLinearGradient(x, y, x + w, y + hh); gr.addColorStop(0, '#a9bccd'); gr.addColorStop(.5, '#7f93a6'); gr.addColorStop(1, '#93a7ba'); a.fillStyle = gr; a.fillRect(x, y, w, hh); }
-    h.fillStyle = '#4a4a4a'; h.fillRect(x, y, w, hh); r.fillStyle = 'rgb(0,34,236)'; r.fillRect(x, y, w, hh);
+    h.fillStyle = '#4a4a4a'; h.fillRect(x, y, w, hh); r.fillStyle = 'rgb(0,88,196)'; r.fillRect(x, y, w, hh);
     for (const g of [a, h]) { g.fillStyle = g === a ? '#22262b' : '#b4b4b4'; g.fillRect(x + w / 2 - 1, y, 2, hh); if (q > .5) g.fillRect(x, y + hh * .42, w, 2); }
     if (!on) continue;
     const b = .55 + .45 * hash2(i * 9.7, j * 4.1 + n), gr = e.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, `rgb(${lit.map(v => v * b | 0)})`); gr.addColorStop(1, `rgb(${lit.map(v => v * b * .62 | 0)})`); e.fillStyle = gr; e.fillRect(x, y, w, hh);
@@ -3770,7 +3792,14 @@ const BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d74
     a.fillStyle = `rgba(${lit},.5)`; a.fillRect(x, y, w, hh);
   }
   const hf = hfBlur(hfOf(h, N), N), em = txOf(e.canvas, 1, 1, true), orm = txOf(r.canvas);
-  return new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
+  const bm = new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
+  /* glass mirrors the sky, which is the same from one frame to the next. It must not mirror a light that is pointed at it: the searchlight, a muzzle flash and the sun each came back off every pane in sight
+     as a flare, the bloom spread it, and a street at night strobed white as the view moved. So the panes are rougher and less of a metal than a mirror is (the rgb(0,88,196) drawn into the roughness map above,
+     green the roughness and blue the metal: it was 34 and 236), and what any part of a building throws straight back from a light is capped at BLD_SHINE, which leaves a sheen and no more. The light a wall
+     scatters is untouched, and so is the sky in the glass. Do not make the glass shinier without flying an urban contract at night afterwards (.scratch/nav/nshots.sh) */
+  bm.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+	reflectedLight.directSpecular = min( reflectedLight.directSpecular, vec3( ${BLD_SHINE.toFixed(3)} ) );`); };
+  return bm;
 });
 
 /* ---- placement helpers ---- */
@@ -7475,6 +7504,8 @@ function talkRival(k) {
 }
 /* ---- panels ---- */
 const pipStr = n => '◆'.repeat(n) + '◇'.repeat(5 - n);
+/* the people in a room are a row of buttons along the bottom of it (.tkb: #hqBar, #barBar). What one of them has for you rides the top edge of their button, in a <u> */
+function talkChip(b, text, cls = '') { const u = b && b.querySelector('u'); if (u && (u.textContent !== text || u.className !== cls)) { u.textContent = text; u.className = cls; } }
 function renderHangarContract() {
   const c = CO.active; $('ctr').innerHTML = c ? `${c.story ? 'STORY' : 'CONTRACT'} <b>${(c.story ? c.title : TYPES[c.type].name).toUpperCase()} — ${c.site.toUpperCase()}</b><br>${BIOMES[c.biome].name} · ${c.story && STORY[c.story].forS || FAC[c.emp].short} · <span class="pips">${pipStr(c.diff)}</span> · ${fmt(c.pay)}${c.cap ? ` · <span style="color:var(--am)">LIMIT ${c.cap} T</span>` : ''}${wingRec(c) ? ` · <span style="color:var(--${CO.wing ? 'ok' : 'hot'})">${CO.wing ? 'WINGMAN ABOARD' : 'WINGMAN RECOMMENDED'}</span>` : ''}` : 'NO CONTRACT — <b>PROVING GROUNDS</b><br>Visit the command deck to sign one.';
   deployLabel();
@@ -7514,6 +7545,7 @@ function renderBoard() {
 }
 function renderStat() {
   const h = Math.floor(CO.hour); $('hqStat').innerHTML = `<div><span>FUNDS</span><b>${fmt(CO.cb)}</b></div><div><span>SECTOR TIME</span><b>DAY ${CO.day} · ${String(h).padStart(2, '0')}:${String(Math.floor((CO.hour - h) * 6) * 10).padStart(2, '0')}</b></div><div><span>RECORD</span><b>${CO.done} WON · ${CO.fails} LOST</b></div><div><span>KITS · WING</span><b>${CO.kit} · ${CO.wing ? CO.wing.ch.first.toUpperCase() : 'SOLO'}</b></div>`;
+  PILOTS.forEach((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); talkChip($('bP' + i), on ? 'ON YOUR WING' : out ? 'MED BAY' : '', on ? 'ok' : 'dim'); });
 }
 function updateHQ(dt, t) {
   HQ.holo.rotation.y += dt * .04; HQ.sweep.rotation.y -= dt * .9; HQ.moon.rotation.y += dt * .25; HQ.rim.emissiveIntensity = 1.4 + Math.sin(t * 2) * .4; HQ.drawScr(dt, t); if (HQ.mini) { HQ.mini.root.rotation.y += dt * .4; HQ.mini.update(dt); }
@@ -7829,10 +7861,10 @@ function talkBarPilot(p) {
 /* ---- the panels ---- */
 function barDraw() {
   BAR.dirty = false; const R = barRoster(), fame = barFame(), cond = barBuzz();
-  const card = (k, tag, st, bad) => { const ch = BARC[k]; return `<div class="card" data-k="${k}"><span class="tg" style="color:${ch.col}">${tag}</span><b>${ch.name}</b><em></em><small>${ch.role}</small><u style="color:${bad ? '#8b8474' : ''}">${st}</u></div>`; };
-  const src = k => { const n = barRumour(k, true); return card(k, k === 'broker' ? 'INFO' : 'TALK', !n ? 'NOTHING NEW' : barFresh(k) ? 'HAS A STORY' : fmt(BAR_SRC[k].cost), !n); };
-  $('barWho').innerHTML = src('keep') + src('load') + src('sig') + src('broker') + card('drink', 'GAME', BARSV.wins.drink ? `${BARSV.wins.drink} WON` : 'UNBEATEN', !BARSV.wins.drink) + card('arm', 'GAME', BARSV.wins.arm ? `${BARSV.wins.arm} WON` : 'UNBEATEN', !BARSV.wins.arm);
-  $('barWho').querySelectorAll('.card').forEach(d => d.onclick = () => { sfx.play('ui'); barTalk(BAR.P[d.dataset.k]); });
+  /* the regulars are the buttons along the bottom (#barBar, as the crew are on the deck): what each has for you just now rides the top edge of theirs */
+  const chip = (k, st, dim) => talkChip($('barBar').querySelector(`[data-k="${k}"]`), st, dim ? 'dim' : '');
+  for (const k of ['keep', 'load', 'sig', 'broker']) { const n = barRumour(k, true); chip(k, !n ? 'NOTHING NEW' : barFresh(k) ? 'HAS A STORY' : fmt(BAR_SRC[k].cost), !n); }
+  for (const k of ['drink', 'arm']) chip(k, BARSV.wins[k] ? `${BARSV.wins[k]} WON` : 'UNBEATEN', !BARSV.wins[k]);
   $('barHireN').textContent = fame ? `HOUSE STANDING −${Math.round(fame * 100)}%` : 'FLAT FEE OR A SHARE';
   $('barPil').innerHTML = R.map((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); return `<div class="bcard${on ? ' on' : ''}${out ? ' out' : ''}" data-i="${i}"><canvas width="72" height="72"></canvas><div><b>${p.ch.name}</b><small><span style="color:${p.ch.col}">${BSK[p.sk][0]}</span> <span class="pips">${pipStr(p.sk + 1)}</span> · ${p.cfg.name} · ${p.st.cls} ${p.st.tons.toFixed(0)} t</small><div class="bpw"><i style="width:${clamp(p.pw / 110, .05, 1) * 100}%"></i></div><small>MECH POWER ${p.pw} · ARMOR ${p.st.armor} · ${p.st.fire.toFixed(0)} DPS</small></div><em>${on ? 'ON YOUR<br>WING' : out ? 'MED<br>BAY' : `${fmt(barFee(p))}<small>or ${Math.round(p.share * 100)}% share</small>`}</em></div>`; }).join('');
   $('barPil').querySelectorAll('.bcard').forEach((d, i) => { drawFace(d.querySelector('canvas'), R[i].ch); d.onclick = () => { sfx.play('ui'); talkBarPilot(R[i]); }; });
@@ -7911,6 +7943,7 @@ async function barLeave(to) {
   addEventListener('keydown', e => { if (mode !== 'bar' || !BAR.relax || uiModal()) return; e.preventDefault(); barRelax(false); });
   $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
   $('barChill').onclick = () => barRelax(false); $('btnToBar').onclick = toBar; $('btnBar').onclick = toBar;
+  for (const b of $('barBar').children) b.onclick = () => { sfx.play('ui'); barTalk(BAR.P[b.dataset.k]); };
 }
 barApply(BOOT);
 
@@ -12193,7 +12226,8 @@ const TOURS = {
     { t: 'Commander on deck. Varga: I run your operations. Everything this company is offered comes through this room, and so does everything it is paid.' },
     { t: 'The contract board. On an ordinary day there are six offers here, and none of them clean. Today there is one, and it came out of our own mech.', at: '#board', act: () => { const c = tutFirst(); if (c && !CO.sel) { CO.sel = c; CO.dirty = true; } } },
     { t: 'Select a card and the terms come up on this side: who is asking, who it is against, what it pays and how dangerous it is. Ordinary offers can be argued with. This one cannot.', at: '#detail', act: () => { const c = tutFirst(); if (c) { CO.sel = c; CO.dirty = true; } } },
-    { t: 'Along the bottom, your people. Me for the board, Mira Sato for intelligence, Dutch, the pilots, the market, and the lifts down to the bay and the bar. Click any of us and we will talk.', at: '#hqBar' },
+    { t: 'Along the bottom, your people, as in any room that has people in it: me for the board, Mira Sato for intelligence, Dutch, and the pilots. Click any of us and we will talk.', at: '#hqBar' },
+    { t: 'And at the foot of this side, where it is in every room, the way out: the market, and the lifts down to the bay and the bar.', at: '#hqNav' },
     { t: 'When you are ready: ACCEPT. I brief an operation like this one in person, next door, and then you take the lift to the bay and launch.', at: () => $('dBrf') || $('detail'), done: () => mode === 'brief' },
   ] },
   field: { by: () => CREW.chief, room: () => mode === 'field' && MS.on && !MS.over && !locked && !P.dead && !$('pause').classList.contains('hid') && $('mapUI').classList.contains('hid'), steps: [
@@ -12211,9 +12245,9 @@ const TOURS = {
   ] },
   bar: { by: () => BARC.keep, room: () => mode === 'bar' && !BAR.relax && !BAR.game, steps: [
     { t: "New face. Sit anywhere that isn't taken. I'm Brandt. Everybody calls me Mother and I've stopped arguing." },
-    { t: "People in here talk. Click one and buy them a round, and you'll hear what is coming onto your board before it gets there. It's bar talk: sometimes it's even true.", at: '#barRoom' },
+    { t: "People in here talk. The regulars are along the bottom: click one and buy them a round, and you'll hear what is coming onto your board before it gets there. It's bar talk: sometimes it's even true. Ballast and Vise would sooner take a stake off you, at the drinking table and the arm-wrestling table.", at: '#barBar' },
     { t: 'Pilots between jobs drink here too. Hire one and they fly on your wing for the next drop, for a fee or a share. The good ones cost.', at: '#barHire' },
-    { t: "There's a drinking contest and an arm-wrestling table, if you fancy your liver or your elbow against the regulars. Or take a seat and do nothing at all. The lift is that way when you've had enough.", at: '#barBar' },
+    { t: "Or take a seat and do nothing at all. The lift is that way when you've had enough.", at: '#barNav' },
   ] },
   stores: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode !== 'salv', steps: [
     { t: 'Stores, boss. The tabs along the top are what we own, the market: what is for sale today, and what they will give us for ours. It changes every day. The third is the dealer: whole machines, when you have the money and not the patience.', at: '#stTabs' },

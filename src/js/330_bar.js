@@ -262,10 +262,10 @@ function talkBarPilot(p) {
 /* ---- the panels ---- */
 function barDraw() {
   BAR.dirty = false; const R = barRoster(), fame = barFame(), cond = barBuzz();
-  const card = (k, tag, st, bad) => { const ch = BARC[k]; return `<div class="card" data-k="${k}"><span class="tg" style="color:${ch.col}">${tag}</span><b>${ch.name}</b><em></em><small>${ch.role}</small><u style="color:${bad ? '#8b8474' : ''}">${st}</u></div>`; };
-  const src = k => { const n = barRumour(k, true); return card(k, k === 'broker' ? 'INFO' : 'TALK', !n ? 'NOTHING NEW' : barFresh(k) ? 'HAS A STORY' : fmt(BAR_SRC[k].cost), !n); };
-  $('barWho').innerHTML = src('keep') + src('load') + src('sig') + src('broker') + card('drink', 'GAME', BARSV.wins.drink ? `${BARSV.wins.drink} WON` : 'UNBEATEN', !BARSV.wins.drink) + card('arm', 'GAME', BARSV.wins.arm ? `${BARSV.wins.arm} WON` : 'UNBEATEN', !BARSV.wins.arm);
-  $('barWho').querySelectorAll('.card').forEach(d => d.onclick = () => { sfx.play('ui'); barTalk(BAR.P[d.dataset.k]); });
+  /* the regulars are the buttons along the bottom (#barBar, as the crew are on the deck): what each has for you just now rides the top edge of theirs */
+  const chip = (k, st, dim) => talkChip($('barBar').querySelector(`[data-k="${k}"]`), st, dim ? 'dim' : '');
+  for (const k of ['keep', 'load', 'sig', 'broker']) { const n = barRumour(k, true); chip(k, !n ? 'NOTHING NEW' : barFresh(k) ? 'HAS A STORY' : fmt(BAR_SRC[k].cost), !n); }
+  for (const k of ['drink', 'arm']) chip(k, BARSV.wins[k] ? `${BARSV.wins[k]} WON` : 'UNBEATEN', !BARSV.wins[k]);
   $('barHireN').textContent = fame ? `HOUSE STANDING −${Math.round(fame * 100)}%` : 'FLAT FEE OR A SHARE';
   $('barPil').innerHTML = R.map((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); return `<div class="bcard${on ? ' on' : ''}${out ? ' out' : ''}" data-i="${i}"><canvas width="72" height="72"></canvas><div><b>${p.ch.name}</b><small><span style="color:${p.ch.col}">${BSK[p.sk][0]}</span> <span class="pips">${pipStr(p.sk + 1)}</span> · ${p.cfg.name} · ${p.st.cls} ${p.st.tons.toFixed(0)} t</small><div class="bpw"><i style="width:${clamp(p.pw / 110, .05, 1) * 100}%"></i></div><small>MECH POWER ${p.pw} · ARMOR ${p.st.armor} · ${p.st.fire.toFixed(0)} DPS</small></div><em>${on ? 'ON YOUR<br>WING' : out ? 'MED<br>BAY' : `${fmt(barFee(p))}<small>or ${Math.round(p.share * 100)}% share</small>`}</em></div>`; }).join('');
   $('barPil').querySelectorAll('.bcard').forEach((d, i) => { drawFace(d.querySelector('canvas'), R[i].ch); d.onclick = () => { sfx.play('ui'); talkBarPilot(R[i]); }; });
@@ -344,6 +344,7 @@ async function barLeave(to) {
   addEventListener('keydown', e => { if (mode !== 'bar' || !BAR.relax || uiModal()) return; e.preventDefault(); barRelax(false); });
   $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
   $('barChill').onclick = () => barRelax(false); $('btnToBar').onclick = toBar; $('btnBar').onclick = toBar;
+  for (const b of $('barBar').children) b.onclick = () => { sfx.play('ui'); barTalk(BAR.P[b.dataset.k]); };
 }
 barApply(BOOT);
 

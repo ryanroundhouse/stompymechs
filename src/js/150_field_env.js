@@ -132,17 +132,17 @@ const GEO = {};
 }
 /* a building's face: eight floors of eight windows to the tile. The wall is cladding with a seam at every floor and streaks under every sill; a window is a frame, a sill and glass that mirrors the sky.
    Three in ten are lit, each in its own way (how bright, blinds down, half curtained). Four pictures drawn together: colour, light, height, and the map that makes glass smooth and wall rough */
-const BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d7468', [255, 233, 184]]].map(([wall, lit], n) => {
+const BLD_SHINE = .2, BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d7468', [255, 233, 184]]].map(([wall, lit], n) => {
   const N = 512, C = N / 8, a = txCan(N, wall), e = txCan(N, '#000'), h = txCan(N, '#8c8c8c'), r = txCan(N, 'rgb(0,255,64)'); speckle(a, N, N, 9000, .05);
   for (let j = 0; j < 8; j++) { for (const [g, col] of [[a, 'rgba(0,0,0,.34)'], [h, '#3c3c3c']]) { g.fillStyle = col; g.fillRect(0, j * C + C - 2, N, 2.5); } a.fillStyle = 'rgba(255,255,255,.1)'; a.fillRect(0, j * C, N, 1.5); }
   for (let i = 0; i < 8; i++) { for (const [g, col] of [[a, 'rgba(0,0,0,.2)'], [h, '#5a5a5a']]) { g.fillStyle = col; g.fillRect(i * C, 0, 1.5, N); } }
   for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
     const k = hash2(i * 3.1 + n * 17, j * 7.7 + n), on = k < .3, q = hash2(i * 5.3 + n, j * 2.9 + 4), x = i * C + 14, y = j * C + 11, w = 36, hh = 41;
     { const gr = a.createLinearGradient(0, y + hh, 0, y + hh + 20); gr.addColorStop(0, 'rgba(20,16,12,.3)'); gr.addColorStop(1, 'rgba(20,16,12,0)'); a.fillStyle = gr; a.fillRect(x + 3 + q * 8, y + hh + 3, 4 + q * 9, 20); }
-    for (const [g, col] of [[a, '#22262b'], [h, '#b4b4b4'], [r, 'rgb(0,150,140)']]) { g.fillStyle = col; g.fillRect(x - 3, y - 3, w + 6, hh + 6); }
+    for (const [g, col] of [[a, '#22262b'], [h, '#b4b4b4'], [r, 'rgb(0,190,110)']]) { g.fillStyle = col; g.fillRect(x - 3, y - 3, w + 6, hh + 6); }
     for (const [g, col] of [[a, '#3a3f45'], [h, '#d0d0d0']]) { g.fillStyle = col; g.fillRect(x - 5, y + hh + 2, w + 10, 4); }
     { const gr = a.createLinearGradient(x, y, x + w, y + hh); gr.addColorStop(0, '#a9bccd'); gr.addColorStop(.5, '#7f93a6'); gr.addColorStop(1, '#93a7ba'); a.fillStyle = gr; a.fillRect(x, y, w, hh); }
-    h.fillStyle = '#4a4a4a'; h.fillRect(x, y, w, hh); r.fillStyle = 'rgb(0,34,236)'; r.fillRect(x, y, w, hh);
+    h.fillStyle = '#4a4a4a'; h.fillRect(x, y, w, hh); r.fillStyle = 'rgb(0,88,196)'; r.fillRect(x, y, w, hh);
     for (const g of [a, h]) { g.fillStyle = g === a ? '#22262b' : '#b4b4b4'; g.fillRect(x + w / 2 - 1, y, 2, hh); if (q > .5) g.fillRect(x, y + hh * .42, w, 2); }
     if (!on) continue;
     const b = .55 + .45 * hash2(i * 9.7, j * 4.1 + n), gr = e.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, `rgb(${lit.map(v => v * b | 0)})`); gr.addColorStop(1, `rgb(${lit.map(v => v * b * .62 | 0)})`); e.fillStyle = gr; e.fillRect(x, y, w, hh);
@@ -151,7 +151,14 @@ const BLD = [['#6b7078', [255, 217, 138]], ['#4f555e', [191, 226, 255]], ['#7d74
     a.fillStyle = `rgba(${lit},.5)`; a.fillRect(x, y, w, hh);
   }
   const hf = hfBlur(hfOf(h, N), N), em = txOf(e.canvas, 1, 1, true), orm = txOf(r.canvas);
-  return new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
+  const bm = new THREE.MeshStandardMaterial({ map: txOf(a.canvas, 1, 1, true), emissiveMap: em, emissive: 0xffffff, emissiveIntensity: 1, normalMap: hfNormal(hf, N, 7), roughnessMap: orm, metalnessMap: orm, metalness: 1, roughness: .7, envMapIntensity: .55 });
+  /* glass mirrors the sky, which is the same from one frame to the next. It must not mirror a light that is pointed at it: the searchlight, a muzzle flash and the sun each came back off every pane in sight
+     as a flare, the bloom spread it, and a street at night strobed white as the view moved. So the panes are rougher and less of a metal than a mirror is (the rgb(0,88,196) drawn into the roughness map above,
+     green the roughness and blue the metal: it was 34 and 236), and what any part of a building throws straight back from a light is capped at BLD_SHINE, which leaves a sheen and no more. The light a wall
+     scatters is untouched, and so is the sky in the glass. Do not make the glass shinier without flying an urban contract at night afterwards (.scratch/nav/nshots.sh) */
+  bm.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+	reflectedLight.directSpecular = min( reflectedLight.directSpecular, vec3( ${BLD_SHINE.toFixed(3)} ) );`); };
+  return bm;
 });
 
 /* ---- placement helpers ---- */
