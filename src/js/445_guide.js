@@ -30,6 +30,11 @@ const TOURS = {
   field: { by: () => CREW.chief, room: () => mode === 'field' && MS.on && !MS.over && !locked && !P.dead && !$('pause').classList.contains('hid') && $('mapUI').classList.contains('hid'), steps: [
     { t: "Last thing from me, boss. ENGAGE gives you the controls: it takes the mouse, and the mouse aims her. ESC hands it back and stops the clock, so nothing out there can hurry you.", at: '#btnResume', pos: 'lft', done: () => locked },
   ] },
+  aar: { by: () => CREW.xo, room: () => mode === 'aar' && AAR.t > .1, steps: [
+    { t: 'Every sortie ends in this room, Commander. On the wall: how it went, what it paid and what it cost, the sortie in figures, and who thinks differently of us for it.', at: '#aarScr', pos: 'low' },
+    { t: 'Round it, your people, each with one thing to say. Nothing to click through, unless one of us wants an answer: Dutch about the salvage, most days. Click a face to hear it again.', at: '#aarR' },
+    { t: 'And the way out, where it always is. The button above the lifts is not for us: it goes to whoever built all this, and I am told they read every one.', at: '#aarNav' },
+  ] },
   salv: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode === 'salv', steps: [
     { t: "Salvage, boss. What you shot is lying out there, and the contract gives us a share of it. Click what you want brought home, up to the limit, then confirm. Whatever we leave, the client keeps.", at: '#stGrid', pos: 'low' },
   ] },
@@ -80,12 +85,13 @@ function tutHint() {
   if (mode === 'hq') return a ? ['NEXT · Take the lift down to the MECH BAY and launch', $('dGo') ? '#dGo' : '#btnToBay'] : !c ? null : CO.sel === c && $('dBrf') ? ['NEXT · ACCEPT it: Commander Varga will brief you', '#dBrf'] : ['NEXT · Select the ★ SHAKEDOWN card on the board', '.card.stc'];
   if (mode === 'brief') return dlgCur ? ['CONTINUE (or SPACE) through the briefing', null] : ['NEXT · Take the lift to the MECH BAY', '#brfSkip'];
   if (mode === 'bar') return ['NEXT · The contract board is upstairs, on the COMMAND DECK', '#bbHQ'];
+  if (mode === 'aar') return ['NEXT · Back up to the COMMAND DECK: the shakedown is on the board again', '#aarHQ'];
   return null;
 }
 function tutChip() {
   const h = tutHint(), C = $('tutChip'), el = h && h[1] ? document.querySelector(h[1]) : null;
   if (TG.pul && TG.pul !== el) TG.pul.classList.remove('tutP'); if (el) el.classList.add('tutP'); TG.pul = el;
-  C.classList.toggle('hid', !h); C.classList.toggle('side', mode === 'brief'); if (h && TG.chip !== h[0]) C.textContent = TG.chip = h[0]; if (!h) TG.chip = '';   /* in the briefing room the middle of the page is the wall map */
+  C.classList.toggle('hid', !h); C.classList.toggle('side', mode === 'brief' || mode === 'aar'); if (h && TG.chip !== h[0]) C.textContent = TG.chip = h[0]; if (!h) TG.chip = '';   /* in the briefing room the middle of the page is the wall map */
 }
 /* the keys for whatever is being taught just now, across the bottom of the HUD: [[key, what it does], ...], or nothing to take them away */
 function tutKeys(L) { TG.keys = L && L.length ? L : null; $('tutKeys').innerHTML = TG.keys ? TG.keys.map(([k, d]) => `<div><b>${k}</b><span>${d}</span></div>`).join('') : ''; POST.kick(); }

@@ -398,3 +398,54 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 .tlyW>div{display:grid;grid-template-columns:1fr 74px 84px 150px 84px 56px;gap:0 10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0;text-align:right;color:#fff;font-variant-numeric:tabular-nums}.tlyW>div>span:first-child{text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
 .tlyW .hd{color:#8b8474;font-size:9.5px;letter-spacing:.14em}.tlyW b{font-weight:400;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tlyW small{color:#7d776a;font-size:9px;letter-spacing:.12em}.tlyW svg{flex:none}
 .tlyW .ac{position:relative;height:14px;background:rgba(127,231,255,.08);border:1px solid rgba(127,231,255,.2)}.tlyW .ac i{position:absolute;left:0;top:0;bottom:0;background:rgba(127,231,255,.38)}.tlyW .ac em{position:relative;font-style:normal;font-size:10px;line-height:12px;padding-right:5px;display:block}
+/* the debriefing room. The summary is on the wall, in the world; these are the heads round it. Two columns of them while the window is wide enough to leave the wall room between
+   (the left one under the title, the right one in the room's own column above the way out), and one, on the right, when it is not (#aarUI.one) */
+.aarC{display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;pointer-events:none;scrollbar-width:thin;scrollbar-color:rgba(255,178,26,.35) transparent}
+#aarL{position:fixed;left:18px;top:86px;bottom:18px;width:clamp(240px,19vw,320px)}
+#aarUI.one #aarL{display:none}
+.aarC.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 54px),transparent);mask-image:linear-gradient(#000 calc(100% - 54px),transparent)}
+#aarSide{bottom:18px}#aarR{flex:0 1 auto;min-height:0}
+#aarScr{position:fixed;pointer-events:none}
+.aarB{--c:var(--am);pointer-events:auto;flex:none;display:grid;grid-template-columns:56px 1fr;gap:0 10px;padding:9px 10px 9px 8px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--c);backdrop-filter:blur(3px);animation:aarIn .34s cubic-bezier(.2,.9,.3,1.25) both;transition:border-color .2s,box-shadow .2s}
+.aarB canvas{width:56px;height:56px;display:block;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#0b0e11;transition:.15s}
+.aarB canvas:hover{border-color:var(--c)}
+.aarB>div{min-width:0}
+.aarB b{display:block;font-weight:400;color:var(--c);letter-spacing:.08em;font-size:10px;line-height:1.35;margin-bottom:4px}
+.aarB p{white-space:pre-line;line-height:1.5;color:#e4ddcc;font-size:11.5px;overflow-wrap:anywhere}
+.aarB.spk{border-color:var(--c);box-shadow:0 0 16px -4px var(--c)}.aarB.spk canvas{border-color:var(--c);box-shadow:0 0 10px -2px var(--c)}
+.aarB.ask{border-color:var(--am)}
+.aarO{display:flex;flex-direction:column;gap:4px;margin-top:8px}.aarO:empty{display:none}
+.aarO button{text-align:left;padding:7px 9px;font-size:10.5px;line-height:1.35}
+.aarB.nag{animation:aarNag .45s 3}
+@keyframes aarIn{from{opacity:0;transform:translateY(16px) scale(.93)}}
+@keyframes aarNag{50%{border-color:var(--hot);box-shadow:0 0 0 3px rgba(255,90,31,.6)}}
+#aarNote{color:var(--hot);letter-spacing:.12em;font-size:10px;line-height:1.4;margin-bottom:8px;text-align:center}
+#aarFb{border-color:var(--cy);color:var(--cy);background:rgba(127,231,255,.08);padding:9px 8px;line-height:1.4;letter-spacing:.06em}
+#aarFb:hover{background:var(--cy);color:#06121a}#aarFb b{font-weight:400;color:#fff}#aarFb:hover b{color:#06121a}
+/* the feedback box: an overlay like the stores and SETTINGS, small, and above them (it can be opened from SETTINGS) */
+#fbUI{z-index:49}
+#fbUI .win{width:min(640px,calc(100vw - 36px));height:auto;max-height:calc(100vh - 36px)}
+#fbUI h2{color:var(--cy);border-color:rgba(127,231,255,.35);letter-spacing:.14em;gap:14px}#fbUI h2 small{color:#8b8474;letter-spacing:.14em;font-size:10px;white-space:nowrap}
+#fbLead{color:#b9b2a2;line-height:1.6;margin-bottom:10px}
+#fbText{display:block;width:100%;min-height:150px;max-height:46vh;resize:vertical;font:13px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:#f2ecdd;background:rgba(0,0,0,.5);border:1px solid rgba(127,231,255,.4);padding:10px 12px;outline:none;user-select:text;-webkit-user-select:text}
+#fbText:focus{border-color:var(--cy);box-shadow:0 0 0 1px rgba(127,231,255,.35)}#fbText::placeholder{color:#5f5a50}#fbText:disabled{opacity:.55}
+#fbNote{color:#7d776a;font-size:10px;line-height:1.55;margin-top:9px}
+#fbSend{border-color:var(--cy);color:#06121a;background:var(--cy)}#fbSend:hover{background:#fff;color:#06121a}#fbSend:disabled{background:none;color:var(--cy)}
+/* what is new: a mark on every SETTINGS button and on the tab, a chip at the top of the three rooms, and the log itself */
+button.wnew{position:relative}
+button.wnew::after{content:"NEW";position:absolute;top:-7px;right:5px;font-size:8px;line-height:11px;letter-spacing:.14em;padding:0 5px;color:#06121a;background:var(--cy);box-shadow:0 0 10px rgba(127,231,255,.7);pointer-events:none;animation:wnP 1.6s ease-in-out infinite}
+@keyframes wnP{50%{box-shadow:0 0 16px rgba(127,231,255,1)}}
+#wnChip{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:43;display:flex;max-width:calc(100vw - 36px);box-shadow:0 8px 26px rgba(0,0,0,.55);animation:aarIn .4s .6s cubic-bezier(.2,.9,.3,1.25) both}
+#sndHint.on~#wnChip{top:50px}
+#wnGo{display:flex;align-items:center;gap:12px;padding:8px 13px;border-color:var(--cy);color:var(--cy);background:rgba(7,9,11,.92);letter-spacing:.1em;min-width:0}
+#wnGo b{font-weight:700;letter-spacing:.16em;white-space:nowrap}#wnGo span{color:#e4ddcc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#wnGo u{text-decoration:none;color:#fff;white-space:nowrap;border-left:1px solid rgba(127,231,255,.4);padding-left:12px}
+#wnGo:hover{background:rgba(127,231,255,.2)}
+#wnX{border-color:var(--cy);border-left:0;color:#8b8474;background:rgba(7,9,11,.92);padding:0 11px}#wnX:hover{color:#fff}
+.wne{border-left:2px solid rgba(255,255,255,.12);padding:2px 0 2px 12px;margin:0 0 14px}
+.wne.new{border-left-color:var(--cy)}
+.wne b{font-weight:400;color:#fff;letter-spacing:.16em;font-size:12px}
+.wne em{font-style:normal;color:#7d776a;letter-spacing:.12em;font-size:9px;display:block;margin:3px 0 6px}
+.wne em u{text-decoration:none;color:#06121a;background:var(--cy);padding:0 5px;margin-right:8px;letter-spacing:.14em}
+.wne ul{list-style:none}.wne li{color:#b9b2a2;line-height:1.6;padding-left:13px;position:relative;user-select:text;-webkit-user-select:text}
+.wne li::before{content:"·";position:absolute;left:2px;color:var(--am)}
+#bbTip{color:#ffcf7a;border-color:rgba(255,207,122,.45);background:rgba(255,207,122,.06)}#bbTip:hover{background:rgba(255,207,122,.24);color:#fff}

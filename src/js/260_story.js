@@ -76,8 +76,9 @@ function storySettle(c, ok, D, add) {
 }
 const stGift = (D, key, n = 1) => { invAdd(key, n); D.story.gifts.push(`${n > 1 ? n + ' × ' : ''}${itemInfo(key).name}`); };
 /* after the books: the people the chapter was about have something to say, and anything they sent arrives */
-function storyDebrief(D, fin) {
-  const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean), crew = { 11: 'xo', 23: 'intel', 37: 'chief', 51: 'p0', 67: 'p1' };
+/* what is said about a chapter once it is over, as [who, line]: the chapter's own epilogue, anything it sent home, and where the thread goes from here */
+function storyLines(D) {
+  const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean);
   if (D.story.gifts.length) L.push([CREW.chief, `Delivery for you, boss, off the back of that one: ${D.story.gifts.join(', ')}. In stores now.`]);
   if (D.ok && D.story.last) {
     L.push([CREW.xo, S.close || `That closes the book on ${S.name}. ${S.end || 'It will be talked about.'}`]); const op = D.story.opens || [], wt = D.story.waits || [];
@@ -86,8 +87,7 @@ function storyDebrief(D, fin) {
   }
   else if (D.ok) L.push([CREW.xo, 'That is not the end of it. When there is more, it will come up on the board.']);
   else L.push([CREW.xo, S.again || 'It will be offered again — these people have nobody else to ask. Take a day, refit, and we go back.']);
-  const step = i => { removeContact(); if (i >= L.length) return fin(); const [ch, text] = L[i], p = crew[ch.seed] ? HQ.P[crew[ch.seed]] : null; if (!p && !(CAST[ch.seed] && CAST[ch.seed].bot)) showContact(ch);   /* a machine is a voice: there is nobody to stand on the pad */ dlg(ch, text, [[i === L.length - 1 ? 'Continue' : 'Go on', () => step(i + 1)]], p); };
-  step(0);
+  return L;
 }
 const stPips = (c, S) => S.ch.map((h, i) => `<i class="${i < c.chap ? 'd' : i === c.chap ? 'n' : ''}"></i>`).join('');
 function storyCard(c, h) {

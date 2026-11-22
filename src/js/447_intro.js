@@ -264,7 +264,7 @@ function introStep(t, dt) {
 }
 /* take the stage: the room that was showing waits where it is */
 function introOpen() {
-  if (INTROV.st || mode === 'field' || mode === 'brief' || busy) return false;
+  if (INTROV.st || mode === 'field' || mode === 'brief' || mode === 'aar' || busy) return false;
   const c = FD.camera; INTROV.keep = { fov: c.fov, pos: P.pos.clone(), shake: P.shake, kills: P.kills, loot: YARD.loot.slice(), k: FD.k };
   Object.assign(INTROV, { st: 1, t: 0, a0: -1, shot: -1, prev: mode, wt: 0, go: -1, warm: 0, blk: 1, end: 0, stall: 0, au: -1, hold: false });
   if (!INTROV.fl.length) INTROV.fl = [new THREE.PointLight(0xffa050, 0, 190, 1.5), new THREE.PointLight(0xffa050, 0, 190, 1.5)]; FD.scene.add(...INTROV.fl);

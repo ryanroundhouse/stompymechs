@@ -38,9 +38,9 @@ function settingsDraw() {
   const bindR = (id, set, show) => { const e = $(id); e.oninput = () => { set(+e.value); e.nextElementSibling.textContent = show(+e.value); }; e.onchange = () => { cfgSave(); sfx.play('ui'); }; };
   const bindT = (id, key, after) => { $(id).onclick = () => { CFG[key] = !CFG[key]; cfgSave(); sfx.play('ui'); if (after) after(); settingsDraw(); }; };
   $('setTitle').textContent = F ? 'FOUND YOUR COMPANY' : 'SETTINGS'; $('setSub').textContent = F ? 'NEW GAME' : `${YARD.name} · DAY ${CO.day}`;
-  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
+  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD'], ['news', 'WHAT\'S NEW']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}${k === 'news' && tab !== 'news' && whatsFresh().length ? ' wnew' : ''}">${l}</button>`).join('');
   $('setTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.tab = b.dataset.k; SET.wipe = false; SET.msg = ''; settingsDraw(); });
-  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : 'Settings are kept on this machine, apart from the save file.';
+  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : tab === 'news' ? 'What has changed, newest first. A NEW marker on SETTINGS says when there is something you have not read.' : 'Settings are kept on this machine, apart from the save file.';
   if (tab === 'audio') {
     /* a preview button; data-p names what it plays: p3 / c3 a mission score on patrol or in combat, night, amb, win */
     const pvb = (k, label) => `<button data-p="${k}" class="${SET.pv === k ? 'on' : ''}">${SET.pv === k ? '■ STOP' : '▶ ' + label}</button>`;
@@ -92,6 +92,8 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
     const nm = $('coName'); nm.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') nm.blur(); }; nm.oninput = () => { YARD.name = cleanName(nm.value, CO_DEF_NAME); brandSync(); }; nm.onchange = () => { nm.value = YARD.name; saveCO(); };
   } else if (tab === 'stats') {
     statsDraw(B);
+  } else if (tab === 'news') {
+    whatsDraw(B, tog);
   } else {
     const b = YARD.bays.filter(x => bayParts(x)).length, act = CO.active;
     B.innerHTML = `<div class="sh">THIS COMPANY</div><div class="sum"><canvas id="lgSm" width="120" height="120"></canvas><div><b>${YARD.name}</b><span>Day ${CO.day} · funds ${fmt(CO.cb)} · ${CO.done} contracts completed, ${CO.fails} failed</span><span>${b} of 3 bays occupied · ${invCount()} items in stores${act ? ` · signed for ${act.site}` : ''}</span><span class="dim">The game saves itself to this browser after every change.</span></div></div>
@@ -132,6 +134,6 @@ function statsDraw(B) {
   $('setClose').onclick = () => { sfx.play('ok'); if (SET.found) { SET.found = false; YARD.founded = true; YARD.name = cleanName($('coName') && $('coName').value, CO_DEF_NAME); brandSync(); CO.news = CO.news.filter(n => !n.includes('is open for contracts') && !n.includes('Nobody is hiring yet')); news(tutLock() ? TUT_WIRE() : TUT_OPEN()); saveCO(); setStatus('STAND READY — ' + mechName); } settingsClose(); };
   $('setUI').addEventListener('pointerdown', e => { if (e.target === $('setUI')) settingsClose(); });
   $('saveFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const why = saveImport(String(rd.result)); SET.bad = !!why; SET.msg = why || `Loaded ${YARD.name} — day ${CO.day}, ${fmt(CO.cb)}.`; sfx.play(why ? 'deny' : 'ok'); settingsDraw(); }; rd.readAsText(f); };
-  addEventListener('keydown', e => { if (e.code !== 'Escape' || !uiModal()) return; if (ST.open && ST.mode !== 'salv') storesClose(); else if (SET.open) settingsClose(); });
+  addEventListener('keydown', e => { if (e.code !== 'Escape' || !uiModal() || FBK.open) return; if (ST.open && ST.mode !== 'salv') storesClose(); else if (SET.open) settingsClose(); });   /* (the feedback box, when it is up, is on top and closes itself) */
 }
 

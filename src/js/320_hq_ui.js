@@ -1,4 +1,4 @@
-/* ============ HEADQUARTERS: UI, CONVERSATIONS, NEGOTIATION, DEBRIEF ============ */
+/* ============ HEADQUARTERS: UI, CONVERSATIONS, NEGOTIATION ============ */
 let dlgCur = null;
 /* dlg(who, text, [[label, fn, disabled]], person) — person: a crew figure to frame, or null to leave the camera alone */
 function dlg(who, text, opts, person) {
@@ -82,26 +82,7 @@ function talkContact(c) {
   };
   menu(c.talked ? 'You again. Have you decided?' : sub ? Q.hi : `${ch.name}, ${FAC[c.emp].name}. ${Q.hi}`); c.talked = true;
 }
-/* after a sortie the XO reads out what happened, then the books — and some clients try to short the invoice */
-function debrief(D) {
-  const x = CREW.xo, c = D.c, led = () => D.lines.map(([l, v]) => `${l}: ${fmt(v)}`).join('\n') + `\nNET: ${fmt(D.total)}   ·   FUNDS: ${fmt(CO.cb)}`;
-  const fin = () => dlg(x, `${D.ok ? 'Good work out there.' : 'We live to sign another contract.'} The board shifted while you were gone — look it over.${D.rep.length ? '\n' + D.rep.map(([f, v]) => `${FAC[f].short} standing ${v > 0 ? '+' : ''}${Math.round(v)}`).join(' · ') : ''}${D.rel && D.rel.length ? '\n' + RIVS.map(k => [k, D.rel.reduce((s, r) => s + (r[0] === k ? r[1] : 0), 0)]).filter(r => r[1]).map(([k, v]) => `${RIV[k].name} ${v > 0 ? '+' : ''}${v}`).join(' · ') : ''}`, [['Dismissed', dlgClose]], HQ.P.xo);
-  const dispute = () => {
-    const ch = c.contact, cut = Math.round(D.base * .3); showContact(ch);
-    const res = (paid, line, r) => { if (!paid) { CO.cb -= cut; D.total -= cut; D.lines.push(['Withheld by client', -cut]); } repAdd(c.emp, r, `the disputed invoice for ${c.site}`); CO.dirty = true; saveCO(); dlg(ch, line, [['Close channel', () => { removeContact(); fin(); }]], null); };
-    dlg(ch, `Our accountants have reviewed the engagement. Ammunition overage, collateral, administrative fees. We are remitting seventy percent — ${fmt(cut)} withheld.`, [
-      ['Accept the cut', () => res(false, 'A pleasure doing business.', 1)],
-      ['Demand payment in full — cite the contract', () => Math.random() < .4 + CO.rep[c.emp] / 120 + (c.talked ? .15 : 0) ? res(true, '...Legal advises me to release the balance. You have your money.', -1) : res(false, 'Then sue us. Seventy percent.', -3)],
-      ['Threaten to tell every outfit in the sector', () => Math.random() < .65 ? res(true, 'There is no need for that. The balance is on its way. Do not call this office again.', -9) : res(false, 'Slander is expensive, mercenary. Seventy percent — and we are finished.', -12)]], null);
-  };
-  const after = () => (D.story ? () => storyDebrief(D, fin) : D.renege ? dispute : fin)(), ch = CREW.chief; let salvShow = null;
-  const salv = () => dlg(ch, `Recovery crews are back from ${c.site}. ${D.salv.pool.length} ${D.salv.pool.length === 1 ? 'piece' : 'pieces'} worth keeping came off the field, and the contract gives us ${c.salv}% salvage — ${D.salv.picks === D.salv.pool.length ? 'so all of it is ours' : `that is ${D.salv.picks} of them`}. Tell me which, boss. The rest goes to the client's yard.`, [
-    ['Show me what they found', salvShow = () => { const S = D.salv; dlgClose(); storesOpen({ mode: 'salv', salv: { pool: S.pool, picks: S.picks, site: c.site, pct: c.salv }, done: got => { D.salv = null; dlg(ch, got.length ? `Tagged and stowed: ${got.map(k => itemInfo(k).name).join(', ')}. In stores whenever you want ${got.length === 1 ? 'it' : 'them'} fitted.` : 'Leaving it all? Your call. The scrap men will be pleased.', [['Continue', after]], HQ.P.chief); } }); }],
-    ['No time — let the client have it', () => { const S = D.salv, worth = S.pool.map(k => itemInfo(k)).sort((a, b) => b.price - a.price), val = worth.slice(0, S.picks).reduce((s, i) => s + i.price, 0);
-      dlg(ch, `All of it, boss? That is ${S.picks === 1 ? 'a piece' : S.picks + ' pieces'} we are owed and will not see again — ${worth[0].name} among ${S.pool.length === 1 ? 'it' : 'them'}, something like ${fmt(val)} at market. Say the word and the client's yard gets the lot.`, [['Wait. Show me what they found', salvShow], ['Yes — leave it all', () => { D.salv = null; after(); }]], HQ.P.chief); }]], HQ.P.chief);
-  const story = D.log.slice(0, -1).filter(s => !s.includes(': "')).slice(-5);
-  dlg(x, `${D.story ? D.story.head : (D.ok ? 'CONTRACT COMPLETE' : 'CONTRACT FAILED') + ' — ' + c.site}.\n${D.text}${story.length ? '\n\n' + story.map(s => '· ' + s).join('\n') : ''}`, [['Show me the books', () => dlg(x, led(), [['Continue', D.salv ? salv : after]])]], HQ.P.xo);
-}
+/* (what happens after a sortie, the books and the client who would like to pay less among it, is the debriefing room: 352_debrief.js) */
 
 /* ---- STANDING: the second tab of the board. How each faction and each of the other companies sees us, what that is worth, and why it last moved ---- */
 const HQV = { tab: 'board', sel: 'r.cob' };

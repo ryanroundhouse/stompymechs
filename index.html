@@ -405,6 +405,57 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 .tlyW>div{display:grid;grid-template-columns:1fr 74px 84px 150px 84px 56px;gap:0 10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0;text-align:right;color:#fff;font-variant-numeric:tabular-nums}.tlyW>div>span:first-child{text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
 .tlyW .hd{color:#8b8474;font-size:9.5px;letter-spacing:.14em}.tlyW b{font-weight:400;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tlyW small{color:#7d776a;font-size:9px;letter-spacing:.12em}.tlyW svg{flex:none}
 .tlyW .ac{position:relative;height:14px;background:rgba(127,231,255,.08);border:1px solid rgba(127,231,255,.2)}.tlyW .ac i{position:absolute;left:0;top:0;bottom:0;background:rgba(127,231,255,.38)}.tlyW .ac em{position:relative;font-style:normal;font-size:10px;line-height:12px;padding-right:5px;display:block}
+/* the debriefing room. The summary is on the wall, in the world; these are the heads round it. Two columns of them while the window is wide enough to leave the wall room between
+   (the left one under the title, the right one in the room's own column above the way out), and one, on the right, when it is not (#aarUI.one) */
+.aarC{display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;pointer-events:none;scrollbar-width:thin;scrollbar-color:rgba(255,178,26,.35) transparent}
+#aarL{position:fixed;left:18px;top:86px;bottom:18px;width:clamp(240px,19vw,320px)}
+#aarUI.one #aarL{display:none}
+.aarC.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 54px),transparent);mask-image:linear-gradient(#000 calc(100% - 54px),transparent)}
+#aarSide{bottom:18px}#aarR{flex:0 1 auto;min-height:0}
+#aarScr{position:fixed;pointer-events:none}
+.aarB{--c:var(--am);pointer-events:auto;flex:none;display:grid;grid-template-columns:56px 1fr;gap:0 10px;padding:9px 10px 9px 8px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--c);backdrop-filter:blur(3px);animation:aarIn .34s cubic-bezier(.2,.9,.3,1.25) both;transition:border-color .2s,box-shadow .2s}
+.aarB canvas{width:56px;height:56px;display:block;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#0b0e11;transition:.15s}
+.aarB canvas:hover{border-color:var(--c)}
+.aarB>div{min-width:0}
+.aarB b{display:block;font-weight:400;color:var(--c);letter-spacing:.08em;font-size:10px;line-height:1.35;margin-bottom:4px}
+.aarB p{white-space:pre-line;line-height:1.5;color:#e4ddcc;font-size:11.5px;overflow-wrap:anywhere}
+.aarB.spk{border-color:var(--c);box-shadow:0 0 16px -4px var(--c)}.aarB.spk canvas{border-color:var(--c);box-shadow:0 0 10px -2px var(--c)}
+.aarB.ask{border-color:var(--am)}
+.aarO{display:flex;flex-direction:column;gap:4px;margin-top:8px}.aarO:empty{display:none}
+.aarO button{text-align:left;padding:7px 9px;font-size:10.5px;line-height:1.35}
+.aarB.nag{animation:aarNag .45s 3}
+@keyframes aarIn{from{opacity:0;transform:translateY(16px) scale(.93)}}
+@keyframes aarNag{50%{border-color:var(--hot);box-shadow:0 0 0 3px rgba(255,90,31,.6)}}
+#aarNote{color:var(--hot);letter-spacing:.12em;font-size:10px;line-height:1.4;margin-bottom:8px;text-align:center}
+#aarFb{border-color:var(--cy);color:var(--cy);background:rgba(127,231,255,.08);padding:9px 8px;line-height:1.4;letter-spacing:.06em}
+#aarFb:hover{background:var(--cy);color:#06121a}#aarFb b{font-weight:400;color:#fff}#aarFb:hover b{color:#06121a}
+/* the feedback box: an overlay like the stores and SETTINGS, small, and above them (it can be opened from SETTINGS) */
+#fbUI{z-index:49}
+#fbUI .win{width:min(640px,calc(100vw - 36px));height:auto;max-height:calc(100vh - 36px)}
+#fbUI h2{color:var(--cy);border-color:rgba(127,231,255,.35);letter-spacing:.14em;gap:14px}#fbUI h2 small{color:#8b8474;letter-spacing:.14em;font-size:10px;white-space:nowrap}
+#fbLead{color:#b9b2a2;line-height:1.6;margin-bottom:10px}
+#fbText{display:block;width:100%;min-height:150px;max-height:46vh;resize:vertical;font:13px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:#f2ecdd;background:rgba(0,0,0,.5);border:1px solid rgba(127,231,255,.4);padding:10px 12px;outline:none;user-select:text;-webkit-user-select:text}
+#fbText:focus{border-color:var(--cy);box-shadow:0 0 0 1px rgba(127,231,255,.35)}#fbText::placeholder{color:#5f5a50}#fbText:disabled{opacity:.55}
+#fbNote{color:#7d776a;font-size:10px;line-height:1.55;margin-top:9px}
+#fbSend{border-color:var(--cy);color:#06121a;background:var(--cy)}#fbSend:hover{background:#fff;color:#06121a}#fbSend:disabled{background:none;color:var(--cy)}
+/* what is new: a mark on every SETTINGS button and on the tab, a chip at the top of the three rooms, and the log itself */
+button.wnew{position:relative}
+button.wnew::after{content:"NEW";position:absolute;top:-7px;right:5px;font-size:8px;line-height:11px;letter-spacing:.14em;padding:0 5px;color:#06121a;background:var(--cy);box-shadow:0 0 10px rgba(127,231,255,.7);pointer-events:none;animation:wnP 1.6s ease-in-out infinite}
+@keyframes wnP{50%{box-shadow:0 0 16px rgba(127,231,255,1)}}
+#wnChip{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:43;display:flex;max-width:calc(100vw - 36px);box-shadow:0 8px 26px rgba(0,0,0,.55);animation:aarIn .4s .6s cubic-bezier(.2,.9,.3,1.25) both}
+#sndHint.on~#wnChip{top:50px}
+#wnGo{display:flex;align-items:center;gap:12px;padding:8px 13px;border-color:var(--cy);color:var(--cy);background:rgba(7,9,11,.92);letter-spacing:.1em;min-width:0}
+#wnGo b{font-weight:700;letter-spacing:.16em;white-space:nowrap}#wnGo span{color:#e4ddcc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#wnGo u{text-decoration:none;color:#fff;white-space:nowrap;border-left:1px solid rgba(127,231,255,.4);padding-left:12px}
+#wnGo:hover{background:rgba(127,231,255,.2)}
+#wnX{border-color:var(--cy);border-left:0;color:#8b8474;background:rgba(7,9,11,.92);padding:0 11px}#wnX:hover{color:#fff}
+.wne{border-left:2px solid rgba(255,255,255,.12);padding:2px 0 2px 12px;margin:0 0 14px}
+.wne.new{border-left-color:var(--cy)}
+.wne b{font-weight:400;color:#fff;letter-spacing:.16em;font-size:12px}
+.wne em{font-style:normal;color:#7d776a;letter-spacing:.12em;font-size:9px;display:block;margin:3px 0 6px}
+.wne em u{text-decoration:none;color:#06121a;background:var(--cy);padding:0 5px;margin-right:8px;letter-spacing:.14em}
+.wne ul{list-style:none}.wne li{color:#b9b2a2;line-height:1.6;padding-left:13px;position:relative;user-select:text;-webkit-user-select:text}
+.wne li::before{content:"·";position:absolute;left:2px;color:var(--am)}
+#bbTip{color:#ffcf7a;border-color:rgba(255,207,122,.45);background:rgba(255,207,122,.06)}#bbTip:hover{background:rgba(255,207,122,.24);color:#fff}
 </style>
 </head>
 <body>
@@ -482,8 +533,23 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
   </div>
  </div>
 </div>
+<div id="aarUI" class="hid">
+ <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>DEBRIEFING ROOM // AFTER ACTION</span><i></i></div>
+ <div id="aarScr"></div>
+ <div id="aarL" class="aarC"></div>
+ <div id="aarSide" class="rcol">
+  <div id="aarR" class="aarC"></div>
+  <div id="aarNav" class="pn rnav">
+   <div id="aarNote" class="hid"></div>
+   <div class="row"><button id="aarFb"></button></div>
+   <div class="row"><button id="aarHQ">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="aarBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
+</div>
 <div id="cutTag"></div>
 <div id="sndHint">♪ SOUND STARTS WITH YOUR FIRST CLICK OR KEY</div>
+<div id="wnChip" class="hid"><button id="wnGo"></button><button id="wnX" title="Not now">✕</button></div>
 <div id="dlg" class="pn hid"><canvas id="dlgFace" width="144" height="144"></canvas><div><b id="dlgWho"></b><p id="dlgTxt"></p><div id="dlgOpts"></div></div></div>
 <div id="barUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>THE LAST ROUND // PILOTS' BAR</span><i></i></div>
@@ -492,6 +558,7 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
   <div id="barStat" class="pn"></div>
   <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
   <div id="barNav" class="pn rnav">
+   <div class="row"><button id="bbTip">♥ THE TIP JAR — BUY THE DEVELOPER A ROUND</button></div>
    <div class="row"><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
    <div class="row"><button id="bbHQ">▲ COMMAND DECK — CONTRACTS</button></div>
    <div class="row"><button id="bbBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
@@ -522,6 +589,13 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
  <div id="setTabs"></div>
  <div id="setBody"></div>
  <div class="foot"><span id="setInfo"></span><button id="setClose">CLOSE</button></div>
+</div></div>
+<div id="fbUI" class="ovl hid"><div class="pn win" id="fbWin">
+ <h2><span id="fbTitle"></span><small id="fbSub"></small></h2>
+ <p id="fbLead"></p>
+ <textarea id="fbText" maxlength="4000" rows="9" spellcheck="true" autocomplete="off"></textarea>
+ <p id="fbNote"></p>
+ <div class="foot"><span id="fbInfo"></span><button id="fbCancel">CANCEL</button><button id="fbSend">SEND IT</button></div>
 </div></div>
 <input type="file" id="saveFile" accept=".json,application/json" class="hid">
 <div id="mapUI" class="hid">
@@ -963,7 +1037,7 @@ function explode(fx, p, s = 1) {
 const GAME_ID = 'STOMPYMECHS', GAME_NAME = 'StompyMechs', CO_DEF_NAME = 'STOMPY MECHS', GAME_WAS = 'IRONWORKS';
 const lsGet = k => { try { return localStorage.getItem('stompymechs.' + k) ?? localStorage.getItem('ironworks.' + k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem('stompymechs.' + k, v); } catch (e) { } };
-const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true };
+const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true, count: true };
 const CFG = { ...CFG_DEF };
 {
   try { const s = JSON.parse(lsGet('cfg') || 'null'); if (s && typeof s === 'object') { for (const k in CFG_DEF) if (typeof s[k] === typeof CFG_DEF[k]) CFG[k] = s[k]; } else if (lsGet('music') === '0') CFG.mus = 0; } catch (e) { }
@@ -975,6 +1049,96 @@ const SCORES = [['desert', 'DUST DEVILS', 'frame drums and a plucked lead · 96 
   ['glacial', 'WHITEOUT', 'slow glass and wind · 66 bpm'], ['volcanic', 'FORGE', 'half-time anvils and grit · 88 bpm'], ['lunar', 'HARD VACUUM', 'sparse pulses in 5/4 · 100 bpm']];
 const scoreFor = biome => CFG.track ? CFG.track - 1 : Math.max(0, SCORES.findIndex(s => s[0] === biome));
 
+/* ============ THE WIRE HOME: WHAT IS NEW, THE LAUNCH COUNT, AND THE FEEDBACK BOX ============ */
+/* WHATS is the game's changelog, newest first: { n, d, t, l }. n only ever goes up, and the newest n is the build number (BUILD), which is what the page tells the server it is.
+   A change a player would notice gets an entry here, in the commit that makes it. What a browser has already been shown is stompymechs.seen (the n of the newest entry it has
+   read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
+   Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
+const WHATS = [
+  { n: 12, d: '22 NOV 2026', t: 'THE DEBRIEFING ROOM, AND A WAY TO ANSWER BACK', l: [
+    'A sortie now ends in the debriefing room. How it went, the books, your standing and the figures for the sortie are on the wall, and the crew say their pieces round it all at once: nothing to click through.',
+    'WHAT DID YOU WISH YOU COULD DO ON THAT CONTRACT? Asked at every debrief, and under SETTINGS · WHAT\'S NEW at any time. Whatever you type goes to the developer.',
+    'This page. A NEW marker on SETTINGS, and a chip at the top of the screen, say when something has changed since you last played.',
+    'There is a tip jar on the counter of the Last Round.'] },
+  { n: 11, d: '21 NOV 2026', t: 'EASIER ON THE EYES', l: [
+    'The floors of the bay, the deck and the bar no longer mirror the lights.',
+    'City glass no longer flares white at night under a searchlight or your own fire.',
+    'Every room has the same frame: its panels down the right with the way out at the foot, and the people who will talk along the bottom.'] },
+  { n: 10, d: '21 NOV 2026', t: 'TWELVE MORE STORIES', l: [
+    'Twelve new story threads of two chapters each: a plough-train with nobody aboard, a wedding where no guest may die, a train robbery, a works that has built unattended for eleven years, duels to first blood, and seven more.',
+    'Four stories are under way at once. Closing one opens the ones behind it.'] },
+  { n: 9, d: '21 NOV 2026', t: 'THE RECORD', l: [
+    'Everything a company does is counted, from accuracy weapon by weapon to steps taken: some two hundred lines.',
+    'A board in the bay, on the deck and behind the bar shows a few lines at a time. The whole book is under SETTINGS · STATS.'] },
+  { n: 8, d: '21 NOV 2026', t: 'FALSE DAWN', l: [
+    'A campaign: eight chapters in three acts that change the rest of the game as they go.',
+    'Contracts are flown at an hour: dawn, day, dusk or night.',
+    'A mech dealer in the stores sells whole machines.',
+    'The board is a spread of difficulties, and the capital ships can be beaten.'] },
+  { n: 7, d: '15 NOV 2026', t: 'A SORTIE IS NOT LOST BY ACCIDENT', l: [
+    'The page asks before it is left in the middle of a sortie, and Back pauses instead of leaving.',
+    'H has to be pressed twice to abandon a contract.'] },
+  { n: 6, d: '15 NOV 2026', t: 'A NAME AND AN OPENING', l: [
+    `The game is ${GAME_NAME}, and opens with eleven seconds of battle and its title.`,
+    'Old IRONWORKS companies and settings come across by themselves.'] },
+  { n: 5, d: '15 NOV 2026', t: 'THE FIRST DAY', l: [
+    'A new company is shown round each room by its crew.',
+    'A first sortie, the shakedown, teaches the controls before anybody will hire you.'] },
+  { n: 4, d: '15 NOV 2026', t: 'MORE IRON', l: [
+    'More machines and many more weapons, in families.',
+    'Component damage: aim at an arm or the legs and shoot them off. It happens to you as well.',
+    'Some contracts carry a weight limit.'] },
+  { n: 3, d: '14 NOV 2026', t: 'HEAT, AND THE DERBY', l: [
+    'A sprint costs heat, and the HUD warns at 80 percent from any source.',
+    'The Derby keeps its field within reach until the last gate, and then lets it go.',
+    'A paused sortie holds its picture instead of drawing it again and again.'] },
+  { n: 2, d: '14 NOV 2026', t: 'STORIES, COMPANIES AND VOICES', l: [
+    'Story missions, a briefing room, bigger theatres and a camera that goes to whoever is speaking.',
+    'Three rival mech companies, standing with them and with the factions, and comms that hold the sortie while you read.',
+    'Everybody speaks aloud. The bar opened: rumours, pilots for hire, two contests.'] },
+  { n: 1, d: '12 NOV 2026', t: 'FIRST LAUNCH', l: ['A mech bay, a command deck, contracts and the field.'] },
+];
+const BUILD = WHATS[0].n;
+const WNEW = { seen: 0 };
+{
+  const s = +lsGet('seen');
+  /* nothing kept: a browser new to the game has read it all, and one with a company from before this was kept is owed the newest entry */
+  WNEW.seen = s > 0 ? Math.min(s | 0, BUILD) : lsGet('co') ? BUILD - 1 : BUILD; if (!(s > 0) && WNEW.seen === BUILD) lsSet('seen', String(BUILD));
+}
+const whatsFresh = () => WHATS.filter(w => w.n > WNEW.seen);
+function whatsSeen() { if (WNEW.seen === BUILD) return false; WNEW.seen = BUILD; lsSet('seen', String(BUILD)); return true; }
+
+/* ---- the server beside the page (server/stompymechs_api.py, behind nginx at api/). It is told two things, and nothing else ever leaves the browser:
+   · that the page was opened, with a random id this browser made up for itself (stompymechs.vid), so that people can be counted and the ones who come back told from the new.
+     CFG.count turns that off (SETTINGS · WHAT'S NEW);
+   · what a player typed into the feedback box and sent. If the server cannot be reached it is kept here (stompymechs.fbq) and sent the next time the page opens.
+   Neither may ever get in the game's way: every failure is swallowed. NET.off stops all of it (the debug build sets it, so the test drivers never count as players;
+   debug.html?net turns it back on) ---- */
+const NET = { off: false, base: 'api/', busy: false };
+function netId() {
+  let v = lsGet('vid'); if (v && /^[0-9a-f]{32}$/.test(v)) return v;
+  const b = new Uint8Array(16); try { crypto.getRandomValues(b); } catch (e) { for (let i = 0; i < 16; i++) b[i] = (Math.random() * 256) | 0; }
+  v = [...b].map(x => x.toString(16).padStart(2, '0')).join(''); lsSet('vid', v); return v;
+}
+/* true if the server took it */
+async function netPost(path, body) {
+  if (NET.off) return false; const ac = typeof AbortController === 'function' ? new AbortController() : null, t = ac && setTimeout(() => ac.abort(), 9000);
+  try { const r = await fetch(NET.base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true, credentials: 'omit', cache: 'no-store', signal: ac ? ac.signal : undefined }); return r.ok; }
+  catch (e) { return false; } finally { clearTimeout(t); }
+}
+const netQueue = () => { try { const q = JSON.parse(lsGet('fbq') || '[]'); return Array.isArray(q) ? q.filter(m => m && typeof m.text === 'string' && m.text.length <= 4000 && Date.now() - m.at < 45 * 864e5).slice(-6) : []; } catch (e) { return []; } };
+/* send one piece of feedback: { kind: 'contract' | 'general', text, ctx }. Resolves true if it arrived, false if it is waiting here for the next launch */
+async function netFeedback(m) {
+  const body = { build: BUILD, kind: m.kind, text: String(m.text).slice(0, 4000), ctx: m.ctx || {} }; if (CFG.count) body.id = netId();
+  if (await netPost('feedback', body)) return true;
+  const q = netQueue(); q.push({ ...body, at: Date.now() }); lsSet('fbq', JSON.stringify(q.slice(-6))); return false;
+}
+async function netFlush() {
+  if (NET.off || NET.busy) return; const q = netQueue(); if (!q.length) return; NET.busy = true;
+  try { while (q.length) { const { at, ...body } = q[0]; if (!await netPost('feedback', body)) break; q.shift(); lsSet('fbq', JSON.stringify(q)); } } finally { NET.busy = false; }
+}
+/* the page has opened: called once, from the end of the module */
+function netBoot() { if (NET.off) return; netFlush(); if (CFG.count) netPost('launch', { id: netId(), build: BUILD }); }
 /* ============ AUDIO (tiny procedural synth) ============ */
 const sfx = (() => {
   let ac, master, on = true, nb, trimK = 1, hushed = false;
@@ -1792,7 +1956,7 @@ const music = (() => {
   let ac = null, sc = null, mg = null, trk = -1, want = 0, pvK = null, pvT = 0, pvI = 0, pvHot = 0, pvNew = false, pvWas = null, stQ = null, stT = 0, slips = 0, voiceK = -1;
   const lv = { deck: -1, radio: -1, field: -1, brief: -1 }, idle = { deck: 9, radio: 9, field: 9, brief: 9 }, KEYS = ['deck', 'radio', 'field', 'brief'];
   /* which rooms hear which player, and how far ahead each is written. The radio answers to nothing in the game, so it is written well ahead: a slow frame in the bay cannot make it stumble */
-  const _r = V3(), _d = V3(), LV = { deck: .95, radio: .6, field: .85, brief: .62 }, ROOM = { deck: ['hq'], radio: ['hangar', 'bar'], field: ['field'], brief: ['brief'] }, EN = { deck: 'amb', radio: 'radio', field: 'score', brief: 'score' }, AHEAD = { deck: .3, radio: .9, field: .3, brief: .4 }, vol = () => .85 * CFG.vol * CFG.mus;
+  const _r = V3(), _d = V3(), LV = { deck: .95, radio: .6, field: .85, brief: .62 }, ROOM = { deck: ['hq', 'aar'], radio: ['hangar', 'bar'], field: ['field'], brief: ['brief'] }, EN = { deck: 'amb', radio: 'radio', field: 'score', brief: 'score' }, AHEAD = { deck: .3, radio: .9, field: .3, brief: .4 }, vol = () => .85 * CFG.vol * CFG.mus;
   return {
     get dbg() { return sc && { state: ac.state, t: +ac.currentTime.toFixed(2), lv, trk, slips, fight: sc.field.state, deck: [sc.deck.part, sc.deck.bar], sting: +stT.toFixed(1), radioNext: +sc.radio.next().toFixed(2), deckNext: +sc.deck.next().toFixed(2), song: sc.radio.song && { bpm: sc.radio.song.bpm | 0, key: sc.radio.song.key, step: sc.radio.song.step } }; },
     get previewing() { return pvT > 0 ? pvK : null; },
@@ -2931,7 +3095,7 @@ function mechCradle(c) {
    hints: the crew show a new commander round each room the first time they walk into it. seen: the tours already given (TUT_KEYS, which are the keys of TOURS).
    All of it is saved with the company (saveBlob, under `tut`). A save from before any of this has no such entry, and is taken to be a company that knows its way about.
    The guide itself, and everything that draws, is in 445_guide.js: this much has to exist before the board is first dealt */
-const TUT_KEYS = ['salv', 'stores', 'field', 'launch', 'bay', 'deck', 'home', 'bar'];   /* in the order they are looked for: an overlay's tour before the room's under it */
+const TUT_KEYS = ['salv', 'stores', 'field', 'aar', 'launch', 'bay', 'deck', 'home', 'bar'];   /* in the order they are looked for: an overlay's tour before the room's under it */
 const TUT = { lock: false, hints: false, seen: {} };
 const tutLock = () => TUT.lock;
 function tutApply(s) {
@@ -2987,7 +3151,7 @@ function talKill(e, owner) {
 
 /* ---- a sortie: what is counted as it starts, every frame it is flown, and when the books are settled ---- */
 function talSortie(c) {
-  const F = TALLY.f; TALLY.sk = 0; TALLY.mk = 0; TALLY.mkT = -9; F.x = P.pos.x; F.z = P.pos.z; F.hd = P.yaw + P.twist; F.jet = false; F.t = 0; talBy = null;
+  const F = TALLY.f; TALLY.sk = 0; TALLY.mk = 0; TALLY.mkT = -9; F.x = P.pos.x; F.z = P.pos.z; F.hd = P.yaw + P.twist; F.jet = false; F.t = 0; talBy = null; F.g0 = { 'g.s': talN('g.s'), 'g.h': talN('g.h'), 'g.d': talN('g.d'), 'd.n': talN('d.n') };   /* what settle() takes away to get this sortie's own figures */
   if (!c) return tal('pg.n');
   tal('s.n'); tal('s.ty.' + (c.story ? 'story' : c.type)); tal('s.bi.' + c.biome); tal('s.h.' + EV.tod.key); tal('s.c.' + player.stats.cls); if (CO.wing) tal('s.wing'); if (c.cap) tal('s.cap');
   if (c.cok === 'joint') tal('s.co'); else if (c.cok === 'sub') tal('s.sub');
@@ -3103,11 +3267,11 @@ const TAL_DEF = [
     ['q.hire', 'PILOTS HIRED', 'n'], ['q.talk', 'THINGS SAID TO YOU', 'n'], ['q.brf', 'BRIEFINGS SAT THROUGH', 'n'], ['q.gift', 'GIFTS SENT TO OTHER COMPANIES', 'n'],
   ]],
   ['THE BAR', [
-    ['b.visit', 'VISITS TO THE LAST ROUND', 'n'], ['b.drink', 'DRINKS BOUGHT', 'n', 1], ['b.round', 'ROUNDS STOOD FOR THE HOUSE', 'n'], ['b.rum', 'RUMOURS HEARD', 'n'], ['b.rest', 'HOURS SPENT IN A CHAIR', 'n'],
+    ['b.visit', 'VISITS TO THE LAST ROUND', 'n'], ['b.drink', 'DRINKS BOUGHT', 'n', 1], ['b.round', 'ROUNDS STOOD FOR THE HOUSE', 'n'], ['b.rum', 'RUMOURS HEARD', 'n'], ['b.tip', 'TIMES SOMETHING WENT IN THE TIP JAR', 'n'], ['b.rest', 'HOURS SPENT IN A CHAIR', 'n'],
     ['b.gd.n', 'DRINKING CONTESTS', 'n'], ['b.gd.w', 'DRINKING CONTESTS WON', 'n'], ['b.ga.n', 'ARM WRESTLES', 'n'], ['b.ga.w', 'ARM WRESTLES WON', 'n'], ['b.glass', 'GLASSES EMPTIED AT THE TABLE', 'n'],
   ]],
   ['TIME', [
-    [N => talSum(N, 't.') - talSum(N, 't.b.') - (N['t.sess'] || 0) - (N['t.intro'] || 0) || null, 'TIME PLAYED', 't'], ['t.hangar', 'TIME IN THE MECH BAY', 't'], ['t.hq', 'TIME ON THE COMMAND DECK', 't'], ['t.bar', 'TIME IN THE BAR', 't'], ['t.brief', 'TIME IN THE BRIEFING ROOM', 't'],
+    [N => talSum(N, 't.') - talSum(N, 't.b.') - (N['t.sess'] || 0) - (N['t.intro'] || 0) || null, 'TIME PLAYED', 't'], ['t.hangar', 'TIME IN THE MECH BAY', 't'], ['t.hq', 'TIME ON THE COMMAND DECK', 't'], ['t.bar', 'TIME IN THE BAR', 't'], ['t.brief', 'TIME IN THE BRIEFING ROOM', 't'], ['t.aar', 'TIME AT THE DEBRIEF', 't'],
     ['t.field', 'TIME AT THE CONTROLS', 't'], ['t.hold', 'TIME WITH A SORTIE ON HOLD', 't'], ['t.sess', 'TIMES THE GAME WAS OPENED', 'n'], ['t.intro', 'TIMES THE OPENING WAS WATCHED', 'n'], [() => CO.day, 'SECTOR DAYS IN BUSINESS', 'n'],
   ]],
 ];
@@ -6194,12 +6358,15 @@ TWISTS.works = async function (ms) {
   look(F, 'FIELD WORKS'); say(ms.ops, 'There is a field works out at the edge of the grid, and its door is open. Everything it builds is coming your way. It is not in the contract, and it only has the stock it was brought with — but every machine it finishes is one more on you. Kill it early or outlast it.');
   setObj('fw', 'Destroy the field works', 0, true); nav('fw', F, 'WORKS', '#7fe7ff'); F.onKill = () => { unnav('fw'); if (ms.over) return; setObj('fw', null, 1); bonus('Field works', 24000 + c.diff * 5000); note('You destroyed a field works that was feeding the fight.'); };
 };
-/* settle the books after a sortie: returns the debrief the XO reads out */
+/* settle the books after a sortie: returns the debrief that the debriefing room shows (352_debrief.js) */
 function settle() {
-  const c = MS.c, ok = MS.ok, L = [], add = (l, v, tag) => { if (Math.round(v)) { L.push([l, Math.round(v)]); if (tag) tal('cr.' + tag, Math.abs(Math.round(v))); } }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base };
+  const c = MS.c, ok = MS.ok, L = [], add = (l, v, tag) => { if (Math.round(v)) { L.push([l, Math.round(v)]); if (tag) tal('cr.' + tag, Math.abs(Math.round(v))); } }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base, payer };
   add(ok ? (own && STORY[c.story].payL ? STORY[c.story].payL : payer ? (c.cok === 'sub' && payer === c.emp ? `Subcontract fee — ${RIV[c.co].short}` : `Contract fee — ${c.story && STORY[c.story].payer || FAC[payer].short}`) : 'Collection — off the books') : 'Partial payment', base, 'fee');   /* the first sortie is flown on the company's own account: no client to please, no bill from the bay, and a bad day there is not on the record */ for (const [l, v] of MS.bonus) add(l, v, v > 0 ? 'bonus' : '');
   if (ok && P.kills) add(`Battlefield scrap ${c.salv}% · ${P.kills} kills`, P.kills * 1500 * c.salv / 25, 'scrap');
   D.salv = ok ? salvageRoll(c, YARD.loot, MS.bonus.length > 0) : null; YARD.loot = [];
+  /* the sortie in figures, for the wall of the debriefing room, and the wingman while there still is one */
+  { const g = TALLY.f.g0 || {}, d = k => Math.max(0, talN(k) - (g[k] || 0)); D.fig = { t: MS.t || 0, kills: P.kills, shots: d('g.s'), hits: d('g.h'), dealt: d('g.d'), taken: d('d.n'), armor: clamp(P.armor / P.max, 0, 1), dead: !!P.dead, abort: !!MS.abort, lost: Object.keys(P.lost || {}).filter(k => player.cfg[k]).map(k => ZONE_N[k]), obj: [MS.obj.filter(o => o.st === 1).length, MS.obj.filter(o => !o.opt || o.st === 1).length] }; }
+  D.wing = CO.wing && !solo ? { ch: CO.wing.ch, down: !!CO.wingDown } : null;
   if (!own) add('Repairs and rearm', -((1 - clamp(P.armor / P.max, 0, 1)) * 38000 + (P.dead ? 55000 : 0)), 'rep');
   if (!own) { const lost = Object.keys(P.lost || {}).filter(k => player.cfg[k]); if (lost.length) add(`Rebuilding ${lost.map(k => ZONE_N[k].toLowerCase()).join(', ')}`, -lost.reduce((s, k) => s + itemInfo(CAT[k] + '.' + player.cfg[k]).price * .15, 0), 'rep'); }
   if (CO.wing && CO.wing.share && !solo) add(`${CO.wing.ch.first}'s ${Math.round(CO.wing.share * 100)}% share`, -Math.max(0, base) * CO.wing.share, 'share');
@@ -6210,12 +6377,14 @@ function settle() {
   if (c.story) storySettle(c, ok, D, add);
   D.renege = ok && payer === c.emp && c.twists.includes('renege') && base > 0; D.total = L.reduce((s, l) => s + l[1], 0); CO.cb += D.total; if (ok) CO.done++; else if (!own) CO.fails++; talSettle(c, ok, D, own);
   /* the world moves on */
-  CO.hour += rand(8, 20); while (CO.hour >= 24) { CO.hour -= 24; CO.day++; } dropContract(c);
+  const was = CO.board.filter(o => !o.story && o !== c); CO.hour += rand(8, 20); while (CO.hour >= 24) { CO.hour -= 24; CO.day++; } dropContract(c);
   if (c.story) news(D.story.news); else news(ok ? `${YARD.name} completed a ${TYPES[c.type].name.toLowerCase()} contract at ${c.site}${payer && payer !== c.emp ? ' — though not for the original client' : ''}.` : `${YARD.name} failed a ${FAC[c.emp].short} contract at ${c.site}.`);
   for (const o of CO.board.filter(o => !o.story && Math.random() < .4)) { dropContract(o); news(`${rivOutfit()} took the ${FAC[o.emp].short} job at ${o.site}.`); }
   if (c.story) { } else if (ok && payer === c.emp && Math.random() < .7) { const [t, pre] = NEXT[c.type]; CO.board.push(genContract({ type: t, emp: c.emp, foe: c.foe, biome: Math.random() < .6 ? c.biome : undefined, pre: `FOLLOW-UP to ${c.site}. ${pre}`, upd: 'FOLLOW-UP' })); }
   else if (!ok && Math.random() < .6) CO.board.push(genContract({ type: pick(['strike', 'recovery']), emp: c.foe === 'maw' ? pick(EMPS) : c.foe, foe: c.emp, pre: `${FAC[c.emp].short} is reeling after ${c.site}. Their rivals smell blood. `, upd: 'OPPORTUNITY' }));
-  fillBoard(); drift(); drift(); if (CO.wing && !solo) { if (CO.wingDown) { CO.wing.p.until = now() + 48; if (CO.wing.p.bar) BARSV.pst[CO.wing.p.seed] = { until: CO.wing.p.until }; } CO.wing = null; CO.wingDown = false; } saveCO(); return D;
+  fillBoard(); drift(); drift(); if (CO.wing && !solo) { if (CO.wingDown) { CO.wing.p.until = now() + 48; if (CO.wing.p.bar) BARSV.pst[CO.wing.p.seed] = { until: CO.wing.p.until }; } CO.wing = null; CO.wingDown = false; }
+  { const fresh = CO.board.filter(o => !o.story && !was.includes(o)); D.bd = { gone: was.filter(o => !CO.board.includes(o)).length, fresh: fresh.length, follow: fresh.some(o => o.upd === 'FOLLOW-UP'), opp: fresh.some(o => o.upd === 'OPPORTUNITY') }; }
+  saveCO(); return D;
 }
 /* ============ RIVAL COMPANIES ON THE BOARD AND IN THE FIELD ============ */
 /* a company that subcontracts to you is the one you bargain with, so each commander is also a negotiating persona (never drawn at random: PERSONA_STD is the ordinary five) */
@@ -6523,8 +6692,9 @@ function storySettle(c, ok, D, add) {
 }
 const stGift = (D, key, n = 1) => { invAdd(key, n); D.story.gifts.push(`${n > 1 ? n + ' × ' : ''}${itemInfo(key).name}`); };
 /* after the books: the people the chapter was about have something to say, and anything they sent arrives */
-function storyDebrief(D, fin) {
-  const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean), crew = { 11: 'xo', 23: 'intel', 37: 'chief', 51: 'p0', 67: 'p1' };
+/* what is said about a chapter once it is over, as [who, line]: the chapter's own epilogue, anything it sent home, and where the thread goes from here */
+function storyLines(D) {
+  const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean);
   if (D.story.gifts.length) L.push([CREW.chief, `Delivery for you, boss, off the back of that one: ${D.story.gifts.join(', ')}. In stores now.`]);
   if (D.ok && D.story.last) {
     L.push([CREW.xo, S.close || `That closes the book on ${S.name}. ${S.end || 'It will be talked about.'}`]); const op = D.story.opens || [], wt = D.story.waits || [];
@@ -6533,8 +6703,7 @@ function storyDebrief(D, fin) {
   }
   else if (D.ok) L.push([CREW.xo, 'That is not the end of it. When there is more, it will come up on the board.']);
   else L.push([CREW.xo, S.again || 'It will be offered again — these people have nobody else to ask. Take a day, refit, and we go back.']);
-  const step = i => { removeContact(); if (i >= L.length) return fin(); const [ch, text] = L[i], p = crew[ch.seed] ? HQ.P[crew[ch.seed]] : null; if (!p && !(CAST[ch.seed] && CAST[ch.seed].bot)) showContact(ch);   /* a machine is a voice: there is nobody to stand on the pad */ dlg(ch, text, [[i === L.length - 1 ? 'Continue' : 'Go on', () => step(i + 1)]], p); };
-  step(0);
+  return L;
 }
 const stPips = (c, S) => S.ch.map((h, i) => `<i class="${i < c.chap ? 'd' : i === c.chap ? 'n' : ''}"></i>`).join('');
 function storyCard(c, h) {
@@ -6589,7 +6758,7 @@ async function toHangar() {
   player.gait.sag = 0; if (player.slot.head) player.slot.head.visible = true; player.onStep = null;
   setDoor(0); HG.lift.position.y = .1; orb.cine = false; orb.idle = 0; setGang(1); busy = false;
   $('fieldUI').classList.add('hid'); $('hangarUI').classList.remove('hid'); for (const id of ['panelL', 'panelR', 'hint', 'status']) $(id).classList.remove('hid');
-  setStatus('UNIT RECOVERED — REPAIRED AND REARMED'); refreshUI(); renderHangarContract(); if (D) { showHQ(); hq.cPos.set(0, 3.2, 8.6); if (D.ok) music.sting('win'); debrief(D); }
+  setStatus('UNIT RECOVERED — REPAIRED AND REARMED'); refreshUI(); renderHangarContract(); if (D) aarOpen(D);
   await tween(.9, k => fade(1 - k));
 }
 function playerLost() {
@@ -7318,7 +7487,7 @@ HQ.syncPins = () => {
   }
 };
 
-/* ============ HEADQUARTERS: UI, CONVERSATIONS, NEGOTIATION, DEBRIEF ============ */
+/* ============ HEADQUARTERS: UI, CONVERSATIONS, NEGOTIATION ============ */
 let dlgCur = null;
 /* dlg(who, text, [[label, fn, disabled]], person) — person: a crew figure to frame, or null to leave the camera alone */
 function dlg(who, text, opts, person) {
@@ -7402,26 +7571,7 @@ function talkContact(c) {
   };
   menu(c.talked ? 'You again. Have you decided?' : sub ? Q.hi : `${ch.name}, ${FAC[c.emp].name}. ${Q.hi}`); c.talked = true;
 }
-/* after a sortie the XO reads out what happened, then the books — and some clients try to short the invoice */
-function debrief(D) {
-  const x = CREW.xo, c = D.c, led = () => D.lines.map(([l, v]) => `${l}: ${fmt(v)}`).join('\n') + `\nNET: ${fmt(D.total)}   ·   FUNDS: ${fmt(CO.cb)}`;
-  const fin = () => dlg(x, `${D.ok ? 'Good work out there.' : 'We live to sign another contract.'} The board shifted while you were gone — look it over.${D.rep.length ? '\n' + D.rep.map(([f, v]) => `${FAC[f].short} standing ${v > 0 ? '+' : ''}${Math.round(v)}`).join(' · ') : ''}${D.rel && D.rel.length ? '\n' + RIVS.map(k => [k, D.rel.reduce((s, r) => s + (r[0] === k ? r[1] : 0), 0)]).filter(r => r[1]).map(([k, v]) => `${RIV[k].name} ${v > 0 ? '+' : ''}${v}`).join(' · ') : ''}`, [['Dismissed', dlgClose]], HQ.P.xo);
-  const dispute = () => {
-    const ch = c.contact, cut = Math.round(D.base * .3); showContact(ch);
-    const res = (paid, line, r) => { if (!paid) { CO.cb -= cut; D.total -= cut; D.lines.push(['Withheld by client', -cut]); } repAdd(c.emp, r, `the disputed invoice for ${c.site}`); CO.dirty = true; saveCO(); dlg(ch, line, [['Close channel', () => { removeContact(); fin(); }]], null); };
-    dlg(ch, `Our accountants have reviewed the engagement. Ammunition overage, collateral, administrative fees. We are remitting seventy percent — ${fmt(cut)} withheld.`, [
-      ['Accept the cut', () => res(false, 'A pleasure doing business.', 1)],
-      ['Demand payment in full — cite the contract', () => Math.random() < .4 + CO.rep[c.emp] / 120 + (c.talked ? .15 : 0) ? res(true, '...Legal advises me to release the balance. You have your money.', -1) : res(false, 'Then sue us. Seventy percent.', -3)],
-      ['Threaten to tell every outfit in the sector', () => Math.random() < .65 ? res(true, 'There is no need for that. The balance is on its way. Do not call this office again.', -9) : res(false, 'Slander is expensive, mercenary. Seventy percent — and we are finished.', -12)]], null);
-  };
-  const after = () => (D.story ? () => storyDebrief(D, fin) : D.renege ? dispute : fin)(), ch = CREW.chief; let salvShow = null;
-  const salv = () => dlg(ch, `Recovery crews are back from ${c.site}. ${D.salv.pool.length} ${D.salv.pool.length === 1 ? 'piece' : 'pieces'} worth keeping came off the field, and the contract gives us ${c.salv}% salvage — ${D.salv.picks === D.salv.pool.length ? 'so all of it is ours' : `that is ${D.salv.picks} of them`}. Tell me which, boss. The rest goes to the client's yard.`, [
-    ['Show me what they found', salvShow = () => { const S = D.salv; dlgClose(); storesOpen({ mode: 'salv', salv: { pool: S.pool, picks: S.picks, site: c.site, pct: c.salv }, done: got => { D.salv = null; dlg(ch, got.length ? `Tagged and stowed: ${got.map(k => itemInfo(k).name).join(', ')}. In stores whenever you want ${got.length === 1 ? 'it' : 'them'} fitted.` : 'Leaving it all? Your call. The scrap men will be pleased.', [['Continue', after]], HQ.P.chief); } }); }],
-    ['No time — let the client have it', () => { const S = D.salv, worth = S.pool.map(k => itemInfo(k)).sort((a, b) => b.price - a.price), val = worth.slice(0, S.picks).reduce((s, i) => s + i.price, 0);
-      dlg(ch, `All of it, boss? That is ${S.picks === 1 ? 'a piece' : S.picks + ' pieces'} we are owed and will not see again — ${worth[0].name} among ${S.pool.length === 1 ? 'it' : 'them'}, something like ${fmt(val)} at market. Say the word and the client's yard gets the lot.`, [['Wait. Show me what they found', salvShow], ['Yes — leave it all', () => { D.salv = null; after(); }]], HQ.P.chief); }]], HQ.P.chief);
-  const story = D.log.slice(0, -1).filter(s => !s.includes(': "')).slice(-5);
-  dlg(x, `${D.story ? D.story.head : (D.ok ? 'CONTRACT COMPLETE' : 'CONTRACT FAILED') + ' — ' + c.site}.\n${D.text}${story.length ? '\n\n' + story.map(s => '· ' + s).join('\n') : ''}`, [['Show me the books', () => dlg(x, led(), [['Continue', D.salv ? salv : after]])]], HQ.P.xo);
-}
+/* (what happens after a sortie, the books and the client who would like to pay less among it, is the debriefing room: 352_debrief.js) */
 
 /* ---- STANDING: the second tab of the board. How each faction and each of the other companies sees us, what that is worth, and why it last moved ---- */
 const HQV = { tab: 'board', sel: 'r.cob' };
@@ -7630,6 +7780,15 @@ const BAR_SEAT = { chair: { h: .47, back: .3 }, stool: { h: .78, back: .16 }, be
   box(sc, woodD, CL, 1.04, .62, CX, .52, CZ); box(sc, wood, CL + .3, .07, .96, CX, 1.075, CZ + .06); box(sc, brass, CL + .3, .025, .03, CX, 1.045, CZ + .53); cyl(sc, brass, .028, .028, CL, CX, .2, CZ + .5, 0, 0, PI / 2, 8);
   for (let x = CX - CL / 2 + .5; x < CX + CL / 2; x += 1.4) { box(sc, brass, .03, .2, .16, x, .12, CZ + .42); box(sc, dk, .05, .9, .03, x + .7, .52, CZ + .32); }
   { const g = grp(sc, CX + .9, 1.11, CZ - .05); box(g, brass, .14, .34, .12, 0, .17, 0); for (const x of [-.045, .045]) { cyl(g, dk, .012, .016, .16, x, .4, .03, .5); cyl(g, brass, .008, .008, .09, x, .2, .09, PI / 2); } }
+  /* the tip jar: glass, a brass lid, what people have dropped in it and a card propped against it. The one thing in the building that takes real money (talkTip) */
+  {
+    const g = grp(sc, CX + 2.9, 1.11, CZ + .2), gl = new THREE.MeshStandardMaterial({ color: 0xcfe6de, transparent: true, opacity: .26, roughness: .06, metalness: .1, envMapIntensity: 1.3, depthWrite: false }), silver = std({ color: 0xc8ccd0, metalness: .92, roughness: .3 }), R = mulberry(77);
+    noShadow(cyl(g, gl, .085, .078, .21, 0, .105, 0, 0, 0, 0, 18)); cyl(g, brass, .09, .09, .022, 0, .221, 0, 0, 0, 0, 18); box(g, dk, .07, .006, .014, 0, .233, 0);
+    for (let i = 0; i < 18; i++) { const a = R() * TAU, r = R() * .05; cyl(g, i % 3 ? brass : silver, .016, .016, .004, Math.sin(a) * r, .006 + i * .0042, Math.cos(a) * r, (R() - .5) * .5, 0, (R() - .5) * .5, 10); }
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(.21, .136), new THREE.MeshBasicMaterial({ color: 0xb8b0a0, map: labelTex(256, 166, (c, w, h) => { c.fillStyle = '#efe6cf'; c.fillRect(0, 0, w, h); c.strokeStyle = '#7a2a1a'; c.lineWidth = 6; c.strokeRect(7, 7, w - 14, h - 14); c.fillStyle = '#7a2a1a'; c.textAlign = 'center'; c.font = 'bold 66px Menlo,Consolas,monospace'; c.fillText('TIPS \u2665', w / 2, 82); c.fillStyle = '#3a2a1c'; c.font = 'bold 19px Menlo,Consolas,monospace'; c.fillText('FOR WHOEVER BUILT', w / 2, 116); c.fillText('THE PLACE', w / 2, 140); }) }));
+    card.position.set(.19, .066, .04); card.rotation.set(-.2, -.3, 0); g.add(card); box(g, woodD, .03, .1, .012, .2, .05, .0, .5, -.3, 0);
+    BAR.tip = new THREE.Mesh(new THREE.SphereGeometry(.27, 8, 6), HUM.hitM); BAR.tip.position.set(.08, .11, 0); g.add(BAR.tip);
+  }
   /* the back bar: cabinet, three lit shelves, the bottles (one mesh per colour of glass) */
   const BZ = -D / 2 + .32; box(sc, woodD, CL, 1, .6, CX, .5, BZ); box(sc, wood, CL, .05, .64, CX, 1.025, BZ); box(sc, std({ color: 0x14100c, metalness: 1, roughness: .18, envMapIntensity: .9 }), CL, 2, .04, CX, 2.05, -D / 2 + .03);
   const shelfY = [1.45, 1.98, 2.51]; for (const y of shelfY) { box(sc, woodD, CL, .045, .34, CX, y, BZ - .08); noShadow(box(sc, glowMat(0xffa040, 1.5), CL - .2, .018, .03, CX, y - .035, BZ + .07)); }
@@ -7843,6 +8002,15 @@ function talkKeep() {
     ['Who is in tonight?', () => dlg(k, `${R.map(p => `${p.ch.first} — ${BSK[p.sk][0].toLowerCase()}, flies ${/^[AEIOU]/.test(p.cfg.name) ? 'an' : 'a'} ${p.cfg.name}`).join('. ')}. All four fly for money; the better the pilot and the bigger the machine, the more of it.\nBallast will drink you under her table for a stake, and Vise will take your arm off for the same. Strand loads the dropships, Banerjee listens to bands she should not, and Calloway in the booth knows every contact on your board.`, back)],
     ['Thanks, Mother', dlgClose]], H);
 }
+/* the tip jar on the counter, and its button at the foot of the column. It is the one thing in the game that asks for real money, so Mother says so in as many words before
+   anything opens, and it opens in a tab of its own: the game stays where it is */
+const TIP_URL = 'https://ryangraham.ca/donate';
+function talkTip() {
+  if (BAR.relax || BAR.game) return; const k = BARC.keep, H = BAR.P.keep;
+  dlg(k, 'The jar? Not mine, and not the house\'s. It goes to whoever built this place: the bar, the yard upstairs, every machine in it. It does not take credits, Commander. That one is real money, out of your own pocket, and nobody in here thinks less of anybody who walks past it.', [
+    ['Put something in the jar — opens ryangraham.ca/donate in a new tab ↗', () => { tal('b.tip'); try { window.open(TIP_URL, '_blank', 'noopener'); } catch (e) { } dlg(k, pick(['Then that is one round I did not have to pour. Thank you, Commander.', 'I will see it gets where it is going. Thank you.']) + '\nIt has opened beside this one. If your browser kept it shut, the address is on the card: ryangraham.ca/donate', [['Any time, Mother', dlgClose]], H); }],
+    ['Not tonight', dlgClose]], H);
+}
 function talkSrc(key) {
   const S = BAR_SRC[key], ch = BARC[key], H = BAR.P[key], back = [['Something else', () => talkSrc(key)], ['Leave', dlgClose]], fresh = barFresh(key), has = barRumour(key, true);
   const T = {
@@ -7881,7 +8049,7 @@ function barDraw() {
   $('barHireN').textContent = fame ? `HOUSE STANDING −${Math.round(fame * 100)}%` : 'FLAT FEE OR A SHARE';
   $('barPil').innerHTML = R.map((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); return `<div class="bcard${on ? ' on' : ''}${out ? ' out' : ''}" data-i="${i}"><canvas width="72" height="72"></canvas><div><b>${p.ch.name}</b><small><span style="color:${p.ch.col}">${BSK[p.sk][0]}</span> <span class="pips">${pipStr(p.sk + 1)}</span> · ${p.cfg.name} · ${p.st.cls} ${p.st.tons.toFixed(0)} t</small><div class="bpw"><i style="width:${clamp(p.pw / 110, .05, 1) * 100}%"></i></div><small>MECH POWER ${p.pw} · ARMOR ${p.st.armor} · ${p.st.fire.toFixed(0)} DPS</small></div><em>${on ? 'ON YOUR<br>WING' : out ? 'MED<br>BAY' : `${fmt(barFee(p))}<small>or ${Math.round(p.share * 100)}% share</small>`}</em></div>`; }).join('');
   $('barPil').querySelectorAll('.bcard').forEach((d, i) => { drawFace(d.querySelector('canvas'), R[i].ch); d.onclick = () => { sfx.play('ui'); talkBarPilot(R[i]); }; });
-  $('bbRelax').disabled = !!BAR.game; BAR.drawWall(); barStat();
+  $('bbRelax').disabled = $('bbTip').disabled = !!BAR.game; BAR.drawWall(); barStat();
 }
 function barStat() {
   const h = Math.floor(CO.hour), b = barBuzz(); $('barStat').innerHTML = `<div><span>FUNDS</span><b>${fmt(CO.cb)}</b></div><div><span>SECTOR TIME</span><b>DAY ${CO.day} · ${String(h).padStart(2, '0')}:${String(Math.floor((CO.hour - h) * 6) * 10).padStart(2, '0')}</b></div><div><span>CONDITION</span><b style="color:${b > .6 ? '#ff5a1f' : b > .25 ? '#ffb21a' : BARSV.rested ? '#8dff6a' : ''}">${barState()}</b></div><div><span>WING</span><b>${CO.wing ? CO.wing.ch.first.toUpperCase() : 'SOLO'}</b></div>`;
@@ -7950,11 +8118,11 @@ async function barLeave(to) {
   cv.addEventListener('pointermove', e => { if (mode !== 'bar' || btn < 0) return; const dx = e.clientX - px, dy = e.clientY - py; px = e.clientX; py = e.clientY; moved += Math.abs(dx) + Math.abs(dy); if (barCam.focus) return; barCam.th -= dx * .005; barCam.ph = clamp(barCam.ph - dy * .004, 1, 1.52); });
   cv.addEventListener('pointerup', e => {
     if (mode !== 'bar') return; btn = -1; if (BAR.relax) return barRelax(false); if (moved > 6 || dlgCur || BAR.game) return; m2.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); rc.setFromCamera(m2, BAR.camera);
-    const h = rc.intersectObjects(BAR.people.map(p => p.hit))[0]; if (h) { sfx.play('ui'); barTalk(h.object.userData.p); }
+    const h = rc.intersectObjects(BAR.people.map(p => p.hit))[0], jar = BAR.tip ? rc.intersectObject(BAR.tip)[0] : null; if (jar && (!h || jar.distance < h.distance)) { sfx.play('ui'); talkTip(); } else if (h) { sfx.play('ui'); barTalk(h.object.userData.p); }
   });
   cv.addEventListener('wheel', e => { if (mode !== 'bar' || barCam.focus) return; e.preventDefault(); barCam.r = clamp(barCam.r * (1 + Math.sign(e.deltaY) * .07), 3.5, 10.5); }, { passive: false });
   addEventListener('keydown', e => { if (mode !== 'bar' || !BAR.relax || uiModal()) return; e.preventDefault(); barRelax(false); });
-  $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
+  $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); }; $('bbTip').onclick = () => { sfx.play('ui'); talkTip(); };
   $('barChill').onclick = () => barRelax(false); $('btnToBar').onclick = toBar; $('btnBar').onclick = toBar;
   for (const b of $('barBar').children) b.onclick = () => { sfx.play('ui'); barTalk(BAR.P[b.dataset.k]); };
 }
@@ -8363,6 +8531,194 @@ async function brfLeave(to) {
   $('brfSkip').onclick = () => { sfx.play('ui'); if (mode === 'brief' && !busy) brfLeave('bay'); }; $('brfBack').onclick = () => { sfx.play('ui'); if (mode === 'brief' && !busy) brfLeave('hq'); };
 }
 
+/* ============ THE DEBRIEFING ROOM: A SORTIE ENDS IN FRONT OF THE BIG SCREEN, WITH EVERYBODY WHO HAS SOMETHING TO SAY ABOUT IT ============ */
+/* The room is the briefing room (350_brief.js) and the screen is its screen, with the camera stood square in front of it: how the contract went, the books, the figures for the
+   sortie and what it did to the company's standing are drawn on the wall (aarDraw), in the world. Round it, on the page, the people with something to say pop up one after
+   another (AAR.L): a head, a line, and now and then a button, because some of them want an answer: Dutch about the salvage, a client who would like to pay less.
+   Nothing has to be clicked through. The lines are said aloud in turn; a click on a head says its line again.
+   `mode` is 'aar' while it shows. toHangar() opens it with the debrief settle() made; aarLeave() goes on to the deck or the bay. Two things are not walked away from by
+   accident: a client waiting on an answer has to be given one, and salvage nobody has chosen takes a second press.
+   A line is { side: 'l' | 'r', ch, text, opts: [[label, fn, disabled]], key }. Both sides are columns while the window is wide enough to keep the screen readable between
+   them (AAR_TWO); narrower than that, every head is in the right-hand column and the screen has the rest */
+const AAR = { D: null, L: [], q: [], n: 0, t: 0, drawT: 0, spk: null, spkT: 0, gap: 0, arm: 0, two: true, cam: [.7, 2.55, 1.4], sent: 0, note: '', mark: null }, AAR_TWO = 1500;
+/* (somebody with two things to say one after the other is one head saying both: `pre` is what they had already said when the rest was added, so that the rest can be changed by itself) */
+const aarLine = (side, ch, text, o = {}) => {
+  const last = AAR.L.filter(b => b.side === side).pop(); if (last && !last.key && !last.opts && (last.ch === ch || (ch.seed !== undefined && last.ch.seed === ch.seed))) { last.pre = last.text; last.text += '\n\n' + text; return Object.assign(last, o); }
+  const b = { side, ch, text, pre: '', opts: null, key: '', el: null, ...o }; AAR.L.push(b); return b;
+};
+/* a head changes its mind: the new line replaces the old (after whatever it had said before that), and is said aloud */
+const aarSet = (b, text) => { b.text = (b.pre ? b.pre + '\n\n' : '') + text; aarFill(b); aarSay(b, true, text); };
+/* who says what. D is settle()'s debrief: the contract, the books, and what was noted on the way home (D.fig, D.wing, D.bd, D.shop) */
+function aarLines(D) {
+  const c = D.c, x = CREW.xo, S = D.salv, notes = D.log.slice(0, -1).filter(s => !s.includes(': "')).slice(-4), n1 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  aarLine('l', x, `${D.text}${notes.length ? '\n' + notes.map(s => '· ' + s).join('\n') : ''}\n${D.ok ? pick(['Good work out there.', 'That is how it is done, Commander.', 'Clean enough. I will take it.']) : pick(['We live to sign another contract.', 'It happens. The trick is to be here afterwards, and we are.'])}`);
+  if (D.story) for (const [ch, text] of storyLines(D)) aarLine(ch.seed === CREW.intel.seed || ch.seed === CREW.chief.seed ? 'r' : 'l', ch, text);
+  else if (D.renege) aarDispute(D);
+  else if (c.cok !== 'sub' && c.contact) { const T = AAR_CLIENT[c.persona] || AAR_CLIENT.clerk; aarLine('l', c.contact, D.ok && D.payer !== c.emp ? `We know who paid you for ${c.site}. In time, so will everybody who might have hired you.` : D.fig.abort ? 'You walked off our contract. That goes in the file, and the file is kept.' : pick(D.ok ? T.ok : T.bad)); }
+  /* a company that flew beside us, against us or over us has a commander, and the commander has a view */
+  for (const k of RIVS) { const L = (D.rel || []).filter(r => r[0] === k), v = L.reduce((s, r) => s + r[1], 0), V = RIV[k]; if (!v) continue; aarLine('l', V.ch, pick(v > 0 ? [`Good flying. ${V.short} does not forget who stood where.`, 'That is one we owe you, and we keep count.', 'You flew that the way we would have. Take it as praise.'] : ['We saw what you did out there. So did everybody on our net.', `That will cost you with ${V.short}. Fly carefully.`, 'We will remember this one, Commander. We are good at remembering.'])); }
+  if (D.wing) { const w = D.wing, ch = w.ch; aarLine('l', ch, w.down ? pick(['They got me, Commander. The med bay says two days. Bill the client for the machine.', 'I walked home. The machine did not. Two days, they tell me.']) : D.ok ? pick(['Clean drop. Call me for the next one.', 'That is what the fee was for. Any time.', 'Good hunting, Commander. You know where I drink.']) : pick(['That one got away from us. It happens.', 'I have had better days. So have you. Next time.'])); }
+  /* Dutch: the state she came home in, what the recovery crews found, and the market if it has turned over */
+  const F = D.fig, T = [F.dead ? 'We brought her home on a flatbed, boss. She is rebuilt and back on the stand.' : F.lost.length ? `She came home short ${F.lost.length > 1 ? 'of ' + stAnd(F.lost.map(s => 'the ' + s.toLowerCase())) : 'of her ' + F.lost[0].toLowerCase()}. Rebuilt, rearmed, back on the stand.` : F.armor > .97 ? 'Not a mark on her. I checked twice.' : F.armor < .35 ? 'You brought back about a third of a mech, boss. She is patched and rearmed all the same.' : 'She is patched, rearmed and back on the stand.'], O = [];
+  if (S) { const all = S.picks >= S.pool.length; T.push(`Recovery crews are back from ${c.site} with ${n1(S.pool.length, 'piece')} worth keeping. The contract gives us ${c.salv}%${all ? (S.pool.length > 1 ? ', which covers the lot. Come and tag them.' : ', which covers it. Come and tag it.') : `: ${S.picks} of them. Tell me which.`}`); O.push([all ? `CLAIM THE SALVAGE · ${S.pool.length === 1 ? 'ONE PIECE' : 'ALL ' + S.pool.length}` : `CHOOSE THE SALVAGE · ${S.picks} OF ${S.pool.length}`, aarSalvage]); }
+  if (D.shop) { const rare = YARD.shop.stock.find(e => e.tag); T.push(`The market turned over while you were out: ${n1(YARD.shop.stock.length, 'lot')}${rare ? `, ${/^[aeiou]/i.test(itemInfo(rare.key).name) ? 'an' : 'a'} ${itemInfo(rare.key).name} among them, which does not come up often` : ''}, and ${n1(dealLot().length, 'whole machine')} on the dealer's lot.`); O.push(['SEE THE MARKET', () => storesOpen({ mode: 'shop' })]); }
+  aarLine('r', CREW.chief, T.join(' '), { opts: O.length ? O : null, key: 'bay' });
+  { const m = aarMira(D); if (m) aarLine('r', CREW.intel, m, { key: 'mira' }); }
+}
+/* Mira: who thinks differently of us, and what the board did meanwhile */
+function aarMira(D) {
+  const M = [], c = D.c, rel = RIVS.map(k => [k, (D.rel || []).reduce((s, r) => s + (r[0] === k ? r[1] : 0), 0)]).filter(r => r[1]), rep = D.rep.filter(r => Math.round(r[1])), B = D.bd, n1 = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  if (rep.length || rel.length) M.push('Standing: ' + [...rep.map(([f, v]) => `${FAC[f].short} ${v > 0 ? 'up' : 'down'} ${Math.abs(Math.round(v))}, ${repWord(CO.rep[f])}`), ...rel.map(([k, v]) => `${RIV[k].name} ${v > 0 ? 'up' : 'down'} ${Math.abs(v)}, ${relWord(CO.riv[k].rel)}`)].join('. ') + '.');
+  if (B && !tutLock() && (B.gone || B.fresh)) M.push(`While you were out ${B.gone ? `${n1(B.gone, 'offer')} on the board went to somebody else` : 'nothing left the board'}${B.fresh ? `, and ${B.fresh === 1 ? 'a new one has' : B.fresh + ' new ones have'} come in` : ''}.${B.follow ? ` ${FAC[c.emp].short} already have a follow-up for us.` : ''}${B.opp ? ' And somebody smells blood: there is an opportunity up there.' : ''}`);
+  return M.join(' ');
+}
+/* the client, when there is nothing to dispute: one line on how they took it, in the voice they bargained in */
+const AAR_CLIENT = {
+  shark: { ok: ['Paid in full. Do not read anything into it.', 'The balance is released. You were worth the rate. This once.'], bad: ['I paid for a result and I have an invoice. We will not speak again soon.', 'I will find someone hungrier. I should have the first time.'] },
+  clerk: { ok: ['The instrument is closed and the fee released. Thank you for your service.', 'Completion is confirmed on our side. Payment has been authorised in full.'], bad: ['I am recording this engagement as unfulfilled. It will stay on your file.', 'The terms were not met. I have noted it, as I am required to.'] },
+  zealot: { ok: ['The cause is served. You have its thanks, and its coin.', 'You fought as though you believed. The faithful will remember it.'], bad: ['The faithful bled and you came home. We will remember which.', 'You were not worthy of this work. I said so, and was overruled.'] },
+  desperate: { ok: ['You did it. You actually did it. Thank you. The money is yours, all of it.', 'I did not think anybody would come, and you came. It is paid. Thank you.'], bad: ['Then that was the last of it. I hope it was worth the fuel.', 'I have nobody else to call. I want you to know that.'] },
+  smuggler: { ok: ['Lovely work. The money is in your account, and it is even the right amount.', 'Done and dusted. I shall tell the next crew you set the standard.'], bad: ['Pity. I had already spent my end. Do not call me: I will call you.', 'Well. That was expensive for both of us, and I do mean both.'] },
+};
+/* some clients try to short the invoice: the contact comes on with three ways to answer, and no way out of the room until one is given */
+function aarDispute(D) {
+  const c = D.c, ch = c.contact, cut = Math.round(D.base * .3);
+  const res = (paid, line, r) => { if (!paid) { CO.cb -= cut; D.total -= cut; D.lines.push(['Withheld by client', -cut]); } repAdd(c.emp, r, `the disputed invoice for ${c.site}`); const e = D.rep.find(q => q[0] === c.emp); if (e) e[1] += r; else D.rep.push([c.emp, r]); CO.dirty = true; saveCO(); b.opts = null; aarSet(b, line); AAR.note = ''; aarNav();
+    const m = AAR.L.find(q => q.key === 'mira'), t = aarMira(D); if (m && t) { m.text = (m.pre ? m.pre + '\n\n' : '') + t; aarFill(m); } };   /* and Mira's figures are the ones on the wall */
+  const b = aarLine('l', ch, `Our accountants have reviewed the engagement. Ammunition overage, collateral, administrative fees. We are remitting seventy percent: ${fmt(cut)} withheld.`, { key: 'disp', opts: [
+    ['Accept the cut', () => res(false, 'A pleasure doing business.', 1)],
+    ['Demand payment in full: cite the contract', () => Math.random() < .4 + CO.rep[c.emp] / 120 + (c.talked ? .15 : 0) ? res(true, '...Legal advises me to release the balance. You have your money.', -1) : res(false, 'Then sue us. Seventy percent.', -3)],
+    ['Threaten to tell every outfit in the sector', () => Math.random() < .65 ? res(true, 'There is no need for that. The balance is on its way. Do not call this office again.', -9) : res(false, 'Slander is expensive, mercenary. Seventy percent, and we are finished.', -12)]] });
+}
+/* the picker, and what Dutch says about what was picked */
+function aarSalvage() {
+  const D = AAR.D, S = D && D.salv, b = AAR.L.find(q => q.key === 'bay'); if (!S || !b) return; AAR.arm = 0; AAR.note = ''; vox.stop();
+  storesOpen({ mode: 'salv', salv: { pool: S.pool, picks: S.picks, site: D.c.site, pct: D.c.salv }, done: got => {
+    D.salv = null; b.opts = (b.opts || []).filter(o => o[1] !== aarSalvage); if (!b.opts.length) b.opts = null;
+    aarSet(b, got.length ? `Tagged and stowed: ${got.map(k => itemInfo(k).name).join(', ')}. In stores whenever you want ${got.length === 1 ? 'it' : 'them'} fitted.` : 'Leaving it all? Your call. The scrap men will be pleased.'); aarNav(); } });
+}
+/* one head pops up: a portrait, who it is, the line, and buttons if it wants an answer */
+function aarPop(b) {
+  const d = b.el = document.createElement('div'); d.className = 'aarB'; d.style.setProperty('--c', b.ch.col || '#ffb21a');
+  d.innerHTML = '<canvas width="144" height="144" title="Hear it again"></canvas><div><b></b><p></p><div class="aarO"></div></div>'; drawFace(d.firstChild, b.ch); d.querySelector('b').textContent = `${b.ch.name} · ${b.ch.role}`;
+  d.firstChild.onclick = () => aarSay(b, true); d.addEventListener('animationend', aarMore); aarFill(b);   /* (a head on its way in overhangs the column: measure again when it has arrived) */ $(AAR.two && b.side === 'l' ? 'aarL' : 'aarR').appendChild(d); aarMore(); sfx.play('comm', .5); AAR.q.push(b);
+}
+/* a column with more heads than it has room for scrolls, fades out at the foot while there is more below, and follows whoever is speaking */
+function aarMore() { for (const id of ['aarL', 'aarR']) { const h = $(id); h.classList.toggle('more', h.scrollHeight - h.scrollTop - h.clientHeight > 6); } }
+function aarFill(b) {
+  const d = b.el; if (!d) return; d.querySelector('p').textContent = coTxt(b.text); const O = d.querySelector('.aarO'); O.innerHTML = ''; d.classList.toggle('ask', !!b.opts);
+  for (const [label, fn, dis] of b.opts || []) { const x = document.createElement('button'); x.textContent = label; x.disabled = !!dis; x.onclick = () => { sfx.play('ui'); fn(); }; O.appendChild(x); }
+  aarMore();
+}
+/* say a line: the next in the queue, or (now) whichever head was clicked */
+function aarSay(b, now, text = b.text) {
+  if (now) { AAR.q = AAR.q.filter(q => q !== b); if (TG.k || !b.el) return; } if (AAR.spk) AAR.spk.el.classList.remove('spk'); AAR.spk = null;
+  const d = vox.say(b.ch, coTxt(text)); if (d) { AAR.spk = b; AAR.spkT = AAR.t + d + .5; b.el.classList.add('spk'); b.el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+}
+/* draw attention to a head that is owed an answer */
+function aarNag(b, note) { while (AAR.n < AAR.L.length) aarPop(AAR.L[AAR.n++]); AAR.note = note; sfx.play('deny'); if (b && b.el) { b.el.classList.remove('nag'); void b.el.offsetWidth; b.el.classList.add('nag'); b.el.scrollIntoView({ block: 'nearest' }); } aarNav(); }
+function aarNav() {
+  $('aarNote').textContent = AAR.note; $('aarNote').classList.toggle('hid', !AAR.note);
+  $('aarFb').innerHTML = AAR.sent === 1 ? '✓ SENT. THANK YOU — <b>SOMETHING ELSE?</b>' : AAR.sent ? '✓ KEPT: IT GOES WHEN THE SERVER ANSWERS — <b>SOMETHING ELSE?</b>' : '✎ WHAT DID YOU WISH YOU COULD DO ON THAT CONTRACT?';
+}
+/* what goes with a piece of feedback written here: the contract and how it went, and nothing about the company */
+function aarCtx(D) {
+  const c = D.c, F = D.fig, st = player.stats;
+  return { what: c.story ? `${c.story}.${c.chap + 1}` : `${c.type}.${c.plot}`, title: c.story ? c.title : TYPES[c.type].name, site: c.site, biome: c.biome, hour: todKey(c.biome, c.mood, c.tod), diff: c.diff, twists: (c.twists || []).join(' '),
+    result: D.ok ? 'won' : F.dead ? 'destroyed' : F.abort ? 'withdrew' : 'lost', secs: Math.round(F.t), kills: F.kills, armor: Math.round(F.armor * 100), mech: `${st.cls} ${Math.round(st.tons)}t`, wing: !!D.wing, net: D.total, flown: CO.done + CO.fails };
+}
+/* where the camera stands so that the screen fills the space the columns leave it, whatever the shape of the window: the screen is 7.2 m by 4.05 m in a frame, flat on the wall */
+function aarLay() {
+  const W = innerWidth, H = innerHeight, two = W >= AAR_TWO, lw = two ? clamp(W * .19, 240, 320) : 0, x0 = two ? 18 + lw + 14 : 18, x1 = W - 18 - 340 - 14, y0 = two ? 30 : 84, y1 = H - 30;
+  const ppm = Math.max(24, Math.min((x1 - x0) / 7.56, (y1 - y0) / 4.4)), d = H / (2 * Math.tan(BRF.camera.fov * PI / 360) * ppm);
+  AAR.cam = [.7 - ((x0 + x1) / 2 - W / 2) / ppm, 2.55 + ((y0 + y1) / 2 - H / 2) / ppm, -6.61 + d];
+  { const s = $('aarScr').style, w = 7.2 * ppm, h = 4.05 * ppm; s.left = (x0 + x1 - w) / 2 + 'px'; s.top = (y0 + y1 - h) / 2 + 'px'; s.width = w + 'px'; s.height = h + 'px'; }   /* where the wall is on the page: the tour rings it */
+  if (two !== AAR.two || !$('aarL').children.length) { AAR.two = two; for (const b of AAR.L) if (b.el) $(two && b.side === 'l' ? 'aarL' : 'aarR').appendChild(b.el); } $('aarUI').classList.toggle('one', !two); aarMore();
+}
+/* ---- the wall ---- */
+function aarDraw(t) {
+  const D = AAR.D; if (!D) return; const g = BRF.cv.getContext('2d'), c = D.c, S = c.story ? STORY[c.story] : null, ok = D.ok, col = ok ? '#8dff6a' : '#ff5a3a', a = AAR.t, F = D.fig, B = BIOMES[c.biome], MONO = 'Menlo,Consolas,monospace';
+  const up = (t0, d = .25) => clamp((a - t0) / d, 0, 1), sp = px => { g.letterSpacing = px + 'px'; };
+  g.fillStyle = '#04080b'; g.fillRect(0, 0, 1280, 720); g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.globalAlpha = 1; sp(0);
+  /* the company's mark, large and faint, behind everything (drawn once: drawLogo sets its own alpha) */
+  if (!AAR.mark) { const m = AAR.mark = document.createElement('canvas'); m.width = m.height = 600; drawLogo(m.getContext('2d'), 300, 300, 280); }
+  g.globalAlpha = .045; g.drawImage(AAR.mark, 690, 150); g.globalAlpha = 1;
+  /* how it went */
+  const k0 = up(.15, .3); g.globalAlpha = k0; g.fillStyle = col; g.fillRect(44, 36, 12, 62); g.font = `bold 62px ${MONO}`; sp(5); g.fillText(S ? (ok ? 'COMPLETE' : 'FAILED') : ok ? 'CONTRACT COMPLETE' : 'CONTRACT FAILED', 74 - (1 - k0) * 30, 92); sp(1);
+  g.fillStyle = S ? S.col : '#e6f4ff'; g.font = `bold 28px ${MONO}`; g.fillText(S ? `${S.name} · ${STNUM[c.chap]} · ${c.title.toUpperCase()}` : `${TYPES[c.type].name.toUpperCase()} — ${c.site.toUpperCase()}`, 44, 134, 1010);
+  g.fillStyle = '#8fbcd2'; g.font = `20px ${MONO}`; g.fillText(`${S ? c.site.toUpperCase() : `${FAC[c.emp].short.toUpperCase()} ▸ ${FAC[c.foe].short.toUpperCase()}`} · ${B.name} · ${skyOf(c.biome, c.mood, c.tod).toUpperCase()} · THREAT ${pipStr(c.diff)}`, 44, 165, 1192);
+  g.textAlign = 'right'; g.fillStyle = '#e6f4ff'; g.font = `bold 24px ${MONO}`; g.fillText(`OP. ${c.op}`, 1118, 72, 330); g.fillStyle = '#8fbcd2'; g.font = `20px ${MONO}`; g.fillText(`DAY ${CO.day}`, 1118, 100); g.textAlign = 'left'; drawLogo(g, 1186, 78, 46);
+  g.fillStyle = col; g.fillRect(44, 182, 1192 * up(.2, .5), 3); g.globalAlpha = 1;
+  const head = (s, x, y, w) => { g.fillStyle = '#ffb21a'; g.font = `bold 19px ${MONO}`; sp(5); g.fillText(s, x, y); sp(0); g.fillStyle = 'rgba(255,178,26,.35)'; g.fillRect(x, y + 10, w, 1); };
+  /* the books: a line at a time, then the figure they add up to */
+  const L = D.lines, n = L.length, X0 = 44, X1 = 696, pitch = Math.min(39, 300 / Math.max(n, 1)), fs = Math.round(clamp(pitch * .68, 18, 26)); head('THE BOOKS', X0, 226, X1 - X0);
+  L.forEach(([l, v], i) => { const k = up(.5 + i * .11), y = 270 + i * pitch; if (!k) return; g.globalAlpha = k; g.font = `${fs}px ${MONO}`; g.textAlign = 'right'; const s = fmt(v), w = g.measureText(s).width; g.fillStyle = v < 0 ? '#ff8a6a' : '#d6f2c8'; g.fillText(s, X1, y); g.textAlign = 'left'; g.fillStyle = '#d6e8f2'; g.fillText(l, X0, y, X1 - X0 - w - 22); });
+  if (!n) { g.globalAlpha = up(.5); g.font = `22px ${MONO}`; g.fillStyle = '#6f93a4'; g.fillText('NO MONEY MOVED', X0, 270); }
+  const tN = .5 + n * .11, kN = up(tN, .8), net = Math.round(D.total * (1 - Math.pow(1 - kN, 3)) / 500) * 500; g.globalAlpha = up(tN, .2);
+  g.fillStyle = 'rgba(160,220,255,.3)'; g.fillRect(X0, 584, X1 - X0, 1); g.fillStyle = '#e6f4ff'; g.font = `bold 26px ${MONO}`; sp(4); g.fillText('NET', X0, 628); sp(0); g.textAlign = 'right'; g.font = `bold 46px ${MONO}`; g.fillStyle = D.total < 0 ? '#ff5a3a' : '#8dff6a'; g.fillText(fmt(kN < 1 ? net : D.total), X1, 632);
+  g.font = `21px ${MONO}`; g.fillStyle = '#8fbcd2'; g.fillText(`FUNDS ${fmt(CO.cb)}`, X1, 664); g.textAlign = 'left'; g.globalAlpha = 1;
+  /* the sortie in figures */
+  const R0 = 748, R1 = 1236, mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`, rows = [['TIME ON THE GROUND', mmss(F.t)], ['OBJECTIVES MET', `${F.obj[0]} OF ${F.obj[1]}`], ['KILLS', String(F.kills)], ['ROUNDS ON TARGET', F.shots ? `${Math.round(F.hits / F.shots * 100)}%` : '—'], ['DAMAGE DEALT', Math.round(F.dealt).toLocaleString('en-US')], ['ARMOUR LEFT', F.dead ? 'NONE' : Math.round(F.armor * 100) + '%'], ['SHOT OFF HER', F.lost.length ? F.lost.join(', ') : 'NOTHING']];
+  head('THE SORTIE', R0, 226, R1 - R0); rows.forEach(([l, v], i) => { const k = up(.7 + i * .09), y = 266 + i * 31; if (!k) return; g.globalAlpha = k; g.font = `22px ${MONO}`; g.fillStyle = '#a9c8d6'; g.fillText(l, R0, y); const w = g.measureText(l).width; g.textAlign = 'right'; g.fillStyle = l === 'ARMOUR LEFT' && (F.dead || F.armor < .3) ? '#ff8a6a' : '#f0f8ff'; g.fillText(v, R1, y, R1 - R0 - w - 18); g.textAlign = 'left'; });
+  g.globalAlpha = 1;
+  /* who thinks differently of us for it */
+  const rel = RIVS.map(k => [k, (D.rel || []).reduce((s, r) => s + (r[0] === k ? r[1] : 0), 0)]).filter(r => r[1]), ST = [...D.rep.filter(r => Math.round(r[1])).map(([f, v]) => [FAC[f].short, FAC[f].col, Math.round(v), repWord(CO.rep[f]), CO.rep[f]]), ...rel.map(([k, v]) => [RIV[k].name, RIV[k].col, v, relWord(CO.riv[k].rel), CO.riv[k].rel])];
+  head('STANDING', R0, 502, R1 - R0); const kS = up(1.3, .3); g.globalAlpha = kS;
+  if (!ST.length) { g.font = `20px ${MONO}`; g.fillStyle = '#6f93a4'; g.fillText('NOBODY THINKS ANY DIFFERENTLY OF US', R0, 542, R1 - R0); }
+  ST.slice(0, 4).forEach(([nm, cl, v, word, at], i) => {
+    const y = 542 + i * 33; g.font = `21px ${MONO}`; g.fillStyle = cl; g.fillText(nm.toUpperCase(), R0, y, 172); g.fillStyle = '#12303a'; g.fillRect(R0 + 186, y - 14, 110, 11); g.fillStyle = at < 0 ? '#ff5a1f' : cl; g.fillRect(R0 + 241, y - 14, clamp(at, -100, 100) * .55 * kS, 11); g.fillStyle = '#e6f4ff'; g.fillRect(R0 + 240, y - 17, 2, 17);
+    g.textAlign = 'right'; g.font = `bold 22px ${MONO}`; g.fillStyle = v < 0 ? '#ff8a6a' : '#8dff6a'; g.fillText(sdNum(v), R0 + 362, y); g.font = `17px ${MONO}`; g.fillStyle = '#a9c8d6'; g.fillText(word.toUpperCase(), R1, y, 118); g.textAlign = 'left'; });
+  if (ST.length > 4) { g.font = `16px ${MONO}`; g.fillStyle = '#6f93a4'; g.fillText(`AND ${ST.length - 4} MORE: SEE STANDING, ON THE DECK`, R0, 542 + 4 * 33 - 8, R1 - R0); }
+  g.globalAlpha = 1;
+  /* the foot of the screen, and the lines every screen in this building has */
+  g.fillStyle = '#5f8496'; g.font = `14px ${MONO}`; g.fillText(`${YARD.name.toUpperCase()} · AFTER ACTION · EYES ONLY`, 44, 702, 640); g.textAlign = 'right'; g.fillStyle = Math.sin(t * 3) > 0 ? col : '#24323a'; g.fillText('● ON FILE', 1236, 702);
+  g.textAlign = 'left'; g.fillStyle = 'rgba(160,220,255,.04)'; for (let yy = (t * 40) % 6; yy < 720; yy += 6) g.fillRect(0, yy, 1280, 1.5);
+  BRF.tex.needsUpdate = true;
+}
+function updateAar(dt, t) {
+  const A = AAR; A.t += dt; while (A.n < A.L.length && A.t > .8 + A.n * .45) aarPop(A.L[A.n++]);
+  /* the lines are said in the order the heads came up, one voice at a time. A tour, or a window over the room, has the floor while it is there */
+  if (A.spk && (!vox.busy() || TG.k || A.t > A.spkT)) { A.spk.el.classList.remove('spk'); A.spk = null; A.gap = .3; }   /* (a browser still holding the sound back never finishes a line: spkT is the way out) */
+  if (!A.spk && A.q.length && !TG.k && !uiModal() && (A.gap -= dt) < 0) aarSay(A.q.shift());
+  if ((A.drawT -= dt) < 0) { A.drawT = A.t < 4 ? .033 : .1; aarDraw(t); }
+  const W = BRF.crowd; W.cam.copy(BRF.camera.position); W.talk = null; W.speaking = false; W.update(dt);
+  BRF.beam.material.opacity = .04 + .012 * Math.sin(t * 23) * Math.sin(t * 3.1); BRF.glow.intensity = 140 + 22 * Math.sin(t * 1.7) + (A.t < .25 ? 60 : 0); BRF.fill.intensity = damp(BRF.fill.intensity, 0, 4, dt);
+  /* square on to the screen: the mouse leans the view a little, and the screen stays where the columns left room for it */
+  const C = brfCam, S = A.cam; C.pos.set(S[0] + C.sx * .9, S[1] + C.sy * .5 + Math.sin(t * .31) * .012, S[2]); C.look.set(S[0], S[1], -6.61);
+  C.cPos.lerp(C.pos, 1 - Math.exp(-2.6 * dt)); C.cLook.lerp(C.look, 1 - Math.exp(-3.2 * dt)); BRF.camera.position.copy(C.cPos); BRF.camera.lookAt(C.cLook); BRF.camera.updateMatrixWorld();
+}
+/* ---- getting there and away ---- */
+/* called by toHangar() with the picture faded out: the machine is back on its stand and the books are settled */
+function aarOpen(D) {
+  brfBuild(); Object.assign(AAR, { D, L: [], q: [], n: 0, t: 0, drawT: 0, spk: null, gap: 0, arm: 0, sent: 0, note: '', mark: null }); $('aarL').innerHTML = $('aarR').innerHTML = '';
+  D.shop = shopRoll(); if (D.shop) { news('The quartermaster has posted new stock on the market.'); saveCO(); }
+  for (const id of ['hangarUI', 'fieldUI', 'hqUI']) $(id).classList.add('hid'); $('aarUI').classList.remove('hid'); mode = 'aar';
+  { const g = BRF.flag.image.getContext('2d'); g.fillStyle = '#0d1116'; g.fillRect(0, 0, 256, 256); drawLogo(g, 128, 128, 112); BRF.flag.needsUpdate = true; }
+  for (const g of BRF.guests) { BRF.crowd.remove(g); BRF.people.splice(BRF.people.indexOf(g), 1); g.dispose(); } BRF.guests = [];   /* whoever sat in on the last briefing has gone home */
+  for (const h of BRF.people) h.look = BRF.eye; BRF.talk = null; aarLines(D); aarLay(); aarNav();
+  const S = AAR.cam; brfCam.sx = brfCam.sy = 0; brfCam.cPos.set(S[0] + 1.6, S[1] - .5, S[2] + 3.2); brfCam.cLook.set(S[0], S[1] - .3, -6.61); aarDraw(T); if (D.ok) music.sting('win');
+}
+async function aarLeave(to) {
+  if (busy || mode !== 'aar' || uiModal()) return; const D = AAR.D, ask = AAR.L.find(b => b.key === 'disp' && b.opts), bay = AAR.L.find(b => b.key === 'bay');
+  if (ask) return aarNag(ask, `${ask.ch.name.toUpperCase()} IS WAITING ON AN ANSWER`);
+  if (D.salv && !(AAR.arm > performance.now())) {
+    const S = D.salv, worth = S.pool.map(k => itemInfo(k)).sort((p, q) => q.price - p.price), val = worth.slice(0, S.picks).reduce((s, i) => s + i.price, 0); AAR.arm = performance.now() + 7000;
+    aarSet(bay, `All of it, boss? That is ${S.picks === 1 ? 'a piece' : S.picks + ' pieces'} we are owed and will not see again, ${worth[0].name} among ${S.pool.length === 1 ? 'it' : 'them'}: something like ${fmt(val)} at market. Go, and the client's yard gets the lot.`);
+    aarNag(bay, 'SALVAGE NOT CHOSEN — PRESS AGAIN TO LEAVE IT ALL'); return setTimeout(() => { if (mode === 'aar' && AAR.D === D && AAR.note[0] === 'S') { AAR.note = ''; aarNav(); } }, 7100);
+  }
+  busy = true; vox.stop(); AAR.q.length = 0; sfx.play('servo'); blackout(true); await tween(.55, fade); $('aarUI').classList.add('hid'); if (D.salv) tal('y.left', D.salv.pool.length); D.salv = null; AAR.D = null; AAR.L = []; AAR.spk = null; saveCO();
+  if (to === 'hq') { showHQ(); hq.cPos.set(0, 3.2, 8.6); hq.cLook.set(0, 1.5, 0); busy = false; }
+  else { mode = 'hangar'; $('hangarUI').classList.remove('hid'); for (const id of ['panelL', 'panelR', 'hint', 'status']) $(id).classList.remove('hid'); orb.cine = false; orb.idle = 0; orb.cPos.set(0, 21.5, 44); orb.cLook.set(0, 14, 0); busy = false; refreshUI(); renderHangarContract(); setStatus(CO.active ? `CONTRACT SIGNED — ${CO.active.site.toUpperCase()} · FIT OUT AND LAUNCH` : 'UNIT RECOVERED — REPAIRED AND REARMED'); }
+  await tween(.8, k => fade(1 - k)); blackout(false);
+}
+{
+  addEventListener('pointermove', e => { if (mode !== 'aar') return; brfCam.sx = (e.clientX / innerWidth - .5) * .5; brfCam.sy = -(e.clientY / innerHeight - .5) * .4; });
+  addEventListener('resize', () => { if (mode === 'aar') aarLay(); }); for (const id of ['aarL', 'aarR']) $(id).addEventListener('scroll', aarMore, { passive: true });
+  /* ENTER or SPACE is the lift up to the deck, once the room has had a moment to arrive */
+  addEventListener('keydown', e => { if (mode !== 'aar' || uiModal() || e.repeat || AAR.t < 1.2 || (e.target && /^(BUTTON|TEXTAREA|INPUT)$/.test(e.target.tagName))) return; if (e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); aarLeave('hq'); } });   /* (a button that has the focus keeps its own ENTER) */
+  $('aarHQ').onclick = () => { sfx.play('ui'); aarLeave('hq'); }; $('aarBay').onclick = () => { sfx.play('ui'); aarLeave('bay'); };
+  $('aarFb').onclick = () => { const D = AAR.D; if (!D || mode !== 'aar') return; sfx.play('ui'); vox.stop(); fbOpen({ kind: 'contract', title: 'WHAT DID YOU WISH YOU COULD DO ON THAT CONTRACT?', sub: D.c.site.toUpperCase(), ctx: aarCtx(D), done: sent => { AAR.sent = sent ? 1 : 2; aarNav(); } }); };
+}
 /* ============ STORY THREAD 0 — SHAKEDOWN: THE MECH CAME WITH A TEACHER, AND NOBODY WILL HIRE THE COMPANY UNTIL SHE HAS PASSED IT ============ */
 /* The first sortie. It is the thread marked `first`, so on a new company's board it is the only card there is (115_first_day.js, storySync), and it is where the controls are taught:
    walking, steering, the torso and both triggers, heat, the jets, the sprint and, for the last few minutes, an actual fight. It is flown on the home range, alone, on the company's own account.
@@ -11939,9 +12295,9 @@ function settingsDraw() {
   const bindR = (id, set, show) => { const e = $(id); e.oninput = () => { set(+e.value); e.nextElementSibling.textContent = show(+e.value); }; e.onchange = () => { cfgSave(); sfx.play('ui'); }; };
   const bindT = (id, key, after) => { $(id).onclick = () => { CFG[key] = !CFG[key]; cfgSave(); sfx.play('ui'); if (after) after(); settingsDraw(); }; };
   $('setTitle').textContent = F ? 'FOUND YOUR COMPANY' : 'SETTINGS'; $('setSub').textContent = F ? 'NEW GAME' : `${YARD.name} · DAY ${CO.day}`;
-  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('');
+  $('setTabs').classList.toggle('hid', F); $('setTabs').innerHTML = [['audio', 'AUDIO'], ['controls', 'CONTROLS'], ['display', 'DISPLAY'], ['company', 'COMPANY'], ['stats', 'STATS'], ['game', 'SAVE / LOAD'], ['news', 'WHAT\'S NEW']].map(([k, l]) => `<button data-k="${k}" class="${k === tab ? 'on' : ''}${k === 'news' && tab !== 'news' && whatsFresh().length ? ' wnew' : ''}">${l}</button>`).join('');
   $('setTabs').querySelectorAll('button').forEach(b => b.onclick = () => { sfx.play('ui'); SET.tab = b.dataset.k; SET.wipe = false; SET.msg = ''; settingsDraw(); });
-  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : 'Settings are kept on this machine, apart from the save file.';
+  $('setClose').textContent = F ? 'SIGN THE CHARTER — BEGIN' : fld ? 'BACK TO THE SORTIE' : 'CLOSE'; $('setInfo').textContent = F ? 'You can change all of this later under SETTINGS · COMPANY.' : tab === 'stats' ? 'The record is the company\'s own. It is kept in the save file and goes wherever that goes.' : tab === 'news' ? 'What has changed, newest first. A NEW marker on SETTINGS says when there is something you have not read.' : 'Settings are kept on this machine, apart from the save file.';
   if (tab === 'audio') {
     /* a preview button; data-p names what it plays: p3 / c3 a mission score on patrol or in combat, night, amb, win */
     const pvb = (k, label) => `<button data-p="${k}" class="${SET.pv === k ? 'on' : ''}">${SET.pv === k ? '■ STOP' : '▶ ' + label}</button>`;
@@ -11993,6 +12349,8 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
     const nm = $('coName'); nm.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') nm.blur(); }; nm.oninput = () => { YARD.name = cleanName(nm.value, CO_DEF_NAME); brandSync(); }; nm.onchange = () => { nm.value = YARD.name; saveCO(); };
   } else if (tab === 'stats') {
     statsDraw(B);
+  } else if (tab === 'news') {
+    whatsDraw(B, tog);
   } else {
     const b = YARD.bays.filter(x => bayParts(x)).length, act = CO.active;
     B.innerHTML = `<div class="sh">THIS COMPANY</div><div class="sum"><canvas id="lgSm" width="120" height="120"></canvas><div><b>${YARD.name}</b><span>Day ${CO.day} · funds ${fmt(CO.cb)} · ${CO.done} contracts completed, ${CO.fails} failed</span><span>${b} of 3 bays occupied · ${invCount()} items in stores${act ? ` · signed for ${act.site}` : ''}</span><span class="dim">The game saves itself to this browser after every change.</span></div></div>
@@ -12033,9 +12391,66 @@ function statsDraw(B) {
   $('setClose').onclick = () => { sfx.play('ok'); if (SET.found) { SET.found = false; YARD.founded = true; YARD.name = cleanName($('coName') && $('coName').value, CO_DEF_NAME); brandSync(); CO.news = CO.news.filter(n => !n.includes('is open for contracts') && !n.includes('Nobody is hiring yet')); news(tutLock() ? TUT_WIRE() : TUT_OPEN()); saveCO(); setStatus('STAND READY — ' + mechName); } settingsClose(); };
   $('setUI').addEventListener('pointerdown', e => { if (e.target === $('setUI')) settingsClose(); });
   $('saveFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { const why = saveImport(String(rd.result)); SET.bad = !!why; SET.msg = why || `Loaded ${YARD.name} — day ${CO.day}, ${fmt(CO.cb)}.`; sfx.play(why ? 'deny' : 'ok'); settingsDraw(); }; rd.readAsText(f); };
-  addEventListener('keydown', e => { if (e.code !== 'Escape' || !uiModal()) return; if (ST.open && ST.mode !== 'salv') storesClose(); else if (SET.open) settingsClose(); });
+  addEventListener('keydown', e => { if (e.code !== 'Escape' || !uiModal() || FBK.open) return; if (ST.open && ST.mode !== 'salv') storesClose(); else if (SET.open) settingsClose(); });   /* (the feedback box, when it is up, is on top and closes itself) */
 }
 
+/* ============ THE FEEDBACK BOX, AND WHAT IS NEW ============ */
+/* fbOpen({ kind, title, sub, ctx, done }) puts up the box: one question, one place to type, SEND. It is opened by the debriefing room (kind 'contract', with what was just
+   flown as ctx) and from SETTINGS · WHAT'S NEW (kind 'general'). What is typed goes to the server through netFeedback (046_wire_home.js), and is kept in this browser to go
+   later if the server does not answer. A draft left unsent is still there the next time the box is opened. The box swallows its own keys: nothing typed reaches the game */
+const FBK = { open: false, kind: 'general', ctx: null, done: null, busy: false, say: '', bad: false, draft: { contract: '', general: '' } };
+function fbOpen(o = {}) {
+  if (FBK.open) return; const kind = o.kind === 'contract' ? 'contract' : 'general', t = $('fbText'); Object.assign(FBK, { open: true, kind, ctx: o.ctx || {}, done: o.done || null, busy: false, say: '', bad: false });
+  $('fbTitle').textContent = o.title || 'TELL THE DEVELOPER'; $('fbSub').textContent = o.sub || '';
+  $('fbLead').textContent = (kind === 'contract' ? 'Something you tried that the game would not let you do. Something you looked for and did not find. A fight you wanted to go another way. ' : 'What works, what does not, what you would like to be able to do. ') + 'Type it as it comes: it goes straight to the person who makes the game, and every one is read.';
+  $('fbNote').textContent = `Sent with it: ${kind === 'contract' ? 'which contract that was and how it went, ' : ''}which build of the game this is (${BUILD})${CFG.count ? ', and the random number this browser is counted by' : ''}. Nothing else: not your company's name, and nothing from your save.`;
+  t.value = FBK.draft[kind]; t.placeholder = kind === 'contract' ? 'I wanted to…' : 'Go on…'; t.disabled = false; $('fbUI').classList.remove('hid'); fbDraw(); setTimeout(() => { if (FBK.open) t.focus(); }, 40);
+}
+function fbClose() { if (!FBK.open || FBK.busy) return; FBK.open = false; FBK.draft[FBK.kind] = $('fbText').value; $('fbUI').classList.add('hid'); $('fbText').blur(); }
+function fbDraw() {
+  const n = $('fbText').value.trim().length; $('fbSend').disabled = FBK.busy || !n; $('fbSend').textContent = FBK.busy ? 'SENDING…' : 'SEND IT'; $('fbCancel').disabled = FBK.busy;
+  $('fbInfo').textContent = FBK.say || `${$('fbText').value.length.toLocaleString('en-US')} / 4,000 · CTRL+ENTER SENDS`; $('fbInfo').style.color = FBK.say ? (FBK.bad ? 'var(--hot)' : 'var(--ok)') : '';
+}
+async function fbSend() {
+  const t = $('fbText'), text = t.value.trim(); if (!FBK.open || FBK.busy) return; if (!text) return sfx.play('deny');
+  FBK.busy = true; FBK.say = ''; t.disabled = true; fbDraw(); sfx.play('ui'); const kind = FBK.kind, ok = await netFeedback({ kind, text, ctx: FBK.ctx });
+  /* either way it is out of the player's hands: sent, or waiting in this browser for the next launch */
+  FBK.draft[kind] = t.value = ''; FBK.bad = !ok; FBK.say = ok ? 'SENT. THANK YOU.' : 'THE SERVER DID NOT ANSWER. IT IS KEPT ON THIS MACHINE AND GOES THE NEXT TIME THE GAME IS OPENED.'; sfx.play(ok ? 'ok' : 'deny'); fbDraw();
+  await new Promise(r => setTimeout(r, ok ? 1100 : 3200)); FBK.busy = false; const d = FBK.done; fbClose(); if (d) d(ok);
+}
+{
+  const t = $('fbText'); t.oninput = fbDraw; for (const ev of ['keyup', 'keypress']) t.addEventListener(ev, e => e.stopPropagation());
+  t.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') { e.preventDefault(); fbClose(); } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); fbSend(); } });
+  $('fbSend').onclick = fbSend; $('fbCancel').onclick = () => { sfx.play('ui'); fbClose(); }; $('fbUI').addEventListener('pointerdown', e => { if (e.target === $('fbUI')) fbClose(); });
+  addEventListener('keydown', e => { if (FBK.open && e.code === 'Escape') fbClose(); });
+}
+
+/* ---- what is new: the marker on every SETTINGS button, the chip at the top of a room, and the tab in SETTINGS (settingsDraw calls whatsDraw) ---- */
+WNEW.from = WNEW.seen;   /* what this browser had read when the page opened: the tab goes on marking what is newer than that for as long as the page stays open */
+WNEW.on = false; WNEW.chip = +lsGet('chip') >= BUILD;   /* the chip has been waved away for this build */
+function whatsMark() {
+  const F = whatsFresh(), on = F.length > 0; for (const id of ['btnSet', 'bSet', 'bbSet', 'btnPSet']) $(id).classList.toggle('wnew', on);
+  if (on) $('wnGo').innerHTML = `<b>★ NEW SINCE YOU LAST PLAYED</b><span>${F[0].t}${F.length > 1 ? ` · AND ${F.length - 1} MORE` : ''}</span><u>SEE WHAT'S NEW ▸</u>`; whatsTick();
+}
+/* the chip shows in the three rooms a player stands about in, and nowhere it could be in the way */
+function whatsTick() { const on = WNEW.seen < BUILD && !WNEW.chip && (mode === 'hangar' || mode === 'hq' || mode === 'bar') && !busy; if (on !== WNEW.on) { WNEW.on = on; $('wnChip').classList.toggle('hid', !on); } }
+function whatsDraw(B, tog) {
+  const isNew = w => w.n > WNEW.from, top = WHATS.filter(isNew), head = top.length ? top : [WHATS[0]], rest = WHATS.filter(w => !head.includes(w));
+  const ent = w => `<div class="wne${isNew(w) ? ' new' : ''}"><b>${w.t}</b><em>${isNew(w) ? '<u>NEW</u>' : ''}${w.d} · BUILD ${w.n}</em><ul>${w.l.map(s => `<li>${s}</li>`).join('')}</ul></div>`;
+  B.innerHTML = `<div class="sh">${top.length ? 'NEW SINCE YOU LAST PLAYED' : 'THE LATEST'} <small>THIS IS BUILD ${BUILD}</small></div>${head.map(ent).join('')}
+<div class="sh">TALK TO THE DEVELOPER</div><div class="gm"><button id="wnFb"><b>✎ SEND FEEDBACK</b><small>What works, what does not, what you wish you could do</small></button></div>
+<div class="sg" style="margin-top:12px">${tog('sCount', 'COUNT ME AS A PLAYER', CFG.count)}</div>
+<p class="snt">${CFG.count ? 'When the game opens it tells its server one thing: a random number this browser made up for itself, so the developer can tell how many people play and how many come back. No name, no address, and nothing from your company or your save.' : 'Nothing is sent when the game opens, and the number this browser was counted by has been forgotten. Feedback still goes, when you press SEND, and only then.'}</p>
+${rest.length ? `<div class="sh">EARLIER</div>${rest.map(ent).join('')}` : ''}`;
+  $('wnFb').onclick = () => { sfx.play('ui'); fbOpen({ kind: 'general' }); };
+  $('sCount').onclick = () => { CFG.count = !CFG.count; if (!CFG.count) lsSet('vid', ''); cfgSave(); sfx.play('ui'); settingsDraw(); };
+  if (whatsSeen()) whatsMark();   /* it has been read */
+}
+{
+  $('wnGo').onclick = () => { sfx.play('ui'); settingsOpen('news'); };
+  $('wnX').onclick = () => { sfx.play('ui'); WNEW.chip = true; lsSet('chip', String(BUILD)); whatsTick(); };
+  whatsMark();
+}
 /* ============ TACTICAL MAP: M pauses the sortie and shows the theatre from above — terrain, sites, sensor contacts, waypoints ============ */
 const MAPV = { open: false, key: '', img: null, cx: 0, cz: 0, zoom: 1.6, drag: null, mx: -1, my: -1, wp: null, hits: [], raf: 0, t: 0 };
 let fieldLock = null, fieldUnlock = null;
@@ -12246,6 +12661,11 @@ const TOURS = {
   field: { by: () => CREW.chief, room: () => mode === 'field' && MS.on && !MS.over && !locked && !P.dead && !$('pause').classList.contains('hid') && $('mapUI').classList.contains('hid'), steps: [
     { t: "Last thing from me, boss. ENGAGE gives you the controls: it takes the mouse, and the mouse aims her. ESC hands it back and stops the clock, so nothing out there can hurry you.", at: '#btnResume', pos: 'lft', done: () => locked },
   ] },
+  aar: { by: () => CREW.xo, room: () => mode === 'aar' && AAR.t > .1, steps: [
+    { t: 'Every sortie ends in this room, Commander. On the wall: how it went, what it paid and what it cost, the sortie in figures, and who thinks differently of us for it.', at: '#aarScr', pos: 'low' },
+    { t: 'Round it, your people, each with one thing to say. Nothing to click through, unless one of us wants an answer: Dutch about the salvage, most days. Click a face to hear it again.', at: '#aarR' },
+    { t: 'And the way out, where it always is. The button above the lifts is not for us: it goes to whoever built all this, and I am told they read every one.', at: '#aarNav' },
+  ] },
   salv: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode === 'salv', steps: [
     { t: "Salvage, boss. What you shot is lying out there, and the contract gives us a share of it. Click what you want brought home, up to the limit, then confirm. Whatever we leave, the client keeps.", at: '#stGrid', pos: 'low' },
   ] },
@@ -12296,12 +12716,13 @@ function tutHint() {
   if (mode === 'hq') return a ? ['NEXT · Take the lift down to the MECH BAY and launch', $('dGo') ? '#dGo' : '#btnToBay'] : !c ? null : CO.sel === c && $('dBrf') ? ['NEXT · ACCEPT it: Commander Varga will brief you', '#dBrf'] : ['NEXT · Select the ★ SHAKEDOWN card on the board', '.card.stc'];
   if (mode === 'brief') return dlgCur ? ['CONTINUE (or SPACE) through the briefing', null] : ['NEXT · Take the lift to the MECH BAY', '#brfSkip'];
   if (mode === 'bar') return ['NEXT · The contract board is upstairs, on the COMMAND DECK', '#bbHQ'];
+  if (mode === 'aar') return ['NEXT · Back up to the COMMAND DECK: the shakedown is on the board again', '#aarHQ'];
   return null;
 }
 function tutChip() {
   const h = tutHint(), C = $('tutChip'), el = h && h[1] ? document.querySelector(h[1]) : null;
   if (TG.pul && TG.pul !== el) TG.pul.classList.remove('tutP'); if (el) el.classList.add('tutP'); TG.pul = el;
-  C.classList.toggle('hid', !h); C.classList.toggle('side', mode === 'brief'); if (h && TG.chip !== h[0]) C.textContent = TG.chip = h[0]; if (!h) TG.chip = '';   /* in the briefing room the middle of the page is the wall map */
+  C.classList.toggle('hid', !h); C.classList.toggle('side', mode === 'brief' || mode === 'aar'); if (h && TG.chip !== h[0]) C.textContent = TG.chip = h[0]; if (!h) TG.chip = '';   /* in the briefing room the middle of the page is the wall map */
 }
 /* the keys for whatever is being taught just now, across the bottom of the HUD: [[key, what it does], ...], or nothing to take them away */
 function tutKeys(L) { TG.keys = L && L.length ? L : null; $('tutKeys').innerHTML = TG.keys ? TG.keys.map(([k, d]) => `<div><b>${k}</b><span>${d}</span></div>`).join('') : ''; POST.kick(); }
@@ -12595,7 +13016,7 @@ function introStep(t, dt) {
 }
 /* take the stage: the room that was showing waits where it is */
 function introOpen() {
-  if (INTROV.st || mode === 'field' || mode === 'brief' || busy) return false;
+  if (INTROV.st || mode === 'field' || mode === 'brief' || mode === 'aar' || busy) return false;
   const c = FD.camera; INTROV.keep = { fov: c.fov, pos: P.pos.clone(), shake: P.shake, kills: P.kills, loot: YARD.loot.slice(), k: FD.k };
   Object.assign(INTROV, { st: 1, t: 0, a0: -1, shot: -1, prev: mode, wt: 0, go: -1, warm: 0, blk: 1, end: 0, stall: 0, au: -1, hold: false });
   if (!INTROV.fl.length) INTROV.fl = [new THREE.PointLight(0xffa050, 0, 190, 1.5), new THREE.PointLight(0xffa050, 0, 190, 1.5)]; FD.scene.add(...INTROV.fl);
@@ -12649,21 +13070,22 @@ function frame(now) {
   if (mode === 'intro') introFrame(dt);
   else if (mode === 'field') { if (commHold) { if (locked) updateComm(dt); } else if (locked || P.dead || MS.over) updateField(dt, T); updateCut(dt); POST.scene = FD.scene; POST.camera = FD.camera; POST.strength = FD.glow; }
   else {
-    if (!dlgCur) tickClock(dt);
+    if (!dlgCur && mode !== 'aar') tickClock(dt);
     if (mode === 'hangar' && HG.walk) { const r = player.root.position; r.z += HG.walk * dt; r.y = MECH_Y - .6 * smooth(clamp((r.z - 9.6) / 4.6, 0, 1)); orb.look.set(0, player.height * .55, -r.z - 3); }
-    if (mode === 'bar') { updateBar(dt, T); POST.scene = BAR.scene; POST.camera = BAR.camera; POST.strength = .6; } else if (mode === 'brief') { updateBrief(dt, T); POST.scene = BRF.scene; POST.camera = BRF.camera; POST.strength = .62; } else updateHangar(dt, T);
-    if (mode === 'bar' || mode === 'brief') { /* the bay is out of sight from down here */ } else if (mode === 'hq') {
+    if (mode === 'bar') { updateBar(dt, T); POST.scene = BAR.scene; POST.camera = BAR.camera; POST.strength = .6; } else if (mode === 'brief' || mode === 'aar') { if (mode === 'aar') updateAar(dt, T); else updateBrief(dt, T); POST.scene = BRF.scene; POST.camera = BRF.camera; POST.strength = .62; } else updateHangar(dt, T);
+    if (mode === 'bar' || mode === 'brief' || mode === 'aar') { /* the bay is out of sight from down here */ } else if (mode === 'hq') {
       updateHQ(dt, T); if ((HQ.fr = (HQ.fr || 0) + 1) % 2 === 0) { renderer.setRenderTarget(HQ.rt); renderer.render(HG.scene, HQ.winCam); renderer.setRenderTarget(null); }
       POST.scene = HQ.scene; POST.camera = HQ.camera; POST.strength = .55;
     } else { POST.scene = HG.scene; POST.camera = HG.camera; POST.strength = .5; }
   }
   renderer.toneMappingExposure = mode === 'field' || (mode === 'intro' && POST.scene === FD.scene) ? FD.expo : 1;   /* the field's hour sets the exposure; indoors it is always 1 */
-  if (mode !== 'intro') { tutTick(dt); talFrame(dt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
+  if (mode !== 'intro') { tutTick(dt); whatsTick(); talFrame(dt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
 }
 sfx.init();   /* everything it needs exists by now */
 requestAnimationFrame(frame);
 $('boot').style.opacity = 0; setTimeout(() => $('boot').remove(), 900);
 introBoot();   /* the opening, the first time the page is ever opened here */
+netBoot();   /* and one line to the server to say the page was opened (046_wire_home.js) */
 </script>
 <script>
 /* surface load/runtime failures instead of a silent black screen */

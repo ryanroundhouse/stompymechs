@@ -3,7 +3,7 @@
    hints: the crew show a new commander round each room the first time they walk into it. seen: the tours already given (TUT_KEYS, which are the keys of TOURS).
    All of it is saved with the company (saveBlob, under `tut`). A save from before any of this has no such entry, and is taken to be a company that knows its way about.
    The guide itself, and everything that draws, is in 445_guide.js: this much has to exist before the board is first dealt */
-const TUT_KEYS = ['salv', 'stores', 'field', 'launch', 'bay', 'deck', 'home', 'bar'];   /* in the order they are looked for: an overlay's tour before the room's under it */
+const TUT_KEYS = ['salv', 'stores', 'field', 'aar', 'launch', 'bay', 'deck', 'home', 'bar'];   /* in the order they are looked for: an overlay's tour before the room's under it */
 const TUT = { lock: false, hints: false, seen: {} };
 const tutLock = () => TUT.lock;
 function tutApply(s) {

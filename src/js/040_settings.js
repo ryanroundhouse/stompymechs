@@ -4,7 +4,7 @@
 const GAME_ID = 'STOMPYMECHS', GAME_NAME = 'StompyMechs', CO_DEF_NAME = 'STOMPY MECHS', GAME_WAS = 'IRONWORKS';
 const lsGet = k => { try { return localStorage.getItem('stompymechs.' + k) ?? localStorage.getItem('ironworks.' + k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem('stompymechs.' + k, v); } catch (e) { } };
-const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true };
+const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true, count: true };
 const CFG = { ...CFG_DEF };
 {
   try { const s = JSON.parse(lsGet('cfg') || 'null'); if (s && typeof s === 'object') { for (const k in CFG_DEF) if (typeof s[k] === typeof CFG_DEF[k]) CFG[k] = s[k]; } else if (lsGet('music') === '0') CFG.mus = 0; } catch (e) { }

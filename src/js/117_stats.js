@@ -41,7 +41,7 @@ function talKill(e, owner) {
 
 /* ---- a sortie: what is counted as it starts, every frame it is flown, and when the books are settled ---- */
 function talSortie(c) {
-  const F = TALLY.f; TALLY.sk = 0; TALLY.mk = 0; TALLY.mkT = -9; F.x = P.pos.x; F.z = P.pos.z; F.hd = P.yaw + P.twist; F.jet = false; F.t = 0; talBy = null;
+  const F = TALLY.f; TALLY.sk = 0; TALLY.mk = 0; TALLY.mkT = -9; F.x = P.pos.x; F.z = P.pos.z; F.hd = P.yaw + P.twist; F.jet = false; F.t = 0; talBy = null; F.g0 = { 'g.s': talN('g.s'), 'g.h': talN('g.h'), 'g.d': talN('g.d'), 'd.n': talN('d.n') };   /* what settle() takes away to get this sortie's own figures */
   if (!c) return tal('pg.n');
   tal('s.n'); tal('s.ty.' + (c.story ? 'story' : c.type)); tal('s.bi.' + c.biome); tal('s.h.' + EV.tod.key); tal('s.c.' + player.stats.cls); if (CO.wing) tal('s.wing'); if (c.cap) tal('s.cap');
   if (c.cok === 'joint') tal('s.co'); else if (c.cok === 'sub') tal('s.sub');
@@ -157,11 +157,11 @@ const TAL_DEF = [
     ['q.hire', 'PILOTS HIRED', 'n'], ['q.talk', 'THINGS SAID TO YOU', 'n'], ['q.brf', 'BRIEFINGS SAT THROUGH', 'n'], ['q.gift', 'GIFTS SENT TO OTHER COMPANIES', 'n'],
   ]],
   ['THE BAR', [
-    ['b.visit', 'VISITS TO THE LAST ROUND', 'n'], ['b.drink', 'DRINKS BOUGHT', 'n', 1], ['b.round', 'ROUNDS STOOD FOR THE HOUSE', 'n'], ['b.rum', 'RUMOURS HEARD', 'n'], ['b.rest', 'HOURS SPENT IN A CHAIR', 'n'],
+    ['b.visit', 'VISITS TO THE LAST ROUND', 'n'], ['b.drink', 'DRINKS BOUGHT', 'n', 1], ['b.round', 'ROUNDS STOOD FOR THE HOUSE', 'n'], ['b.rum', 'RUMOURS HEARD', 'n'], ['b.tip', 'TIMES SOMETHING WENT IN THE TIP JAR', 'n'], ['b.rest', 'HOURS SPENT IN A CHAIR', 'n'],
     ['b.gd.n', 'DRINKING CONTESTS', 'n'], ['b.gd.w', 'DRINKING CONTESTS WON', 'n'], ['b.ga.n', 'ARM WRESTLES', 'n'], ['b.ga.w', 'ARM WRESTLES WON', 'n'], ['b.glass', 'GLASSES EMPTIED AT THE TABLE', 'n'],
   ]],
   ['TIME', [
-    [N => talSum(N, 't.') - talSum(N, 't.b.') - (N['t.sess'] || 0) - (N['t.intro'] || 0) || null, 'TIME PLAYED', 't'], ['t.hangar', 'TIME IN THE MECH BAY', 't'], ['t.hq', 'TIME ON THE COMMAND DECK', 't'], ['t.bar', 'TIME IN THE BAR', 't'], ['t.brief', 'TIME IN THE BRIEFING ROOM', 't'],
+    [N => talSum(N, 't.') - talSum(N, 't.b.') - (N['t.sess'] || 0) - (N['t.intro'] || 0) || null, 'TIME PLAYED', 't'], ['t.hangar', 'TIME IN THE MECH BAY', 't'], ['t.hq', 'TIME ON THE COMMAND DECK', 't'], ['t.bar', 'TIME IN THE BAR', 't'], ['t.brief', 'TIME IN THE BRIEFING ROOM', 't'], ['t.aar', 'TIME AT THE DEBRIEF', 't'],
     ['t.field', 'TIME AT THE CONTROLS', 't'], ['t.hold', 'TIME WITH A SORTIE ON HOLD', 't'], ['t.sess', 'TIMES THE GAME WAS OPENED', 'n'], ['t.intro', 'TIMES THE OPENING WAS WATCHED', 'n'], [() => CO.day, 'SECTOR DAYS IN BUSINESS', 'n'],
   ]],
 ];

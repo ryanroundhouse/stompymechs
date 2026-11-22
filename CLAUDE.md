@@ -19,7 +19,11 @@ bay, on the deck and behind the bar, and in full under SETTINGS · STATS. A new 
 is shown round each room by its crew, and flies a first sortie that teaches the controls before
 anybody will hire it. Everybody who speaks does so aloud, in a made-up language. The first time
 the page is opened it plays an eleven-second opening: four cuts of battle, then the STOMPY MECHS
-title, cut to its own music.
+title, cut to its own music. A sortie ends in a debriefing room: the summary on the wall, the
+crew's heads round it, and a button that asks the player what they wished they could have done.
+The page tells a small service beside it (`server/`) that it was opened and what was typed into
+the feedback box, and nothing else; SETTINGS · WHAT'S NEW is the changelog, and there is a tip
+jar in the bar.
 `index.html` is the whole deliverable. It loads three.js (and one add-on, `RoomEnvironment`) from
 a CDN, so view it through a local web server with an internet connection. It is built from the
 sources in `src/` by `build.py`; edit `src/`, never `index.html`.
@@ -47,7 +51,8 @@ playable page. Never hand-edit it.
   one of the `/* ============ TITLE ============ */` section banners. A new file goes in at a
   number between its neighbours (`255_thing.js`); keep the gaps. Every file ends with a newline.
   Where things are: `040_settings.js` the game's name (`GAME_ID`, `GAME_NAME`, `CO_DEF_NAME`) and
-  `lsGet`/`lsSet`; `115_first_day.js` what a new company has been shown (`TUT`); `117_stats.js`
+  `lsGet`/`lsSet`; `046_wire_home.js` the changelog (`WHATS`, `BUILD`) and the wire to the server
+  (`NET`, `netPost`, `netFeedback`, `netBoot`); `115_first_day.js` what a new company has been shown (`TUT`); `117_stats.js`
   the record (`TALLY`, `tal`, `TAL_DEF`, `talRows`) and `345_stat_boards.js` the boards that
   show it (`talBoard`, `talBoards`); `020_post.js`
   the post chain `POST`; `030_gfx.js` materials and the texture kit (`std`, `matFloor`, `matShine`,
@@ -62,13 +67,15 @@ playable page. Never hand-edit it.
   the story helpers, `stLook` and `stRace`/`RACE_K`; `210_missions.js` and `240_ops.js` the
   contract types and twists; `230`/`250` the rival companies; `260_story.js` thread state, the
   board and the save; `280`-`310` people and crews; `330_bar.js`, `340_bar_games.js`;
-  `350_brief.js` the briefing room; `355_thread0_shakedown.js` the first sortie; `360`-`400` the
+  `350_brief.js` the briefing room; `352_debrief.js` the debriefing room (`AAR`, `aarOpen`,
+  `aarLines`, `aarLeave`); `355_thread0_shakedown.js` the first sortie; `360`-`400` the
   first five threads (`stKeep` is in `400`, the Derby's `dbCall` in `390`); `402_campaign_kit.js` the
   campaign's cast and tools (`sunWar`, `sunDim`, `sunKey`, `skyLance`, `sunSweep`) and `403`-`405`
   its three acts; `406`-`408` the twelve threads that the first five open (four to a file, each
   with its cast and its own helpers under a two-letter prefix: `fw`, `os`, `nf`, `cc`, `sl`, `ds`,
   `sf`, `ns`, `ir`, `tc`, `bt`); `409_story_load.js` one line, `storyApply(BOOT)`, which has to come
-  after the last file that defines a thread; `415_mech_dealer.js` the dealer (`dealLot`, `dealBuy`); `445_guide.js` the room
+  after the last file that defines a thread; `415_mech_dealer.js` the dealer (`dealLot`, `dealBuy`);
+  `425_feedback.js` the feedback box (`fbOpen`) and what is new (`whatsDraw`, `whatsMark`); `445_guide.js` the room
   tours, the next-step chip and the HUD key prompts; `447_intro.js` the opening (`INTROV`,
   `INTRO_SHOTS`); `450_main.js` the main loop. `grep -l name src/js/*.js` finds
   anything else.
@@ -77,12 +84,14 @@ playable page. Never hand-edit it.
   `src/debug/harness.js` (`__ev`, `__errs`, `__ff`, `__cam`, `__see`, `__strip`, `__poses`,
   `__mus`, `__render`, `__wav`, `__mk`, `__sim`, `__vox`, `__story`, `__smk`, `__sites`,
   `__fcam`, `__fsee`, `__sheet`, `__mechs`, `__parts`, `__aim`, `__arena`, `__dummy`, `__tut`,
-  `__intro`, `__introSheet`).
+  `__intro`, `__introSheet`, `__aar`).
   It also makes `music.KIT` reachable. A debug page skips the first day altogether (an open
   board, no tours, through a new game and an imported save as well), because every driver below
   expects that; load `debug.html?tut` to get what a new player gets. It never plays the opening
   unasked either (`INTROV.off`): `debug.html?intro` does. Nor does it ask before being unloaded mid-sortie
-  (`SGUARD.ask`), so the drivers can navigate away: `debug.html?guard` does. Its two anchors are asserted; if one moves, fix `build.py`.
+  (`SGUARD.ask`), so the drivers can navigate away: `debug.html?guard` does. And it tells the server
+  nothing (`NET.off`: the drivers are not players, and what they type is not feedback): `debug.html?net` does.
+  Its two anchors are asserted; if one moves, fix `build.py`.
 - Every build writes `.scratch/check.mjs` (the module script alone). Follow every build with
   `node --check .scratch/check.mjs`: in a module a second top-level declaration of a name is a
   syntax error, so this is what catches collisions between files. Check a new top-level name
@@ -116,7 +125,9 @@ playable page. Never hand-edit it.
   `window`, so reach them through `__ev('...')`. Clear that profile's localStorage after test runs; the game
   saves the company under `stompymechs.co`, settings under `stompymechs.cfg` and whether the
   opening has been seen under `stompymechs.intro` (and still reads `ironworks.co` and
-  `ironworks.cfg` when those are all a browser has).
+  `ironworks.cfg` when those are all a browser has). It also keeps `stompymechs.seen` and
+  `stompymechs.chip` (the newest WHAT'S NEW entry read, and waved away), `stompymechs.vid` (the
+  random id the browser is counted by) and `stompymechs.fbq` (feedback waiting for the server).
 - Check in Firefox as well as Chrome: it is the browser the game is actually played in, and its
   Web Audio differs. Start a second, muted instance with
   `/Applications/Firefox.app/Contents/MacOS/firefox --headless --no-remote --profile
@@ -193,8 +204,9 @@ playable page. Never hand-edit it.
     (`curl http://127.0.0.1:$CDP_PORT/json/close/<id>`, then `curl -X PUT .../json/new?about:blank`)
     before driving anything else.
   - `t_after.js` (on `debug.html?tut`, clean save) flies it with the story autopilot and comes
-    home through the real debrief: books, the salvage picker and its tour, the epilogue, the
-    board opening, the `home` tour. `step.js` (`ACTS` replaced by a list of `'next'`, `'#id'`
+    home through the debriefing room as a new company gets it: the room's tour step by step, the
+    heads, the salvage picker and its tour, the lift, the board opening, the `home` tour
+    (`window.__stop = 1` leaves it in the room, for a picture). `step.js` (`ACTS` replaced by a list of `'next'`, `'#id'`
     and milliseconds) clicks through a tour and reports each step's text and ring.
   - `t_tsave.js` (on `debug.html?tut`, clean save) takes `tut` through the save: a fresh
     company, an old save with no `tut`, hostile values, a save made half-way, a lost shakedown
@@ -302,7 +314,8 @@ playable page. Never hand-edit it.
     three and a half minutes; the defence contracts could not be won.)
   - `t_board.js` deals sixty boards and counts limits, types and twists, then asks the bay
     about each limit; `t_launch.js` presses the real launch button against a limit and a job
-    rated for two; `t_salv.js` goes through both salvage confirmations with real buttons;
+    rated for two; `t_salv.js` goes through both salvage confirmations with real buttons (the lift out
+    of the debriefing room, and the picker's own);
     `t_misc.js` covers the proving ground's waves, the save round trip for a limit, and the
     stores with every part in them. `t_pic.js` (`window.__pic`) sets up a moment to look at.
   - `__sheet(items, angle, cols, pitch)`, `__mechs(cfgs)` and `__parts(cat)` tile anything
@@ -425,6 +438,25 @@ playable page. Never hand-edit it.
   Firefox, and says whether the floor compiled with its cap. `err.mjs [url]` loads a page and
   prints what it throws while starting, for when a build passes `node --check` and every hook
   is then undefined.
+- The debriefing room, the feedback box and the server, in `.scratch/aar/`:
+  - `t_aar.js` (`ev.sh`, `ffev.sh`; a freshly loaded debug page) is the room through its real
+    buttons: a win, the salvage and its second press, both lifts, a loss, a client who disputes
+    the invoice (no way out until they are answered), ENTER, and the feedback box (what goes
+    with it, keys that must not reach the room, a draft kept, a server that does not answer).
+    `t_fig.js` fires the real weapons for twenty seconds and sets the wall's figures against the
+    record. `go.sh out.png ['window.__o = {...}; window.__lose = 1']` builds, flies one contract
+    home and takes a picture; look at one at 1600 by 813 (two columns of heads) and one under
+    1500 wide (one), with `.scratch/nav/shotat.mjs`.
+  - `__aar()` says what is in the room; `__aar('shut')` leaves it at once, which `__mk`, `__smk`
+    and `__arena` do first, so a driver can still fly one contract straight after another. A
+    driver that wants the deck afterwards has to take the lift (`$('aarHQ').click()`, twice if
+    there is salvage). On the deck the clock runs again: read `CO.news` before leaving.
+  - `python3 server/test_api.py` is the service by itself. `t_e2e.js` is the page against it:
+    `python3 server/stompymechs_api.py serve --db .scratch/aar/e2e.db --port 8399 --static
+    .scratch`, then load `http://127.0.0.1:8399/debug.html?net` and run the body twice (the
+    second with `window.__second = 1`, which is the "next launch" that sends what was kept).
+    Headless Chrome is not counted as a player (its user agent says headless, and the service
+    drops crawlers), so the launch count wants Firefox: `ff.mjs run`.
 - Release builds must contain no `window.__` hooks.
 
 ## Conventions
@@ -450,7 +482,7 @@ playable page. Never hand-edit it.
   validates on the way in because imported files are untrusted.
 - Overlays that take over input carry the `ovl` class; `uiModal()` is how key handlers know to
   stand down.
-- Rooms are `mode` values: `hangar`, `hq`, `bar`, `brief`, `field`. (`intro` is the opening,
+- Rooms are `mode` values: `hangar`, `hq`, `bar`, `brief`, `aar`, `field`. (`intro` is the opening,
   which is not a room: see below.) The bar (`BAR`, camera rig
   `barCam`,
   `updateBar`) is built like the deck. The conversation box `#dlg` and `dlg()` serve both rooms;
@@ -530,6 +562,60 @@ playable page. Never hand-edit it.
   click, a control, a resize or `POST.kick()`, and twice a second regardless. Anything new that
   changes the field's look while it is on hold, without one of those, should call `POST.kick()`.
   The other rooms always draw.
+- The debriefing room (`src/js/352_debrief.js`, `mode` `'aar'`) is where every contract ends:
+  `toHangar()` settles the books and calls `aarOpen(D)` with the picture faded out. It is the
+  briefing room and its screen (`BRF`), with the camera stood square to the wall.
+  - The summary is drawn on the wall, in the world (`aarDraw`, on `BRF.cv`): how it went, THE
+    BOOKS (`D.lines`, `D.total`), THE SORTIE (`D.fig`, which `settle()` works out from the record:
+    the tally as it stood at launch is `TALLY.f.g0`) and STANDING (`D.rep`, `D.rel`). Its type is
+    sized to be read with the wall at about 0.6 of its 1280 pixels: nothing under 20 px but
+    the footer.
+  - The people are on the page: `aarLines(D)` makes a list of heads (`aarLine(side, ch, text, {
+    opts, key })`), `updateAar` pops one every .45 s and says them aloud one at a time, in that
+    order (a click on a face says it again; a tour or an overlay has the floor while it is up).
+    The XO gives the verdict; a story chapter's epilogue is `storyLines(D)`; the client says
+    how they took it (`AAR_CLIENT`, by `c.persona`) or disputes the invoice (`aarDispute`); a
+    company's commander has a view when `D.rel` moved; the wingman; Dutch on the state of the
+    machine, the salvage (`aarSalvage` opens the picker) and the market if it turned over
+    (`D.shop`); Mira on standing and on what the board did meanwhile (`D.bd`). Somebody with two
+    things to say running is one head (`pre`); `aarSet(b, text)` changes what a head says.
+    Anything new that a player should be told after a sortie is a line here, not a `dlg()`.
+  - Heads stand both sides of the wall from `AAR_TWO` (1500 px) up, `#aarL` under the title and
+    `#aarR` in the room's column, and all in the column below that. `aarLay()` stands the
+    camera so that the wall fills what the columns leave (and puts `#aarScr` where the wall is on
+    the page, for the tour's ring). A column that overflows scrolls, fades at the foot (`.more`)
+    and follows whoever is speaking.
+  - The way out is the foot of the column (`#aarNav`): the feedback button, then the two lifts.
+    `aarLeave('hq' | 'bay')` refuses while a head is owed an answer (`key: 'disp'` with `opts`)
+    and asks twice about salvage; ENTER or SPACE is the lift to the deck. The sector's clock
+    stands still in the room (`tickClock` is not called), as it did while the XO read the books,
+    and the deck's music plays (`ROOM.deck`).
+- The wire home (`src/js/046_wire_home.js`). The page sends the server two things and nothing
+  else may ever be added without saying so on the screen: `POST api/launch { id, build }` when it
+  opens (`netBoot`; `CFG.count`, COUNT ME AS A PLAYER, turns it off and forgets the id), and
+  `POST api/feedback { id, build, kind, text, ctx }` when a player presses SEND. `ctx` is what
+  was flown and how it went (`aarCtx`): never the company's name or anything out of the save.
+  Every failure is swallowed: the game must run the same with no server at all. Feedback that
+  could not be sent waits in `stompymechs.fbq` and goes at the next launch (`netFlush`).
+  - The feedback box is `fbOpen({ kind, title, sub, ctx, done })` (`src/js/425_feedback.js`,
+    `#fbUI`, an `.ovl` above the others). The debriefing room opens it with WHAT DID YOU WISH YOU
+    COULD DO ON THAT CONTRACT?, SETTINGS · WHAT'S NEW with a general one. Its textarea stops its
+    own keys from reaching the game.
+  - The server is `server/stompymechs_api.py` (standard library, SQLite, behind nginx at
+    `/api/`); `server/README.md` has the tables, the views and how the dashboard reads them. It is
+    installed by hand on the web server (`sudo sh server/install.sh`); the deploy does not touch it.
+- What is new. `WHATS` (`src/js/046_wire_home.js`) is the changelog, newest first, and the `n` of
+  its newest entry is `BUILD`, which the page sends to the server. **A change a player would
+  notice gets an entry there, in the commit that makes it** (`{ n, d, t, l: [lines] }`, `n` one
+  more than the last): that is what puts NEW on every SETTINGS button (`whatsMark`, the `wnew`
+  class) and the chip at the top of the bay, the deck and the bar (`#wnChip`, `whatsTick`) for a
+  browser whose `stompymechs.seen` is older. Opening the tab reads it (`whatsSeen`). A browser
+  new to the game has nothing to catch up on; one with a company and no `seen` is shown the
+  newest entry.
+- The tip jar (`talkTip`, `src/js/330_bar.js`: the jar on the counter, `BAR.tip`, and `#bbTip` in
+  the way out's row of things that are not rooms) is the only thing in the game that asks for
+  real money. Mother says so in as many words before anything opens, and `TIP_URL` opens in a
+  tab of its own.
 - The first day is `TUT = { lock, hints, seen }` (`src/js/115_first_day.js`), saved under `tut`
   (`tutSave()`, `tutApply()`). A save with no `tut` is an old company: open board, no tours.
   - `tutLock()` means the board holds one card: `fillBoard()` deals nothing, and `storySync()`
@@ -543,7 +629,7 @@ playable page. Never hand-edit it.
     `forS`, `payL`, `note`, `close` and `again` on a thread replace the stock wording.
   - A room's tour is an entry in `TOURS` (`src/js/445_guide.js`): `{ by, room, modal, steps:
     [{ t, at, when, done, act, pos }] }`, started by `tutTick` (called from `frame`) the first
-    time `room()` is true, for a key listed in `TUT_KEYS`. A tour never blocks input: the ring
+    time `room()` is true, for a key listed in `TUT_KEYS` (the debriefing room's is `aar`). A tour never blocks input: the ring
     passes clicks through and leaving the room ends it. A new overlay or room wants a tour
     here; a new control wants a line in the shakedown. `tutHint()` is the NEXT chip, shown
     until the lock comes off; `tutKeys([[key, what]])` puts key prompts on the HUD for a
@@ -779,7 +865,8 @@ playable page. Never hand-edit it.
     follows its number, and a board is drawn only when it has changed. The side panels cover
     the outer thirds of every room, so the deck's strip and the bar's set are drawn from the
     left; in the bay one tower's board is always clear of them.
-- Salvage is not given up by accident: the chief asks again in `debrief`, and the picker's
+- Salvage is not given up by accident: the lift out of the debriefing room takes a second press
+  while there is salvage nobody has chosen (`AAR.arm`; Dutch says what it is worth), and the picker's
   LEAVE IT ALL arms on the first press (`ST.sure`). A script hands the player an item by
   pushing `{ kind: 'gift', key }` onto `YARD.loot`.
 - The hour. A contract carries `tod` (`dawn`, `day`, `dusk` or `night`; `todDeal` deals it, and

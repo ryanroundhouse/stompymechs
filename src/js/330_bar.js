@@ -18,6 +18,15 @@ const BAR_SEAT = { chair: { h: .47, back: .3 }, stool: { h: .78, back: .16 }, be
   box(sc, woodD, CL, 1.04, .62, CX, .52, CZ); box(sc, wood, CL + .3, .07, .96, CX, 1.075, CZ + .06); box(sc, brass, CL + .3, .025, .03, CX, 1.045, CZ + .53); cyl(sc, brass, .028, .028, CL, CX, .2, CZ + .5, 0, 0, PI / 2, 8);
   for (let x = CX - CL / 2 + .5; x < CX + CL / 2; x += 1.4) { box(sc, brass, .03, .2, .16, x, .12, CZ + .42); box(sc, dk, .05, .9, .03, x + .7, .52, CZ + .32); }
   { const g = grp(sc, CX + .9, 1.11, CZ - .05); box(g, brass, .14, .34, .12, 0, .17, 0); for (const x of [-.045, .045]) { cyl(g, dk, .012, .016, .16, x, .4, .03, .5); cyl(g, brass, .008, .008, .09, x, .2, .09, PI / 2); } }
+  /* the tip jar: glass, a brass lid, what people have dropped in it and a card propped against it. The one thing in the building that takes real money (talkTip) */
+  {
+    const g = grp(sc, CX + 2.9, 1.11, CZ + .2), gl = new THREE.MeshStandardMaterial({ color: 0xcfe6de, transparent: true, opacity: .26, roughness: .06, metalness: .1, envMapIntensity: 1.3, depthWrite: false }), silver = std({ color: 0xc8ccd0, metalness: .92, roughness: .3 }), R = mulberry(77);
+    noShadow(cyl(g, gl, .085, .078, .21, 0, .105, 0, 0, 0, 0, 18)); cyl(g, brass, .09, .09, .022, 0, .221, 0, 0, 0, 0, 18); box(g, dk, .07, .006, .014, 0, .233, 0);
+    for (let i = 0; i < 18; i++) { const a = R() * TAU, r = R() * .05; cyl(g, i % 3 ? brass : silver, .016, .016, .004, Math.sin(a) * r, .006 + i * .0042, Math.cos(a) * r, (R() - .5) * .5, 0, (R() - .5) * .5, 10); }
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(.21, .136), new THREE.MeshBasicMaterial({ color: 0xb8b0a0, map: labelTex(256, 166, (c, w, h) => { c.fillStyle = '#efe6cf'; c.fillRect(0, 0, w, h); c.strokeStyle = '#7a2a1a'; c.lineWidth = 6; c.strokeRect(7, 7, w - 14, h - 14); c.fillStyle = '#7a2a1a'; c.textAlign = 'center'; c.font = 'bold 66px Menlo,Consolas,monospace'; c.fillText('TIPS \u2665', w / 2, 82); c.fillStyle = '#3a2a1c'; c.font = 'bold 19px Menlo,Consolas,monospace'; c.fillText('FOR WHOEVER BUILT', w / 2, 116); c.fillText('THE PLACE', w / 2, 140); }) }));
+    card.position.set(.19, .066, .04); card.rotation.set(-.2, -.3, 0); g.add(card); box(g, woodD, .03, .1, .012, .2, .05, .0, .5, -.3, 0);
+    BAR.tip = new THREE.Mesh(new THREE.SphereGeometry(.27, 8, 6), HUM.hitM); BAR.tip.position.set(.08, .11, 0); g.add(BAR.tip);
+  }
   /* the back bar: cabinet, three lit shelves, the bottles (one mesh per colour of glass) */
   const BZ = -D / 2 + .32; box(sc, woodD, CL, 1, .6, CX, .5, BZ); box(sc, wood, CL, .05, .64, CX, 1.025, BZ); box(sc, std({ color: 0x14100c, metalness: 1, roughness: .18, envMapIntensity: .9 }), CL, 2, .04, CX, 2.05, -D / 2 + .03);
   const shelfY = [1.45, 1.98, 2.51]; for (const y of shelfY) { box(sc, woodD, CL, .045, .34, CX, y, BZ - .08); noShadow(box(sc, glowMat(0xffa040, 1.5), CL - .2, .018, .03, CX, y - .035, BZ + .07)); }
@@ -231,6 +240,15 @@ function talkKeep() {
     ['Who is in tonight?', () => dlg(k, `${R.map(p => `${p.ch.first} — ${BSK[p.sk][0].toLowerCase()}, flies ${/^[AEIOU]/.test(p.cfg.name) ? 'an' : 'a'} ${p.cfg.name}`).join('. ')}. All four fly for money; the better the pilot and the bigger the machine, the more of it.\nBallast will drink you under her table for a stake, and Vise will take your arm off for the same. Strand loads the dropships, Banerjee listens to bands she should not, and Calloway in the booth knows every contact on your board.`, back)],
     ['Thanks, Mother', dlgClose]], H);
 }
+/* the tip jar on the counter, and its button at the foot of the column. It is the one thing in the game that asks for real money, so Mother says so in as many words before
+   anything opens, and it opens in a tab of its own: the game stays where it is */
+const TIP_URL = 'https://ryangraham.ca/donate';
+function talkTip() {
+  if (BAR.relax || BAR.game) return; const k = BARC.keep, H = BAR.P.keep;
+  dlg(k, 'The jar? Not mine, and not the house\'s. It goes to whoever built this place: the bar, the yard upstairs, every machine in it. It does not take credits, Commander. That one is real money, out of your own pocket, and nobody in here thinks less of anybody who walks past it.', [
+    ['Put something in the jar — opens ryangraham.ca/donate in a new tab ↗', () => { tal('b.tip'); try { window.open(TIP_URL, '_blank', 'noopener'); } catch (e) { } dlg(k, pick(['Then that is one round I did not have to pour. Thank you, Commander.', 'I will see it gets where it is going. Thank you.']) + '\nIt has opened beside this one. If your browser kept it shut, the address is on the card: ryangraham.ca/donate', [['Any time, Mother', dlgClose]], H); }],
+    ['Not tonight', dlgClose]], H);
+}
 function talkSrc(key) {
   const S = BAR_SRC[key], ch = BARC[key], H = BAR.P[key], back = [['Something else', () => talkSrc(key)], ['Leave', dlgClose]], fresh = barFresh(key), has = barRumour(key, true);
   const T = {
@@ -269,7 +287,7 @@ function barDraw() {
   $('barHireN').textContent = fame ? `HOUSE STANDING −${Math.round(fame * 100)}%` : 'FLAT FEE OR A SHARE';
   $('barPil').innerHTML = R.map((p, i) => { const on = CO.wing && CO.wing.p === p, out = p.until > now(); return `<div class="bcard${on ? ' on' : ''}${out ? ' out' : ''}" data-i="${i}"><canvas width="72" height="72"></canvas><div><b>${p.ch.name}</b><small><span style="color:${p.ch.col}">${BSK[p.sk][0]}</span> <span class="pips">${pipStr(p.sk + 1)}</span> · ${p.cfg.name} · ${p.st.cls} ${p.st.tons.toFixed(0)} t</small><div class="bpw"><i style="width:${clamp(p.pw / 110, .05, 1) * 100}%"></i></div><small>MECH POWER ${p.pw} · ARMOR ${p.st.armor} · ${p.st.fire.toFixed(0)} DPS</small></div><em>${on ? 'ON YOUR<br>WING' : out ? 'MED<br>BAY' : `${fmt(barFee(p))}<small>or ${Math.round(p.share * 100)}% share</small>`}</em></div>`; }).join('');
   $('barPil').querySelectorAll('.bcard').forEach((d, i) => { drawFace(d.querySelector('canvas'), R[i].ch); d.onclick = () => { sfx.play('ui'); talkBarPilot(R[i]); }; });
-  $('bbRelax').disabled = !!BAR.game; BAR.drawWall(); barStat();
+  $('bbRelax').disabled = $('bbTip').disabled = !!BAR.game; BAR.drawWall(); barStat();
 }
 function barStat() {
   const h = Math.floor(CO.hour), b = barBuzz(); $('barStat').innerHTML = `<div><span>FUNDS</span><b>${fmt(CO.cb)}</b></div><div><span>SECTOR TIME</span><b>DAY ${CO.day} · ${String(h).padStart(2, '0')}:${String(Math.floor((CO.hour - h) * 6) * 10).padStart(2, '0')}</b></div><div><span>CONDITION</span><b style="color:${b > .6 ? '#ff5a1f' : b > .25 ? '#ffb21a' : BARSV.rested ? '#8dff6a' : ''}">${barState()}</b></div><div><span>WING</span><b>${CO.wing ? CO.wing.ch.first.toUpperCase() : 'SOLO'}</b></div>`;
@@ -338,11 +356,11 @@ async function barLeave(to) {
   cv.addEventListener('pointermove', e => { if (mode !== 'bar' || btn < 0) return; const dx = e.clientX - px, dy = e.clientY - py; px = e.clientX; py = e.clientY; moved += Math.abs(dx) + Math.abs(dy); if (barCam.focus) return; barCam.th -= dx * .005; barCam.ph = clamp(barCam.ph - dy * .004, 1, 1.52); });
   cv.addEventListener('pointerup', e => {
     if (mode !== 'bar') return; btn = -1; if (BAR.relax) return barRelax(false); if (moved > 6 || dlgCur || BAR.game) return; m2.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); rc.setFromCamera(m2, BAR.camera);
-    const h = rc.intersectObjects(BAR.people.map(p => p.hit))[0]; if (h) { sfx.play('ui'); barTalk(h.object.userData.p); }
+    const h = rc.intersectObjects(BAR.people.map(p => p.hit))[0], jar = BAR.tip ? rc.intersectObject(BAR.tip)[0] : null; if (jar && (!h || jar.distance < h.distance)) { sfx.play('ui'); talkTip(); } else if (h) { sfx.play('ui'); barTalk(h.object.userData.p); }
   });
   cv.addEventListener('wheel', e => { if (mode !== 'bar' || barCam.focus) return; e.preventDefault(); barCam.r = clamp(barCam.r * (1 + Math.sign(e.deltaY) * .07), 3.5, 10.5); }, { passive: false });
   addEventListener('keydown', e => { if (mode !== 'bar' || !BAR.relax || uiModal()) return; e.preventDefault(); barRelax(false); });
-  $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); };
+  $('bbHQ').onclick = () => barLeave('hq'); $('bbBay').onclick = () => barLeave('hangar'); $('bbRelax').onclick = () => barRelax(true); $('bbSet').onclick = () => { sfx.play('ui'); settingsOpen(); }; $('bbTip').onclick = () => { sfx.play('ui'); talkTip(); };
   $('barChill').onclick = () => barRelax(false); $('btnToBar').onclick = toBar; $('btnBar').onclick = toBar;
   for (const b of $('barBar').children) b.onclick = () => { sfx.play('ui'); barTalk(BAR.P[b.dataset.k]); };
 }

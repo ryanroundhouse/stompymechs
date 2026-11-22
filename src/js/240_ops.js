@@ -118,12 +118,15 @@ TWISTS.works = async function (ms) {
   look(F, 'FIELD WORKS'); say(ms.ops, 'There is a field works out at the edge of the grid, and its door is open. Everything it builds is coming your way. It is not in the contract, and it only has the stock it was brought with — but every machine it finishes is one more on you. Kill it early or outlast it.');
   setObj('fw', 'Destroy the field works', 0, true); nav('fw', F, 'WORKS', '#7fe7ff'); F.onKill = () => { unnav('fw'); if (ms.over) return; setObj('fw', null, 1); bonus('Field works', 24000 + c.diff * 5000); note('You destroyed a field works that was feeding the fight.'); };
 };
-/* settle the books after a sortie: returns the debrief the XO reads out */
+/* settle the books after a sortie: returns the debrief that the debriefing room shows (352_debrief.js) */
 function settle() {
-  const c = MS.c, ok = MS.ok, L = [], add = (l, v, tag) => { if (Math.round(v)) { L.push([l, Math.round(v)]); if (tag) tal('cr.' + tag, Math.abs(Math.round(v))); } }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base };
+  const c = MS.c, ok = MS.ok, L = [], add = (l, v, tag) => { if (Math.round(v)) { L.push([l, Math.round(v)]); if (tag) tal('cr.' + tag, Math.abs(Math.round(v))); } }, payer = MS.payer, own = !!(c.story && STORY[c.story].first), solo = !!(c.story && STORY[c.story].ch[c.chap].solo), base = ok ? c.pay * MS.payK : c.pay * (MS.partial || 0), D = { c, ok, text: MS.endText, log: [...MS.log], lines: L, renege: false, base, payer };
   add(ok ? (own && STORY[c.story].payL ? STORY[c.story].payL : payer ? (c.cok === 'sub' && payer === c.emp ? `Subcontract fee — ${RIV[c.co].short}` : `Contract fee — ${c.story && STORY[c.story].payer || FAC[payer].short}`) : 'Collection — off the books') : 'Partial payment', base, 'fee');   /* the first sortie is flown on the company's own account: no client to please, no bill from the bay, and a bad day there is not on the record */ for (const [l, v] of MS.bonus) add(l, v, v > 0 ? 'bonus' : '');
   if (ok && P.kills) add(`Battlefield scrap ${c.salv}% · ${P.kills} kills`, P.kills * 1500 * c.salv / 25, 'scrap');
   D.salv = ok ? salvageRoll(c, YARD.loot, MS.bonus.length > 0) : null; YARD.loot = [];
+  /* the sortie in figures, for the wall of the debriefing room, and the wingman while there still is one */
+  { const g = TALLY.f.g0 || {}, d = k => Math.max(0, talN(k) - (g[k] || 0)); D.fig = { t: MS.t || 0, kills: P.kills, shots: d('g.s'), hits: d('g.h'), dealt: d('g.d'), taken: d('d.n'), armor: clamp(P.armor / P.max, 0, 1), dead: !!P.dead, abort: !!MS.abort, lost: Object.keys(P.lost || {}).filter(k => player.cfg[k]).map(k => ZONE_N[k]), obj: [MS.obj.filter(o => o.st === 1).length, MS.obj.filter(o => !o.opt || o.st === 1).length] }; }
+  D.wing = CO.wing && !solo ? { ch: CO.wing.ch, down: !!CO.wingDown } : null;
   if (!own) add('Repairs and rearm', -((1 - clamp(P.armor / P.max, 0, 1)) * 38000 + (P.dead ? 55000 : 0)), 'rep');
   if (!own) { const lost = Object.keys(P.lost || {}).filter(k => player.cfg[k]); if (lost.length) add(`Rebuilding ${lost.map(k => ZONE_N[k].toLowerCase()).join(', ')}`, -lost.reduce((s, k) => s + itemInfo(CAT[k] + '.' + player.cfg[k]).price * .15, 0), 'rep'); }
   if (CO.wing && CO.wing.share && !solo) add(`${CO.wing.ch.first}'s ${Math.round(CO.wing.share * 100)}% share`, -Math.max(0, base) * CO.wing.share, 'share');
@@ -134,10 +137,12 @@ function settle() {
   if (c.story) storySettle(c, ok, D, add);
   D.renege = ok && payer === c.emp && c.twists.includes('renege') && base > 0; D.total = L.reduce((s, l) => s + l[1], 0); CO.cb += D.total; if (ok) CO.done++; else if (!own) CO.fails++; talSettle(c, ok, D, own);
   /* the world moves on */
-  CO.hour += rand(8, 20); while (CO.hour >= 24) { CO.hour -= 24; CO.day++; } dropContract(c);
+  const was = CO.board.filter(o => !o.story && o !== c); CO.hour += rand(8, 20); while (CO.hour >= 24) { CO.hour -= 24; CO.day++; } dropContract(c);
   if (c.story) news(D.story.news); else news(ok ? `${YARD.name} completed a ${TYPES[c.type].name.toLowerCase()} contract at ${c.site}${payer && payer !== c.emp ? ' — though not for the original client' : ''}.` : `${YARD.name} failed a ${FAC[c.emp].short} contract at ${c.site}.`);
   for (const o of CO.board.filter(o => !o.story && Math.random() < .4)) { dropContract(o); news(`${rivOutfit()} took the ${FAC[o.emp].short} job at ${o.site}.`); }
   if (c.story) { } else if (ok && payer === c.emp && Math.random() < .7) { const [t, pre] = NEXT[c.type]; CO.board.push(genContract({ type: t, emp: c.emp, foe: c.foe, biome: Math.random() < .6 ? c.biome : undefined, pre: `FOLLOW-UP to ${c.site}. ${pre}`, upd: 'FOLLOW-UP' })); }
   else if (!ok && Math.random() < .6) CO.board.push(genContract({ type: pick(['strike', 'recovery']), emp: c.foe === 'maw' ? pick(EMPS) : c.foe, foe: c.emp, pre: `${FAC[c.emp].short} is reeling after ${c.site}. Their rivals smell blood. `, upd: 'OPPORTUNITY' }));
-  fillBoard(); drift(); drift(); if (CO.wing && !solo) { if (CO.wingDown) { CO.wing.p.until = now() + 48; if (CO.wing.p.bar) BARSV.pst[CO.wing.p.seed] = { until: CO.wing.p.until }; } CO.wing = null; CO.wingDown = false; } saveCO(); return D;
+  fillBoard(); drift(); drift(); if (CO.wing && !solo) { if (CO.wingDown) { CO.wing.p.until = now() + 48; if (CO.wing.p.bar) BARSV.pst[CO.wing.p.seed] = { until: CO.wing.p.until }; } CO.wing = null; CO.wingDown = false; }
+  { const fresh = CO.board.filter(o => !o.story && !was.includes(o)); D.bd = { gone: was.filter(o => !CO.board.includes(o)).length, fresh: fresh.length, follow: fresh.some(o => o.upd === 'FOLLOW-UP'), opp: fresh.some(o => o.upd === 'OPPORTUNITY') }; }
+  saveCO(); return D;
 }

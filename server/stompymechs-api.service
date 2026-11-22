@@ -1,0 +1,35 @@
+# /etc/systemd/system/stompymechs-api.service: the launch counter and the feedback box (install.sh puts this here)
+[Unit]
+Description=StompyMechs launch counter and feedback box
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/stompymechs/stompymechs_api.py serve --db /var/lib/stompymechs/stompymechs.db --host 127.0.0.1 --port 8377 --origin https://stompymechs.graham.pub
+User=stompymechs
+Group=stompymechs
+# /var/lib/stompymechs, made by systemd and owned by the service. Group-readable, so that a dashboard whose user is in the stompymechs group can open the database
+StateDirectory=stompymechs
+StateDirectoryMode=0750
+UMask=0027
+Restart=on-failure
+RestartSec=3
+# it needs a loopback socket and one directory, and is given nothing else
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

@@ -545,7 +545,7 @@ const music = (() => {
   let ac = null, sc = null, mg = null, trk = -1, want = 0, pvK = null, pvT = 0, pvI = 0, pvHot = 0, pvNew = false, pvWas = null, stQ = null, stT = 0, slips = 0, voiceK = -1;
   const lv = { deck: -1, radio: -1, field: -1, brief: -1 }, idle = { deck: 9, radio: 9, field: 9, brief: 9 }, KEYS = ['deck', 'radio', 'field', 'brief'];
   /* which rooms hear which player, and how far ahead each is written. The radio answers to nothing in the game, so it is written well ahead: a slow frame in the bay cannot make it stumble */
-  const _r = V3(), _d = V3(), LV = { deck: .95, radio: .6, field: .85, brief: .62 }, ROOM = { deck: ['hq'], radio: ['hangar', 'bar'], field: ['field'], brief: ['brief'] }, EN = { deck: 'amb', radio: 'radio', field: 'score', brief: 'score' }, AHEAD = { deck: .3, radio: .9, field: .3, brief: .4 }, vol = () => .85 * CFG.vol * CFG.mus;
+  const _r = V3(), _d = V3(), LV = { deck: .95, radio: .6, field: .85, brief: .62 }, ROOM = { deck: ['hq', 'aar'], radio: ['hangar', 'bar'], field: ['field'], brief: ['brief'] }, EN = { deck: 'amb', radio: 'radio', field: 'score', brief: 'score' }, AHEAD = { deck: .3, radio: .9, field: .3, brief: .4 }, vol = () => .85 * CFG.vol * CFG.mus;
   return {
     get dbg() { return sc && { state: ac.state, t: +ac.currentTime.toFixed(2), lv, trk, slips, fight: sc.field.state, deck: [sc.deck.part, sc.deck.bar], sting: +stT.toFixed(1), radioNext: +sc.radio.next().toFixed(2), deckNext: +sc.deck.next().toFixed(2), song: sc.radio.song && { bpm: sc.radio.song.bpm | 0, key: sc.radio.song.key, step: sc.radio.song.step } }; },
     get previewing() { return pvT > 0 ? pvK : null; },

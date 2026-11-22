@@ -83,8 +83,23 @@
   </div>
  </div>
 </div>
+<div id="aarUI" class="hid">
+ <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>DEBRIEFING ROOM // AFTER ACTION</span><i></i></div>
+ <div id="aarScr"></div>
+ <div id="aarL" class="aarC"></div>
+ <div id="aarSide" class="rcol">
+  <div id="aarR" class="aarC"></div>
+  <div id="aarNav" class="pn rnav">
+   <div id="aarNote" class="hid"></div>
+   <div class="row"><button id="aarFb"></button></div>
+   <div class="row"><button id="aarHQ">▲ COMMAND DECK — CONTRACTS</button></div>
+   <div class="row"><button id="aarBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
+  </div>
+ </div>
+</div>
 <div id="cutTag"></div>
 <div id="sndHint">♪ SOUND STARTS WITH YOUR FIRST CLICK OR KEY</div>
+<div id="wnChip" class="hid"><button id="wnGo"></button><button id="wnX" title="Not now">✕</button></div>
 <div id="dlg" class="pn hid"><canvas id="dlgFace" width="144" height="144"></canvas><div><b id="dlgWho"></b><p id="dlgTxt"></p><div id="dlgOpts"></div></div></div>
 <div id="barUI" class="hid">
  <div class="ttl"><canvas width="100" height="100"></canvas><b>STOMPY MECHS</b><span>THE LAST ROUND // PILOTS' BAR</span><i></i></div>
@@ -93,6 +108,7 @@
   <div id="barStat" class="pn"></div>
   <div id="barHire" class="pn"><h2>PILOTS FOR HIRE <small id="barHireN"></small></h2><div id="barPil"></div><p>One wingman per drop. The better the pilot and the more machine they bring, the higher the fee. The faces change every few days.</p></div>
   <div id="barNav" class="pn rnav">
+   <div class="row"><button id="bbTip">♥ THE TIP JAR — BUY THE DEVELOPER A ROUND</button></div>
    <div class="row"><button id="bbRelax">TAKE A SEAT — RELAX</button><button id="bbSet">⚙ SETTINGS</button></div>
    <div class="row"><button id="bbHQ">▲ COMMAND DECK — CONTRACTS</button></div>
    <div class="row"><button id="bbBay">◀ MECH BAY — FIT OUT · LAUNCH</button></div>
@@ -123,6 +139,13 @@
  <div id="setTabs"></div>
  <div id="setBody"></div>
  <div class="foot"><span id="setInfo"></span><button id="setClose">CLOSE</button></div>
+</div></div>
+<div id="fbUI" class="ovl hid"><div class="pn win" id="fbWin">
+ <h2><span id="fbTitle"></span><small id="fbSub"></small></h2>
+ <p id="fbLead"></p>
+ <textarea id="fbText" maxlength="4000" rows="9" spellcheck="true" autocomplete="off"></textarea>
+ <p id="fbNote"></p>
+ <div class="foot"><span id="fbInfo"></span><button id="fbCancel">CANCEL</button><button id="fbSend">SEND IT</button></div>
 </div></div>
 <input type="file" id="saveFile" accept=".json,application/json" class="hid">
 <div id="mapUI" class="hid">

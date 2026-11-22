@@ -23,7 +23,7 @@ async function toHangar() {
   player.gait.sag = 0; if (player.slot.head) player.slot.head.visible = true; player.onStep = null;
   setDoor(0); HG.lift.position.y = .1; orb.cine = false; orb.idle = 0; setGang(1); busy = false;
   $('fieldUI').classList.add('hid'); $('hangarUI').classList.remove('hid'); for (const id of ['panelL', 'panelR', 'hint', 'status']) $(id).classList.remove('hid');
-  setStatus('UNIT RECOVERED — REPAIRED AND REARMED'); refreshUI(); renderHangarContract(); if (D) { showHQ(); hq.cPos.set(0, 3.2, 8.6); if (D.ok) music.sting('win'); debrief(D); }
+  setStatus('UNIT RECOVERED — REPAIRED AND REARMED'); refreshUI(); renderHangarContract(); if (D) aarOpen(D);
   await tween(.9, k => fade(1 - k));
 }
 function playerLost() {

@@ -2,7 +2,7 @@
 window.__errs = []; addEventListener('error', e => __errs.push(String(e.message))); addEventListener('unhandledrejection', e => __errs.push('rej ' + (e.reason && e.reason.stack || e.reason)));
 window.__fps = (n = 90) => new Promise(r => { let c = 0; const t0 = performance.now(), f = () => { if (++c >= n) r(Math.round(c * 1000 / (performance.now() - t0))); else requestAnimationFrame(f); }; requestAnimationFrame(f); });
 /* fast-forward the bay/deck simulation without rendering */
-window.__ff = (sec, step = 1 / 30) => { let n = 0; for (let t = 0; t < sec; t += step) { T += step; updateTweens(step); if (!dlgCur) tickClock(step); if (mode === 'bar') updateBar(step, T); else { updateHangar(step, T); if (mode === 'hq') updateHQ(step, T); } n++; } return n; };
+window.__ff = (sec, step = 1 / 30) => { let n = 0; for (let t = 0; t < sec; t += step) { T += step; updateTweens(step); if (!dlgCur && mode !== 'aar') tickClock(step); if (mode === 'bar') updateBar(step, T); else if (mode === 'aar') updateAar(step, T); else { updateHangar(step, T); if (mode === 'hq') updateHQ(step, T); } n++; } return n; };
 /* park the deck camera: __cam(x,y,z, lx,ly,lz) — or __cam() to release */
 window.__cam = (x, y, z, lx, ly, lz) => { if (x === undefined) { hq.focus = null; barCam.focus = null; orb.cine = false; return; } if (mode === 'bar') { barCam.focus = { pos: V3(x, y, z), look: V3(lx, ly, lz) }; barCam.cPos.set(x, y, z); barCam.cLook.set(lx, ly, lz); } else if (mode === 'hq') { hq.focus = { pos: V3(x, y, z), look: V3(lx, ly, lz) }; hq.cPos.set(x, y, z); hq.cLook.set(lx, ly, lz); } else { orb.cine = true; orb.pos.set(x, y, z); orb.look.set(lx, ly, lz); orb.cPos.set(x, y, z); orb.cLook.set(lx, ly, lz); } };
 /* frame one person: __see(human, dist, angle off their facing, height) */
@@ -61,10 +61,16 @@ window.__poses = (h, acts, ang = 0, d = 3.3, y = .95, fov = 30, settle = 1.6) =>
 };
 
 /* ---- v7 ---- */
+/* the debriefing room. __aar() says what is in it (the heads, the note, the wall's figures); __aar('shut') leaves it at once for the bay, with no lift and nothing asked, which is what
+   __mk, __smk and __arena do first: the drivers fly one contract straight after another */
+window.__aar = op => {
+  if (op === 'shut' && mode === 'aar') { vox.stop(); if (ST.open) { ST.done = null; storesClose(); } $('aarUI').classList.add('hid'); Object.assign(AAR, { D: null, L: [], q: [], spk: null }); mode = 'hangar'; $('hangarUI').classList.remove('hid'); busy = false; }
+  return { on: mode === 'aar', t: AAR.t, two: AAR.two, note: AAR.note, heads: AAR.L.map(b => ({ side: b.side, who: b.ch.name, text: b.text, opts: (b.opts || []).map(o => o[0]), key: b.key, up: !!b.el })), fig: AAR.D ? AAR.D.fig : null, lines: AAR.D ? AAR.D.lines : null, total: AAR.D ? AAR.D.total : null };
+};
 /* put a made-to-order contract on the board, sign it and drop straight into the field with the free-mouse lock (headless Chrome refuses pointer lock). o overrides any field: plot, twists, rival, co, cok, diff ... */
 window.__mk = (type, plot, o = {}) => {
   const c = genContract({ type }); delete c.rival; Object.assign(c, { plot, twists: [], diff: 3 }, o); if (c.co) { const { co, cok, share } = c; delete c.co; delete c.cok; rivCo(c, co, cok, share || 0); }
-  CO.board.push(c); CO.active = CO.sel = c; dlgClose(); for (const id of ['hqUI', 'barUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); return c;
+  __aar('shut'); CO.board.push(c); CO.active = CO.sel = c; dlgClose(); for (const id of ['hqUI', 'barUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); return c;
 };
 /* run the sortie forward without waiting: steps the field, lets the mission scripts continue between steps, and answers every comm at once (pick(c) -> option index). Returns everything that was said.
    The player is kept alive unless o.mortal; o.stop(said) ends the run early */
@@ -83,7 +89,7 @@ window.__vox = (ch, text, fx) => { const r = voxRender(voxOf(ch), text, { fx, se
 /* ---- v8: story ---- */
 /* put a chapter of a thread on the board (__story), or go straight into it in the field (__smk) with any remembered flags f, e.g. { 'mar.ram': 1 } */
 window.__story = (k, ch = 0) => { Object.assign(stState(k), { ch, st: 2, at: 0, exp: now() + 90, n: 0 }); storySync(); return CO.board.find(c => c.story === k); };
-window.__smk = (k, ch = 0, f = {}) => { const c = __story(k, ch); Object.assign(STV.f, f); CO.active = CO.sel = c; dlgClose(); for (const id of ['hqUI', 'barUI', 'brfUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); return { id: c.id, title: c.title, diff: c.diff, size: FD.size }; };
+window.__smk = (k, ch = 0, f = {}) => { __aar('shut'); const c = __story(k, ch); Object.assign(STV.f, f); CO.active = CO.sel = c; dlgClose(); for (const id of ['hqUI', 'barUI', 'brfUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); return { id: c.id, title: c.title, diff: c.diff, size: FD.size }; };
 /* where the chapter's sites ended up: height, and how far above the water */
 /* look at the field from anywhere: __fcam(x, y, z, lx, ly, lz), or a function returning those six each frame; no arguments hands the view back. __fsee(thing, dist, angle, height) stands off from an entity or a point */
 window.__fcam = (...a) => { if (!a.length) { FD.scene.onBeforeRender = () => { }; document.body.classList.remove('cut'); return; } const f = typeof a[0] === 'function' ? a[0] : () => a; document.body.classList.add('cut'); player.slot.head.visible = true; FD.scene.onBeforeRender = (r, sc, cam) => { const v = f(); if (!v || cam !== FD.camera) return; cam.position.set(v[0], v[1], v[2]); cam.lookAt(v[3], v[4], v[5]); cam.updateMatrixWorld(); FD.sky.position.copy(cam.position); FD.sun.position.set(v[3], v[4], v[5]).addScaledVector(FD.sunDir, 220); FD.sun.target.position.set(v[3], v[4], v[5]); }; };
@@ -109,7 +115,7 @@ window.__parts = (cat, ang = .6, cols = 6, ids = Object.keys(PARTS[cat])) => __m
 /* point the reticle at a target (or at one of its parts): call it every step, the camera sits off to one side of the machine */
 window.__aim = (e, k) => { const c = e.pos.clone(); c.y += e.cy; if (k && e.mech) { const z = e.mech.zg.find(z => z.k === k); if (z) zoneW(e.mech, z, c); } const cam = FD.camera.position, dx = c.x - cam.x, dz = c.z - cam.z; P.twist = angDiff(P.yaw, Math.atan2(dx, dz)); P.pitch = Math.atan2(c.y - cam.y, Math.hypot(dx, dz)); };
 /* a bare proving ground with the player in a given build: __arena(cfg) */
-window.__arena = cfg => { if (cfg) { player.cfg = { name: 'T', paint: 0, sinks: 3, ...cfg }; player.build(); } CO.active = null; dlgClose(); for (const id of ['hqUI', 'barUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); clearField(); P.pos.set(160, heightAt(160, 160), 160); P.waveT = -1e9; };
+window.__arena = cfg => { __aar('shut'); if (cfg) { player.cfg = { name: 'T', paint: 0, sinks: 3, ...cfg }; player.build(); } CO.active = null; dlgClose(); for (const id of ['hqUI', 'barUI']) $(id).classList.add('hid'); mode = 'hangar'; startField(); soft = true; locked = true; $('pause').classList.add('hid'); clearField(); P.pos.set(160, heightAt(160, 160), 160); P.waveT = -1e9; };
 /* a target dummy d metres ahead: a pacified machine with a great deal of armour */
 window.__dummy = (d = 60, cfg = PRESETS[1], o = {}) => { const x = P.pos.x + Math.sin(P.yaw) * d, z = P.pos.z + Math.cos(P.yaw) * d, e = mkMech(x, z, { ...cfg, paint: 3 }, 1, { ai: 'hold', hpK: 60, name: 'DUMMY', yaw: 0, ...o }); e.pacify = o.pacify ?? true; return e; };
 /* the first day. A debug page skips all of it (the drivers in .scratch expect a full board and nobody showing anybody round), and goes on skipping it through a new game or an imported save,
@@ -122,6 +128,8 @@ if (!/[?&]tut\b/.test(location.search)) {
 /* the opening. A debug page never plays it unasked (the drivers expect the bay), unless the address ends in ?intro. __intro(t) builds it and holds it at t seconds, silent, for a screenshot;
    __intro('play') runs it from the top with its sound, __intro('end') stops it, __intro() says where it stands */
 if (!/[?&]intro\b/.test(location.search)) INTROV.off = true;
+/* the wire home. A debug page tells the server nothing (the drivers are not players, and their feedback is not feedback), unless the address ends in ?net */
+if (!/[?&]net\b/.test(location.search)) NET.off = true;
 /* the sortie guard. A debug page does not ask before it is unloaded mid-sortie (the drivers navigate away from sorties all the time), unless the address ends in ?guard */
 if (!/[?&]guard\b/.test(location.search)) SGUARD.ask = false;
 window.__intro = t => {
