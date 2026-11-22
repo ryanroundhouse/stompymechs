@@ -8,8 +8,9 @@ with contracts and a rotating market, a bar (rumours, pilots for hire, two conte
 missions with salvage (eighteen catalogue mechs, fifty-three weapons in families, fifteen kinds of
 vehicle, a centipede, factories and two capital ships, all of which can be shot apart a
 component at a time), three rival mech companies that compete with you, hire you and fly
-beside you, five story threads (connected chapters that come up on the board one at a time,
-are briefed in a briefing room and are flown on a theatre 2.4 times the usual size) and over them
+beside you, seventeen story threads (connected chapters that come up on the board one at a time,
+are briefed in a briefing room and are flown on a theatre 2.4 times the usual size; four are under
+way at once, and closing one opens the ones behind it) and over them
 one campaign, FALSE DAWN: eight chapters in three acts that change the rest of the game as they
 go. Contracts are flown at an hour (dawn, day, dusk, night), and the market sells whole machines
 as well as parts. Everything a company does is counted (the record: some two hundred lines,
@@ -62,9 +63,12 @@ playable page. Never hand-edit it.
   contract types and twists; `230`/`250` the rival companies; `260_story.js` thread state, the
   board and the save; `280`-`310` people and crews; `330_bar.js`, `340_bar_games.js`;
   `350_brief.js` the briefing room; `355_thread0_shakedown.js` the first sortie; `360`-`400` the
-  five threads (`stKeep` is in `400`, the Derby's `dbCall` in `390`); `402_campaign_kit.js` the
+  first five threads (`stKeep` is in `400`, the Derby's `dbCall` in `390`); `402_campaign_kit.js` the
   campaign's cast and tools (`sunWar`, `sunDim`, `sunKey`, `skyLance`, `sunSweep`) and `403`-`405`
-  its three acts; `415_mech_dealer.js` the dealer (`dealLot`, `dealBuy`); `445_guide.js` the room
+  its three acts; `406`-`408` the twelve threads that the first five open (four to a file, each
+  with its cast and its own helpers under a two-letter prefix: `fw`, `os`, `nf`, `cc`, `sl`, `ds`,
+  `sf`, `ns`, `ir`, `tc`, `bt`); `409_story_load.js` one line, `storyApply(BOOT)`, which has to come
+  after the last file that defines a thread; `415_mech_dealer.js` the dealer (`dealLot`, `dealBuy`); `445_guide.js` the room
   tours, the next-step chip and the HUD key prompts; `447_intro.js` the opening (`INTROV`,
   `INTRO_SHOTS`); `450_main.js` the main loop. `grep -l name src/js/*.js` finds
   anything else.
@@ -225,9 +229,33 @@ playable page. Never hand-edit it.
     moved the camera; `camrt.sh '{ hold, type, plot, o, secs }'` runs one in real time with
     nobody at the controls and logs line, hold and camera state.
   - `t_ssave.js` takes story state through the save: round trip, hostile files, a failed
-    chapter and a lapsed offer coming round again, the three-card limit.
+    chapter and a lapsed offer coming round again, the four-card limit, four threads under way
+    and no more, a book closed the real way opening the ones behind it (and what the debrief
+    says), and the whole tree closed a book at a time in a random order. Run it from a profile
+    with no save: flags left over from another run change the order of the keys it compares.
   The autopilot kills fast and (without `drive`) teleports, so it proves a chapter can be
-  finished and says nothing about how hard it is.
+  finished and says nothing about how hard it is. It deals its damage with `damage()` on
+  everything hostile within 260 m, not through the weapons, and does nothing at all unless
+  `follow` is given.
+- The twelve later threads, in `.scratch/mc/`:
+  - `all.sh [ff]` flies all twenty-four chapters with the story autopilot and prints one verdict
+    each; `fly.sh 'label' '<run.sh object>' [n]` is one chapter with its objectives, books and
+    last lines, `v.sh` the same in three lines. The objects in `all.sh` are the ones that work:
+    a hold of 46 m needs `off: 20` (the pilot stands exactly on its edge otherwise), a chapter
+    whose newest marker is not where to stand needs its own `follow` (the vaults before the
+    Magistrate, the ring of the Kepler rail, the court of the Stair), and the cruiser's gun
+    needs an `each` that turns the machine to the battery and calls `__aim` on it.
+  - `bout.sh '{ zone, fire, out, cfg }'` fights TRIAL BY IRON I through the real weapons
+    (`zone` a part to aim at or `''` for the middle, `fire: false` a pilot who never shoots,
+    `out: 1` one who walks out of the Ring, `cfg` a `PRESETS` index for the bay) and prints how
+    long each bout took and what was left. `t_duelrate.js` (`ev.sh`) stands a pilot still in
+    front of each opponent in four machines and says when they were bled: about a minute for
+    Fenn, three quarters for the Sister, half for Auclair, longer in a heavy.
+  - `t_truce.js` is the ceasefire's rules (a stray round, a real one, a shell beside a picket, a
+    picket killed, a pilot who does nothing), `t_mark.js` the cruiser's gun laid from four
+    distances, `t_misc2.js` three ways to lose that only a deliberate mistake reaches,
+    `t_tree.js` the unlock tree, `t_gifts.js` every prize by name (an item key that does not
+    exist shows there), `t_faces_new.js` the new cast's portraits.
 - The Derby races, in `.scratch/v11/`: `race.sh '{ ch, sprint, log }'` flies a chapter through
   the real controls (W, A, D and SHIFT held in `keys`, so the machine's own speed, turning and
   heat count) and prints the place every `log` seconds, each car's gap in metres and the speed it
@@ -517,18 +545,31 @@ playable page. Never hand-edit it.
   owned by 4: they hit what yours hit, the kills are theirs (`MS.v.rvk`), not yours.
   `rivFight()` runs a fight to the point where they yield.
 - Story threads live in `STORY` (no prototype, like `RIV`): `{ name, sub, col, emp, foe, who,
-  open(), wait, flags, fin, ch: [...] }`. A chapter is `{ title, kind, biome, mood, seed, diff,
+  open(), after, wait, flags, fin, end, ch: [...] }`. A chapter is `{ title, kind, biome, mood, seed, diff,
   pay, salv, site, op, tease, wire, sites: { lz, key: [x, z, r, label] }, roads, face, guests,
   brf: [...], async run(ms), epi(ok, f, D), prize(D, add, f) }`. `kind` is one of the ordinary
   mission types and only dresses the card; `run` replaces that type's script altogether.
 - Where a thread stands is `stState(k)` in `STV.th`: `ch` the next chapter, `st` 0 not begun, 1
   between chapters, 2 on the board, 3 finished, `at` when it may next be offered, `exp` when
   the offer closes, `n` failed attempts. `storySync()` is the only thing that puts story cards
-  on the board (never more than three, and the campaign's besides), `storyLapse()` takes an unanswered one away for a
+  on the board (never more than four, and the campaign's besides), `storyLapse()` takes an unanswered one away for a
   while, `storySettle()` moves the thread on or, after a failure, queues the same chapter
   again. Story cards are never saved with the board; `storySave()` / `storyApply()` keep the
   thread state and rebuild them. `STORY.zero` is the thread marked `first`: see the first day,
   above.
+- Only `STORY_MAX` (four) side stories are under way at once: begun and not finished
+  (`stLive()`). The first sortie and the campaign are not side stories (`stSide`). A thread that
+  lists others in `after` may not begin until any one of them is finished (`stMay`, with `open()`
+  if it has one): MARIGOLD opens FURROW and OPEN SEASON, THE GREATEST SHOW opens SOMETHING
+  BORROWED and THE NINE-FORTY, THE IRON DERBY opens COLD CHAIN and SLINGSHOT, DEAD RECKONING
+  opens THE DROWNED STAIR and THE SATO FILE, and four more wait on two or three of those and
+  THE LONG NIGHT. `stFill(first)` begins threads while there is room, the ones in `first` before
+  any other; `storySync()` calls it, and `storySettle()` calls it with `stKids(k)` when a book is
+  closed, so the freed place goes to something that book opened. `D.story.opens` and
+  `D.story.waits` are what the debrief then says, and the card of a last chapter says what
+  closing it opens. A save from before the limit may hold five under way; nothing is taken
+  away, and no new thread begins until there is room. A new thread wants `after`, a `wait` and
+  an `end` (the last line of its debrief), and goes in a file numbered below `409`.
 - What a thread remembers of the player's choices is a small integer under `'thread.flag'`.
   In a chapter use `stSet(flag, v)` and `stGet(flag)`: they are staged in `MS.sf` and kept only
   if the chapter is won. Anywhere else read `stFlag('mar.ram')` or `stDone('mar')`. A flag
@@ -542,6 +583,10 @@ playable page. Never hand-edit it.
   `after`, `say`, `ask`, `tell` (awaitable `say`), `setObj`, `nav`, `foes`, `spawn`,
   `dropship`): `stFrom` (alerted hostiles from a bearing), `stHold` and `stBar` (meters),
   `stPay`, `stGift`, `stMend`, `stRoad`, `stBeacon`, `stGate`, `stFire`, `stShow`, `stTick`,
+  `stYield(list, share, cb)` (hostiles who give up at that share of their hull and walk off:
+  it returns a count of them), `stTrig()` (when the player last pulled a trigger, which is how
+  a script tells the player's own round from somebody's stray), `stRing(p, r, hex, glow)` (a
+  line on the ground: glow about 1 by night), `stClock(seconds)`,
   `stRace` (gates, laps, a pack: see below), and the big machines `stCrawler`, `stWalker`,
   `stLantern`, `stDread`. An ally who must not die is wrapped in `stKeep` (`src/js/400_thread5_night.js`): at a
   quarter armour they are out of the fight and nobody shoots at them. A new named character
@@ -736,7 +781,7 @@ playable page. Never hand-edit it.
   the works twist is put near enough to walk to.
 - The campaign is the thread marked `main` (`STORY.sun`, FALSE DAWN: acts in
   `src/js/403_campaign_act1.js` to `405`, tools in `402_campaign_kit.js`). A `main` thread's
-  card is over and above the three story cards, is listed first, never lapses and comes back
+  card is over and above the four story cards, is listed first, never lapses and comes back
   sooner after a failure. Its chapters carry `act`, and may carry their own `emp`, `foe`, `who`,
   `note` and `after` (the wire that goes round when the chapter is won); `guests` may be a
   function, and a briefing step's `t`, `by` and `show` getters, where they depend on a flag.

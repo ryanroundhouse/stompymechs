@@ -1,5 +1,5 @@
 /* ============ THE CAMPAIGN'S KIT: THE KALDUR CONCORD, ITS MIRROR, AND WHAT THE MIRROR DOES TO THE GROUND ============ */
-/* FALSE DAWN (STORY.sun, in the three files after this one) is the one thread marked `main`: eight chapters in three acts, its card over and above the three story cards and never withdrawn.
+/* FALSE DAWN (STORY.sun, in the three files after this one) is the one thread marked `main`: eight chapters in three acts, its card over and above the four story cards and never withdrawn.
    It changes the rest of the game as it goes, and everything it changes is read from where the thread stands, so nothing here is saved twice:
    sunWar()  from the end of chapter III until it is over: war rates on every contract, and the Concord interdicts some of them (TWISTS.concord)
    sunDim()  from the end of chapter V until it is over: the Array is edge-on across the sun, and every sky in the sector is TOD.ecl (todKey)

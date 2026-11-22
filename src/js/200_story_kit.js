@@ -64,6 +64,15 @@ const stTick = fn => { FD.tick.push(fn); };
 /* stand somewhere for a while: an objective with a clock that only runs while you are inside the ring */
 async function stHold(id, p, r, secs, text) { let t = 0; setObj(id, () => `${text} — ${t >= secs ? 'done' : stBar(t / secs * 100)}`); await new Promise(res => stTick(dt => { if (MS.over) return false; if (near(p, r) && !P.dead) t += dt; if (t >= secs) { res(); return false; } return true; })); setObj(id, null, 1); }
 
+/* machines that give up rather than die: at k of its armour each strikes its colours, is out of the fight and walks off the map. cb(e) is told as each one goes; the function it returns says how many have.
+   Nothing stops a heavy round finishing one of them first, and that is the point: where a script uses this, a kill is somebody's fault */
+function stYield(L, k = .35, cb) { let n = 0; stTick(() => { if (MS.over) return false; let left = 0; for (const e of L) { if (e.dead || e.out) continue; left++; if (e.hp > e.max * k) continue; n++; Object.assign(e, { inv: true, pacify: true, out: true, focus: null }); if (e.mech) leave([e]); else e.team = 2; if (cb) cb(e); } return left > 0; }); return () => n; }
+/* a clock the HUD shows in an objective line */
+const stClock = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+/* the player's trigger pulls: a cooldown that has gone up is a round gone out. T.n is how many there have been, T.t when the last was */
+function stTrig() { const T = { n: 0, t: -1e9 }, c = {}; stTick(() => { if (MS.over) return false; for (const k in P.cd) { if (P.cd[k] > (c[k] || 0) + .001) { T.n++; T.t = MS.t; } c[k] = P.cd[k]; } return true; }); return T; }
+/* a line on the ground r metres from p: how close is too close, or where to stand. It is a mesh like any other; move it by its position */
+function stRing(p, r, hex = 0xffb21a, glow = 2.2) { const m = new THREE.Mesh(GEO.ring, glowMat(hex, glow));   /* glow: about 1 by night, where 2.2 burns out to white */ m.position.set(p.x, heightAt(p.x, p.z) + .6, p.z); m.scale.setScalar(r); FD.scene.add(m); FD.misc.push(m); POST.kick(); return m; }
 /* ---- MARIGOLD: a mining crawler with a town on its back. Forty-six metres of track, tin roofs, washing lines and one very large drill-laser. It follows a road, crushes what it meets, and — it turns out — can stand up ---- */
 function stCrawler(at, path, o = {}) {
   const g = grp(FD.scene, at.x, at.y, at.z), hull = grp(g), lit = glowMat(0xffc56a, 2.2), glass = std({ color: 0x3fae7a, transparent: true, opacity: .45, roughness: .1, metalness: .2, emissive: 0x0c3a22, emissiveIntensity: .8 });

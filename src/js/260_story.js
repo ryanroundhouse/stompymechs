@@ -1,5 +1,5 @@
 /* ============ STORY THREADS: CONNECTED CHAPTERS THAT TURN UP ON THE BOARD ONE AT A TIME, EACH BRIEFED BY THE XO AND FLOWN OVER A THEATRE STK TIMES THE USUAL SIZE ============ */
-/* a thread is { name, sub, col, emp, foe, who (whoever is asking), open() (may it start yet?), wait (hours before it first appears), flags [names a chapter may set], ch: [chapters] }.
+/* a thread is { name, sub, col, emp, foe, who (whoever is asking), open() (may it start yet?), after [threads: one of them has to be finished first], wait (hours before it first appears), flags [names a chapter may set], ch: [chapters] }.
    a chapter is { title, kind (a TYPES key: what sort of work it is on paper), biome, mood, seed, diff, pay, salv, site, op, tease (the board text), wire (the news line when it is offered),
    sites { lz: [x, z, r], … } (flattened ground, shared by the briefing and the field), face (the site the lance faces on landing), brf [briefing steps], run(ms) (the field script), epi(ok, f) (who says what afterwards), prize(D, add, f) }.
    STORY has no prototype for the same reason RIV has none: thread keys come out of save files. The thread files further down fill it in.
@@ -13,16 +13,31 @@ const stFlag = k => STV.f[k] | 0;
 const stSet = (flag, v = 1) => { MS.sf[MS.c.story + '.' + flag] = v | 0; };
 const stGet = flag => (MS.sf[MS.c.story + '.' + flag] ?? STV.f[MS.c.story + '.' + flag]) | 0;
 const stDone = k => !!STORY[k] && stState(k).st === 3;
+/* the side stories are every thread but the first sortie and the campaign, and only STORY_MAX of them are under way at once (begun and not yet finished): that is also the most story cards a board holds, the
+   campaign's apart. A thread that names others in `after` cannot begin until one of those is finished, so closing a book is what opens the next ones. stFill() begins as many as there is room for, drawn from
+   those that may begin, and the ones named in `first` (the threads the book just closed has opened) before any other */
+const STORY_MAX = 4, stSide = k => !STORY[k].first && !STORY[k].main;
+const stLive = () => Object.keys(STORY).filter(k => stSide(k) && stState(k).st > 0 && stState(k).st < 3);
+const stMay = k => { const S = STORY[k]; return (!S.after || S.after.some(stDone)) && (!S.open || S.open()); };
+const stKids = k => Object.keys(STORY).filter(j => (STORY[j].after || []).includes(k) && stState(j).st === 0);
+const stAnd = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+function stFill(first = []) {
+  const got = []; let live = stLive().length;
+  while (live < STORY_MAX) { const W = Object.keys(STORY).filter(k => stSide(k) && stState(k).st === 0 && stMay(k)), F = W.filter(k => first.includes(k)); if (!W.length) break; const k = pick(F.length ? F : W), T = stState(k); T.st = 1; T.at = now() + (STORY[k].wait || 0) * rand(.6, 1.4); live++; got.push(k); }
+  return got;
+}
 function storyMake(k) {
   const S = STORY[k], T = stState(k), H = S.ch[T.ch], rg = REGION[H.biome], a = (H.seed % 628) / 100;
   return { id: ++cid, story: k, chap: T.ch, title: H.title, type: H.kind, plot: TYPES[H.kind].plots[0], emp: H.emp || S.emp, foe: H.foe || S.foe, biome: H.biome, mood: H.mood | 0, tod: H.tod, diff: clamp(H.diff + (CO.done > 14 ? 1 : 0), 1, 5), seed: H.seed, twists: [], persona: 'clerk', pat: 99, pushes: 0,
     intel: [], support: false, contact: H.who || S.who, site: H.site, item: '', op: H.op, pay: H.pay, salv: H.salv || 25, exp: T.exp, pos: [rg[0] + Math.sin(a) * .15, rg[1] + Math.cos(a) * .15], upd: '', brief: H.tease };
 }
-/* keep the board in step with the threads: begin the ones whose time has come, offer whichever chapter is due (never more than three at once), and make sure each offered thread has exactly its own card */
+/* keep the board in step with the threads: begin the ones whose time has come (the first sortie and the campaign as soon as they may, the side stories while there is room: stFill), offer whichever chapter is due
+   (never more than STORY_MAX at once), and make sure each offered thread has exactly its own card */
 function storySync() {
   const n = now(), L = tutLock(); let on = 0;
-  for (const k in STORY) { const T = stState(k); if (T.st === 0 && L === !!STORY[k].first && STORY[k].open()) { T.st = 1; T.at = n + (STORY[k].wait || 0) * rand(.6, 1.4); } if (T.st === 2 && !STORY[k].main) on++; }
-  for (const k in STORY) { const T = stState(k), S = STORY[k]; if (T.st !== 1 || n < T.at || (on >= 3 && !S.main) || L !== !!S.first) continue;   /* a locked board is offered the first sortie and nothing else; an open one, everything but */ T.st = 2; T.exp = S.first || S.main ? 1e6 : n + rand(60, 96); if (!S.main) on++;   /* the campaign's card is over and above the three, and waits as long as it has to */ news(T.n ? `${S.who.name} is asking for ${YARD.name} again: ${S.ch[T.ch].title}.` : S.ch[T.ch].wire); sfx.play('comm'); }
+  for (const k in STORY) { const T = stState(k), S = STORY[k]; if (T.st === 0 && !stSide(k) && L === !!S.first && stMay(k)) { T.st = 1; T.at = n + (S.wait || 0) * rand(.6, 1.4); } }
+  if (!L) stFill(); for (const k in STORY) if (stState(k).st === 2 && !STORY[k].main) on++;
+  for (const k in STORY) { const T = stState(k), S = STORY[k]; if (T.st !== 1 || n < T.at || (on >= STORY_MAX && !S.main) || L !== !!S.first) continue;   /* a locked board is offered the first sortie and nothing else; an open one, everything but */ T.st = 2; T.exp = S.first || S.main ? 1e6 : n + rand(60, 96); if (!S.main) on++;   /* the campaign's card is over and above those, and waits as long as it has to */ news(T.n ? `${S.who.name} is asking for ${YARD.name} again: ${S.ch[T.ch].title}.` : S.ch[T.ch].wire); sfx.play('comm'); }
   for (const c of [...CO.board]) if (c.story && (!STORY[c.story] || stState(c.story).st !== 2 || stState(c.story).ch !== c.chap)) dropContract(c);
   for (const k in STORY) if (stState(k).st === 2 && !CO.board.some(c => c.story === k)) { CO.board.push(storyMake(k)); CO.dirty = true; }
 }
@@ -55,6 +70,8 @@ function storySettle(c, ok, D, add) {
   if (!ok) { T.n++; T.st = 1; T.at = S.first ? 0 : S.main ? now() + rand(3, 7) : now() + rand(24, 46); return; }
   for (const key in MS.sf) if ((S.flags || []).includes(key.slice(k.length + 1))) STV.f[key] = clamp(MS.sf[key] | 0, -9, 9);
   T.ch++; T.n = 0; T.st = last ? 3 : 1; T.at = now() + (S.main ? rand(12, 22) : rand(24, 44)); if (S.first && last) { tutStory(); CO.news = CO.news.filter(n => !n.includes('Nobody is hiring yet')); }
+  /* a side story closed: there is room for another, and the ones this book was holding shut go to the front of the queue. The debrief says which have begun and which must wait for room */
+  if (last && stSide(k)) { const kids = stKids(k), got = stFill(kids); D.story.opens = kids.filter(j => got.includes(j)).map(j => STORY[j].name); D.story.waits = kids.filter(j => !got.includes(j) && stMay(j)).map(j => STORY[j].name); }
   if (H.prize) H.prize(D, add, f);
 }
 const stGift = (D, key, n = 1) => { invAdd(key, n); D.story.gifts.push(`${n > 1 ? n + ' × ' : ''}${itemInfo(key).name}`); };
@@ -62,7 +79,11 @@ const stGift = (D, key, n = 1) => { invAdd(key, n); D.story.gifts.push(`${n > 1 
 function storyDebrief(D, fin) {
   const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean), crew = { 11: 'xo', 23: 'intel', 37: 'chief', 51: 'p0', 67: 'p1' };
   if (D.story.gifts.length) L.push([CREW.chief, `Delivery for you, boss, off the back of that one: ${D.story.gifts.join(', ')}. In stores now.`]);
-  if (D.ok && D.story.last) L.push([CREW.xo, S.close || `That closes the book on ${S.name}. ${S.end || 'It will be talked about.'}`]);
+  if (D.ok && D.story.last) {
+    L.push([CREW.xo, S.close || `That closes the book on ${S.name}. ${S.end || 'It will be talked about.'}`]); const op = D.story.opens || [], wt = D.story.waits || [];
+    if (op.length) L.push([CREW.intel, `Word of it has travelled. ${stAnd(op)} ${op.length > 1 ? 'have' : 'has'} come in on the back of it: ${op.length > 1 ? 'new people' : 'somebody new'}, asking for {CO} by name. ${op.length > 1 ? 'They' : 'It'} will be on the board within the day.`]);
+    if (wt.length) L.push([CREW.xo, `${stAnd(wt)} ${wt.length > 1 ? 'are' : 'is'} asking as well, and will have to wait. ${['', 'One', 'Two', 'Three', 'Four', 'Five'][STORY_MAX] || STORY_MAX} of these on the books at once is as many as I will carry.`]);
+  }
   else if (D.ok) L.push([CREW.xo, 'That is not the end of it. When there is more, it will come up on the board.']);
   else L.push([CREW.xo, S.again || 'It will be offered again — these people have nobody else to ask. Take a day, refit, and we go back.']);
   const step = i => { removeContact(); if (i >= L.length) return fin(); const [ch, text] = L[i], p = crew[ch.seed] ? HQ.P[crew[ch.seed]] : null; if (!p && !(CAST[ch.seed] && CAST[ch.seed].bot)) showContact(ch);   /* a machine is a voice: there is nobody to stand on the pad */ dlg(ch, text, [[i === L.length - 1 ? 'Continue' : 'Go on', () => step(i + 1)]], p); };
@@ -74,11 +95,11 @@ function storyCard(c, h) {
   return `<span class="tg">★</span><b>${S.name}</b><em>${fmt(c.pay)}</em><small>${S.first ? 'FIRST SORTIE' : `${S.main ? `ACT ${STNUM[S.ch[c.chap].act - 1]} · ` : ''}${STNUM[c.chap]} OF ${STNUM[S.ch.length - 1]}`} · ${c.title.toUpperCase()} · <span style="color:${B.css}">${B.name}</span> ${todTag(c)}</small><i class="pips" title="Threat ${c.diff} of 5">${pipStr(c.diff)}</i>${capTag(c)}<u>${c === CO.active ? 'ACCEPTED' : h < 8 ? 'CLOSING' : stState(c.story).n ? 'AGAIN' : S.first ? 'START HERE' : S.main ? 'CAMPAIGN' : 'STORY'}</u>`;
 }
 function storyDetail(c, el) {
-  const S = STORY[c.story], B = BIOMES[c.biome], m = B.wx[c.mood] || B.wx[0], h = Math.max(0, c.exp - now()), act = c === CO.active, T = stState(c.story);
+  const S = STORY[c.story], B = BIOMES[c.biome], m = B.wx[c.mood] || B.wx[0], h = Math.max(0, c.exp - now()), act = c === CO.active, T = stState(c.story), nk = stKids(c.story).filter(j => !STORY[j].after.some(stDone)).length;   /* the threads that only this one is holding shut */
   el.innerHTML = `<h2 style="color:${S.col}">${S.first ? 'FIRST SORTIE' : S.main ? `THE CAMPAIGN · ACT ${STNUM[S.ch[c.chap].act - 1]}` : 'STORY OPERATION'} <small>OP. ${c.op}</small></h2><div class="dsc"><div class="sth" style="--sc:${S.col}"><b>${S.name}</b><span>${S.sub}</span><div class="stp">${stPips(c, S)}<em>${S.first ? 'BEFORE ANYTHING ELSE' : `CHAPTER ${STNUM[c.chap]} OF ${STNUM[S.ch.length - 1]}`}</em></div></div>
 <h3>${c.title.toUpperCase()}</h3><div class="sub">${c.site.toUpperCase()}</div>
 <div class="kv">ASKED FOR BY <b style="color:${c.contact.col}">${c.contact.name}</b></div><div class="kv">FOR <b style="color:${S.forN ? S.col : FAC[c.emp].col}">${S.forN || FAC[c.emp].name}</b></div><div class="kv">AGAINST <b style="color:${S.vsN ? '#ff7a55' : FAC[c.foe].col}">${S.vsN || FAC[c.foe].name}</b></div><div class="kv">THEATRE <b style="color:${B.css}">${B.name}</b></div><div class="kv">CONDITIONS <b class="tod ${todKey(c.biome, c.mood, c.tod)}">${skyOf(c.biome, c.mood, c.tod)}</b></div>
-<div class="kv">OPERATING AREA <b>${(STK).toFixed(1)} KM ACROSS</b></div><div class="kv">THREAT <b class="pips">${pipStr(c.diff)}</b></div>${capKv(c)}<div class="kv">FEE <b>${fmt(c.pay)}</b></div><div class="kv">SALVAGE <b>${c.salv}%</b></div><div class="kv">${act ? 'STATUS' : S.first || S.main ? 'OFFER' : 'OFFER CLOSES IN'} <b>${act ? 'ACCEPTED' : S.first || S.main ? 'STANDS UNTIL FLOWN' : h.toFixed(0) + ' h'}</b></div>${T.n ? `<div class="kv">ATTEMPTS SO FAR <b style="color:var(--hot)">${T.n}</b></div>` : ''}
+<div class="kv">OPERATING AREA <b>${(STK).toFixed(1)} KM ACROSS</b></div><div class="kv">THREAT <b class="pips">${pipStr(c.diff)}</b></div>${capKv(c)}<div class="kv">FEE <b>${fmt(c.pay)}</b></div><div class="kv">SALVAGE <b>${c.salv}%</b></div><div class="kv">${act ? 'STATUS' : S.first || S.main ? 'OFFER' : 'OFFER CLOSES IN'} <b>${act ? 'ACCEPTED' : S.first || S.main ? 'STANDS UNTIL FLOWN' : h.toFixed(0) + ' h'}</b></div>${T.n ? `<div class="kv">ATTEMPTS SO FAR <b style="color:var(--hot)">${T.n}</b></div>` : ''}${stSide(c.story) ? `<div class="kv">STORIES UNDER WAY <b>${stLive().length} OF ${STORY_MAX}</b></div>${nk ? `<div class="kv">CLOSING THIS ONE OPENS <b style="color:${S.col}">${['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'][nk] || nk} MORE</b></div>` : ''}` : ''}
 <p>${c.brief}</p><p class="nt">${S.main ? S.ch[c.chap].note || S.note : S.note || B.note + ' A story operation runs long and covers a lot of ground. Commander Varga briefs the lance before launch — what is known, at any rate. Lose it, or let the offer lapse, and it comes round on the board again.'}</p></div>
 <div class="dact"><div class="row"><button id="dBrf" class="stb">${act ? 'HEAR THE BRIEFING AGAIN ▶' : 'ACCEPT — REPORT TO THE BRIEFING ROOM ▶'}</button></div>${act ? '<div class="row"><button id="dAcc">STAND DOWN</button><button id="dGo">TO THE MECH BAY ▶</button></div>' : ''}</div>`;
   $('dBrf').onclick = () => { sfx.play('ui'); if (!act) accept(c); CO.dirty = true; toBrief(c); };
