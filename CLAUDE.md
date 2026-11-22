@@ -398,6 +398,10 @@ playable page. Never hand-edit it.
     three boards ticked for a minute each, and the STATS tab through its search box and chips.
   - `t_stats3.js` is every counter that hangs off a button or a key: the bay, the market, the
     dealer, the deck, the bar and a contest, the field keys, a wave, a briefing.
+  - `t_settle.js` ticks each board by hand at seven frame rates and checks that once every line
+    has finished arriving the picture last drawn holds its real value. A board draws at 30
+    pictures a second while a line arrives and not at all afterwards, so the frame a line
+    settles on has to be drawn (`B.dirty`): skipped, it left a letter of the shuffle standing.
   - `fill.js` loads a record worth looking at, for a screenshot of a board or the tab.
   - `.scratch/intro/t_intro.js` has the record in its `snap()`: the opening must count nothing.
     In headless Chrome its "the title is up at 7.8 s" from the deck fails (shot 2), and did

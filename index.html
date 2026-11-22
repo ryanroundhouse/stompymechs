@@ -8082,7 +8082,8 @@ function talBoardTick(B, dt, t) {
   let moving = false; B.wait -= dt;
   if (!B.slots.length) { for (let i = 0; i < B.n; i++) { const s = talDeal(B); if (s) { s.age = -i * .35; B.slots.push(s); } } B.wait = B.every; }
   else if (B.wait <= 0) { const s = talDeal(B); if (s) B.slots[B.turn % B.slots.length] = s; B.turn = (B.turn + 1) % B.n; B.wait = B.every; }
-  for (const s of B.slots) { if (s.age < 1) { moving = true; s.age += dt / .75; } }
+  /* the frame a line finishes arriving is drawn whatever the rate: after it nothing moves, so a picture skipped here would leave the shuffle's last letters standing */
+  for (const s of B.slots) { if (s.age < 1) { moving = true; if ((s.age += dt / .75) >= 1) B.dirty = true; } }
   if ((B.live -= dt) < 0) {
     B.live = 1; const F = talFeed(), k = YARD.name + YARD.logoV; if (k !== B.key) { B.key = k; B.dirty = true; }
     for (const s of B.slots) { const r = F.find(r => r.l === s.l && r.g === s.g); if (r && r.v !== s.v) { s.v = r.v; B.dirty = true; } }
