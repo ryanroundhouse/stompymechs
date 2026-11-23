@@ -61,11 +61,11 @@ window.__poses = (h, acts, ang = 0, d = 3.3, y = .95, fov = 30, settle = 1.6) =>
 };
 
 /* ---- v7 ---- */
-/* the debriefing room. __aar() says what is in it (the heads, the note, the wall's figures); __aar('shut') leaves it at once for the bay, with no lift and nothing asked, which is what
+/* the debriefing room. __aar() says what is in it (everybody with a line, who has the floor, how many wait, the note, the buttons at the top of the way out, the wall's figures); __aar('shut') leaves it at once for the bay, with no lift and nothing asked, which is what
    __mk, __smk and __arena do first: the drivers fly one contract straight after another */
 window.__aar = op => {
-  if (op === 'shut' && mode === 'aar') { vox.stop(); if (ST.open) { ST.done = null; storesClose(); } $('aarUI').classList.add('hid'); Object.assign(AAR, { D: null, L: [], q: [], spk: null }); mode = 'hangar'; $('hangarUI').classList.remove('hid'); busy = false; }
-  return { on: mode === 'aar', t: AAR.t, two: AAR.two, note: AAR.note, heads: AAR.L.map(b => ({ side: b.side, who: b.ch.name, text: b.text, opts: (b.opts || []).map(o => o[0]), key: b.key, up: !!b.el })), fig: AAR.D ? AAR.D.fig : null, lines: AAR.D ? AAR.D.lines : null, total: AAR.D ? AAR.D.total : null };
+  if (op === 'shut' && mode === 'aar') { vox.stop(); if (ST.open) { ST.done = null; storesClose(); } $('aarUI').classList.add('hid'); Object.assign(AAR, { D: null, L: [], q: [], cur: null }); $('aarL').innerHTML = $('aarR').innerHTML = ''; mode = 'hangar'; $('hangarUI').classList.remove('hid'); busy = false; }
+  return { on: mode === 'aar', t: AAR.t, two: AAR.two, note: AAR.note, cur: AAR.cur ? AAR.cur.ch.name : null, left: AAR.q.length, salv: $('aarSalv').parentNode.classList.contains('hid') ? '' : $('aarSalv').textContent, shop: !$('aarShop').parentNode.classList.contains('hid'), heads: AAR.L.map(b => ({ who: b.ch.name, text: b.text, opts: (b.opts || []).map(o => o[0]), key: b.key, up: b === AAR.cur, wait: AAR.q.includes(b) })), fig: AAR.D ? AAR.D.fig : null, lines: AAR.D ? AAR.D.lines : null, total: AAR.D ? AAR.D.total : null };
 };
 /* put a made-to-order contract on the board, sign it and drop straight into the field with the free-mouse lock (headless Chrome refuses pointer lock). o overrides any field: plot, twists, rival, co, cok, diff ... */
 window.__mk = (type, plot, o = {}) => {

@@ -76,10 +76,10 @@ function storySettle(c, ok, D, add) {
 }
 const stGift = (D, key, n = 1) => { invAdd(key, n); D.story.gifts.push(`${n > 1 ? n + ' × ' : ''}${itemInfo(key).name}`); };
 /* after the books: the people the chapter was about have something to say, and anything they sent arrives */
-/* what is said about a chapter once it is over, as [who, line]: the chapter's own epilogue, anything it sent home, and where the thread goes from here */
+/* what is said about a chapter once it is over, as [who, line]: the chapter's own epilogue, and where the thread goes from here. (Anything it sent home is Dutch's to announce,
+   with the rest of what he has to say: aarLines) */
 function storyLines(D) {
   const S = STORY[D.story.k], H = S.ch[D.story.chap], L = (H.epi ? H.epi(D.ok, D.story.f, D) : []).filter(Boolean);
-  if (D.story.gifts.length) L.push([CREW.chief, `Delivery for you, boss, off the back of that one: ${D.story.gifts.join(', ')}. In stores now.`]);
   if (D.ok && D.story.last) {
     L.push([CREW.xo, S.close || `That closes the book on ${S.name}. ${S.end || 'It will be talked about.'}`]); const op = D.story.opens || [], wt = D.story.waits || [];
     if (op.length) L.push([CREW.intel, `Word of it has travelled. ${stAnd(op)} ${op.length > 1 ? 'have' : 'has'} come in on the back of it: ${op.length > 1 ? 'new people' : 'somebody new'}, asking for {CO} by name. ${op.length > 1 ? 'They' : 'It'} will be on the board within the day.`]);

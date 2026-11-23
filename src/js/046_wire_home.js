@@ -4,6 +4,9 @@
    read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
    Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
 const WHATS = [
+  { n: 13, d: '23 NOV 2026', t: 'THE DEBRIEF, ONE VOICE AT A TIME', l: [
+    'In the debriefing room the crew now have their say one at a time, at the top left: a head comes up, says its piece and fades for the next, instead of a column of them down each side. Rest the pointer on one to keep it there; click it to move on.',
+    'CLAIM THE SALVAGE is a button of its own at the foot of the room, above the lifts, where it cannot be missed. It goes once the salvage is tagged. SEE THE MARKET is there with it when the market has turned over.'] },
   { n: 12, d: '22 NOV 2026', t: 'THE DEBRIEFING ROOM, AND A WAY TO ANSWER BACK', l: [
     'A sortie now ends in the debriefing room. How it went, the books, your standing and the figures for the sortie are on the wall, and the crew say their pieces round it all at once: nothing to click through.',
     'WHAT DID YOU WISH YOU COULD DO ON THAT CONTRACT? Asked at every debrief, and under SETTINGS · WHAT\'S NEW at any time. Whatever you type goes to the developer.',

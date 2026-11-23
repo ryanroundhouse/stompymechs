@@ -398,27 +398,36 @@ body.intro>*:not(#gl):not(#intro):not(#boot){opacity:0!important;pointer-events:
 .tlyW>div{display:grid;grid-template-columns:1fr 74px 84px 150px 84px 56px;gap:0 10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);padding:4px 0;text-align:right;color:#fff;font-variant-numeric:tabular-nums}.tlyW>div>span:first-child{text-align:left;display:flex;align-items:center;gap:8px;min-width:0}
 .tlyW .hd{color:#8b8474;font-size:9.5px;letter-spacing:.14em}.tlyW b{font-weight:400;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tlyW small{color:#7d776a;font-size:9px;letter-spacing:.12em}.tlyW svg{flex:none}
 .tlyW .ac{position:relative;height:14px;background:rgba(127,231,255,.08);border:1px solid rgba(127,231,255,.2)}.tlyW .ac i{position:absolute;left:0;top:0;bottom:0;background:rgba(127,231,255,.38)}.tlyW .ac em{position:relative;font-style:normal;font-size:10px;line-height:12px;padding-right:5px;display:block}
-/* the debriefing room. The summary is on the wall, in the world; these are the heads round it. Two columns of them while the window is wide enough to leave the wall room between
-   (the left one under the title, the right one in the room's own column above the way out), and one, on the right, when it is not (#aarUI.one) */
+/* the debriefing room. The summary is on the wall, in the world; this is the head beside it: one at a time, at the top left under the title while the window is wide enough
+   to leave the wall room beside it (#aarL), and at the top of the room's own column when it is not (#aarUI.one, #aarR) */
 .aarC{display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;pointer-events:none;scrollbar-width:thin;scrollbar-color:rgba(255,178,26,.35) transparent}
 #aarL{position:fixed;left:18px;top:86px;bottom:18px;width:clamp(240px,19vw,320px)}
 #aarUI.one #aarL{display:none}
+body:has(#tutChip.side:not(.hid)) #aarL{top:136px}   /* (the next-step chip stands there, while a new company still has one) */
 .aarC.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 54px),transparent);mask-image:linear-gradient(#000 calc(100% - 54px),transparent)}
 #aarSide{bottom:18px}#aarR{flex:0 1 auto;min-height:0}
 #aarScr{position:fixed;pointer-events:none}
-.aarB{--c:var(--am);pointer-events:auto;flex:none;display:grid;grid-template-columns:56px 1fr;gap:0 10px;padding:9px 10px 9px 8px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--c);backdrop-filter:blur(3px);animation:aarIn .34s cubic-bezier(.2,.9,.3,1.25) both;transition:border-color .2s,box-shadow .2s}
-.aarB canvas{width:56px;height:56px;display:block;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:#0b0e11;transition:.15s}
-.aarB canvas:hover{border-color:var(--c)}
+.aarB{--c:var(--am);position:relative;cursor:pointer;pointer-events:auto;flex:none;display:grid;grid-template-columns:56px 1fr;gap:0 10px;padding:9px 10px 9px 8px;background:var(--bg);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--c);backdrop-filter:blur(3px);animation:aarIn .34s cubic-bezier(.2,.9,.3,1.25) both;transition:border-color .2s,box-shadow .2s}
+.aarB canvas{width:56px;height:56px;display:block;border:1px solid rgba(255,255,255,.14);background:#0b0e11;transition:.15s}
+.aarB:hover{border-color:var(--c)}
 .aarB>div{min-width:0}
 .aarB b{display:block;font-weight:400;color:var(--c);letter-spacing:.08em;font-size:10px;line-height:1.35;margin-bottom:4px}
 .aarB p{white-space:pre-line;line-height:1.5;color:#e4ddcc;font-size:11.5px;overflow-wrap:anywhere}
 .aarB.spk{border-color:var(--c);box-shadow:0 0 16px -4px var(--c)}.aarB.spk canvas{border-color:var(--c);box-shadow:0 0 10px -2px var(--c)}
-.aarB.ask{border-color:var(--am)}
+.aarB.ask{border-color:var(--am);cursor:default}
+.aarB small{display:block;margin-top:7px;text-align:right;color:#8b8474;font-size:9px;line-height:1.3;letter-spacing:.12em}.aarB small:empty{display:none}.aarB:hover small{color:var(--c)}
+.aarB>i{position:absolute;left:-3px;right:-1px;bottom:-1px;height:2px;background:var(--c);opacity:.75;transform-origin:0 50%}
+.aarB.out{animation:aarOut .3s ease-in both;pointer-events:none}
 .aarO{display:flex;flex-direction:column;gap:4px;margin-top:8px}.aarO:empty{display:none}
 .aarO button{text-align:left;padding:7px 9px;font-size:10.5px;line-height:1.35}
 .aarB.nag{animation:aarNag .45s 3}
 @keyframes aarIn{from{opacity:0;transform:translateY(16px) scale(.93)}}
 @keyframes aarNag{50%{border-color:var(--hot);box-shadow:0 0 0 3px rgba(255,90,31,.6)}}
+@keyframes aarOut{to{opacity:0;transform:translateY(-10px)}}
+@keyframes aarCall{50%{box-shadow:0 0 20px -2px var(--am)}}
+#aarSalv{background:var(--am);border-color:var(--am);color:#111;padding:11px 8px;letter-spacing:.12em;animation:aarCall 1.7s ease-in-out infinite}
+#aarSalv:hover{background:#fff;border-color:#fff;color:#111}
+#aarSalv.nag{animation:aarNag .45s 3}
 #aarNote{color:var(--hot);letter-spacing:.12em;font-size:10px;line-height:1.4;margin-bottom:8px;text-align:center}
 #aarFb{border-color:var(--cy);color:var(--cy);background:rgba(127,231,255,.08);padding:9px 8px;line-height:1.4;letter-spacing:.06em}
 #aarFb:hover{background:var(--cy);color:#06121a}#aarFb b{font-weight:400;color:#fff}#aarFb:hover b{color:#06121a}

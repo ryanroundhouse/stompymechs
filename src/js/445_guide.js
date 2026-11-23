@@ -32,8 +32,8 @@ const TOURS = {
   ] },
   aar: { by: () => CREW.xo, room: () => mode === 'aar' && AAR.t > .1, steps: [
     { t: 'Every sortie ends in this room, Commander. On the wall: how it went, what it paid and what it cost, the sortie in figures, and who thinks differently of us for it.', at: '#aarScr', pos: 'low' },
-    { t: 'Round it, your people, each with one thing to say. Nothing to click through, unless one of us wants an answer: Dutch about the salvage, most days. Click a face to hear it again.', at: '#aarR' },
-    { t: 'And the way out, where it always is. The button above the lifts is not for us: it goes to whoever built all this, and I am told they read every one.', at: '#aarNav' },
+    { t: 'Beside it, your people, one at a time: a head comes up, says its piece and makes way for the next. Nothing to click through, unless one of us wants an answer. Rest the pointer on a head and it stays; click it and the next one comes.', at: () => (AAR.cur && AAR.cur.el) || $(AAR.two ? 'aarL' : 'aarR') },
+    { t: 'And the way out, where it always is. When the recovery crews have found something worth keeping, the salvage is at the top of it: claim it before you take a lift. The button above the lifts is not for us: it goes to whoever built all this, and I am told they read every one.', at: '#aarNav' },
   ] },
   salv: { by: () => CREW.chief, modal: true, room: () => !$('stores').classList.contains('hid') && ST.mode === 'salv', steps: [
     { t: "Salvage, boss. What you shot is lying out there, and the contract gives us a share of it. Click what you want brought home, up to the limit, then confirm. Whatever we leave, the client keeps.", at: '#stGrid', pos: 'low' },

@@ -20,7 +20,8 @@ is shown round each room by its crew, and flies a first sortie that teaches the 
 anybody will hire it. Everybody who speaks does so aloud, in a made-up language. The first time
 the page is opened it plays an eleven-second opening: four cuts of battle, then the STOMPY MECHS
 title, cut to its own music. A sortie ends in a debriefing room: the summary on the wall, the
-crew's heads round it, and a button that asks the player what they wished they could have done.
+crew having their say beside it one head at a time, and a button that asks the player what they
+wished they could have done.
 The page tells a small service beside it (`server/`) that it was opened and what was typed into
 the feedback box, and nothing else; SETTINGS · WHAT'S NEW is the changelog, and there is a tip
 jar in the bar.
@@ -440,14 +441,21 @@ playable page. Never hand-edit it.
   is then undefined.
 - The debriefing room, the feedback box and the server, in `.scratch/aar/`:
   - `t_aar.js` (`ev.sh`, `ffev.sh`; a freshly loaded debug page) is the room through its real
-    buttons: a win, the salvage and its second press, both lifts, a loss, a client who disputes
-    the invoice (no way out until they are answered), ENTER, and the feedback box (what goes
-    with it, keys that must not reach the room, a draft kept, a server that does not answer).
-    `t_fig.js` fires the real weapons for twenty seconds and sets the wall's figures against the
-    record. `go.sh out.png ['window.__o = {...}; window.__lose = 1']` builds, flies one contract
-    home and takes a picture; look at one at 1600 by 813 (two columns of heads) and one under
-    1500 wide (one), with `.scratch/nav/shotat.mjs`.
-  - `__aar()` says what is in the room; `__aar('shut')` leaves it at once, which `__mk`, `__smk`
+    buttons: a win, one head at a time and everybody in turn, the salvage button and the lift's
+    second press, both lifts, a loss, a client who disputes the invoice (no way out until they
+    are answered, the head that does not fade, Dutch cutting in and the client coming back),
+    ENTER, a click that moves on, and the feedback box (what goes with it, keys that must not
+    reach the room, a draft kept, a server that does not answer, nobody's time running behind
+    it). `t_fig.js` fires the real weapons for twenty seconds and sets the wall's figures
+    against the record. `go.sh out.png ['window.__o = {...}; window.__lose = 1']` builds, flies
+    one contract home and takes a picture; look at one at 1500 wide or more (the head top left)
+    and one narrower (the head at the top of the column), with `.scratch/nav/shotat.mjs`.
+  - `t_flow.js` is the floor in real time: who had it from when to when, and how long each line
+    was given. `fly2.js` (`window.__st = [k, ch]` for a story chapter, `window.__then`) flies
+    one home for a picture, and `node .scratch/aar/mouse.mjs` then rests the real pointer on the
+    head (it must hold), clicks it (the next must come) and moves away (it must count down).
+  - `__aar()` says what is in the room (`cur` has the floor, `left` wait, `salv` and `shop` are
+    the buttons); `__aar('shut')` leaves it at once, which `__mk`, `__smk`
     and `__arena` do first, so a driver can still fly one contract straight after another. A
     driver that wants the deck afterwards has to take the lift (`$('aarHQ').click()`, twice if
     there is salvage). On the deck the clock runs again: read `CO.news` before leaving.
@@ -570,22 +578,33 @@ playable page. Never hand-edit it.
     the tally as it stood at launch is `TALLY.f.g0`) and STANDING (`D.rep`, `D.rel`). Its type is
     sized to be read with the wall at about 0.6 of its 1280 pixels: nothing under 20 px but
     the footer.
-  - The people are on the page: `aarLines(D)` makes a list of heads (`aarLine(side, ch, text, {
-    opts, key })`), `updateAar` pops one every .45 s and says them aloud one at a time, in that
-    order (a click on a face says it again; a tour or an overlay has the floor while it is up).
+  - The people are on the page, one at a time: `aarLines(D)` makes the list (`aarLine(ch, text,
+    { opts, key })`, kept in `AAR.L`; `AAR.q` is who has yet to speak) and `aarTalk` gives each
+    the floor in that order. A head (`aarShow`) comes up, is said aloud once, stays long enough
+    to be read (`AAR.need`, the bar along its foot) and fades for the next (`aarDrop`). Nothing
+    stays on the page: it was a column of heads down each side, and a button in one of them was
+    as good as hidden. The pointer resting on a head holds it, a click on it brings the next, a
+    tour or an overlay stops the count while it is up, and a head with `opts` stays until it is
+    answered. `aarCut(ch, text, key)` is somebody speaking out of turn, at once (Dutch when the
+    salvage is tagged, or about to be left): whoever had the floor comes back afterwards if they
+    had not finished. `aarRe(key, text)` changes what a head still waiting is going to say.
     The XO gives the verdict; a story chapter's epilogue is `storyLines(D)`; the client says
     how they took it (`AAR_CLIENT`, by `c.persona`) or disputes the invoice (`aarDispute`); a
-    company's commander has a view when `D.rel` moved; the wingman; Dutch on the state of the
-    machine, the salvage (`aarSalvage` opens the picker) and the market if it turned over
+    company's commander has a view when `D.rel` moved; the wingman; Dutch (`aarBay`) on anything a
+    chapter sent home, the state of the machine, the salvage and the market if it turned over
     (`D.shop`); Mira on standing and on what the board did meanwhile (`D.bd`). Somebody with two
-    things to say running is one head (`pre`); `aarSet(b, text)` changes what a head says.
+    things to say running is one head (`pre`).
     Anything new that a player should be told after a sortie is a line here, not a `dlg()`.
-  - Heads stand both sides of the wall from `AAR_TWO` (1500 px) up, `#aarL` under the title and
-    `#aarR` in the room's column, and all in the column below that. `aarLay()` stands the
-    camera so that the wall fills what the columns leave (and puts `#aarScr` where the wall is on
-    the page, for the tour's ring). A column that overflows scrolls, fades at the foot (`.more`)
-    and follows whoever is speaking.
-  - The way out is the foot of the column (`#aarNav`): the feedback button, then the two lifts.
+  - The head stands at the top left, under the title (`#aarL`), from `AAR_TWO` (1500 px) up, and
+    at the top of the room's column (`#aarR`) below that, where there is no room beside the
+    wall. `aarLay()` stands the camera so that the wall fills what the head and the way out
+    leave (and puts `#aarScr` where the wall is on the page, for the tour's ring). The next-step
+    chip stands at the top left in this room too: `#aarL` starts under it while it shows.
+  - The way out is the foot of the column (`#aarNav`): what there is to do that is not a room,
+    then the feedback button, then the two lifts. A head goes, so nothing a player has to press
+    may live in one unless it holds the floor until pressed (the dispute): the salvage is
+    `#aarSalv` (`aarSalvage` opens the picker), shown while `D.salv` is unchosen and gone once
+    it is, and the market `#aarShop`, shown when it turned over; `aarNav()` draws both.
     `aarLeave('hq' | 'bay')` refuses while a head is owed an answer (`key: 'disp'` with `opts`)
     and asks twice about salvage; ENTER or SPACE is the lift to the deck. The sector's clock
     stands still in the room (`tickClock` is not called), as it did while the XO read the books,
