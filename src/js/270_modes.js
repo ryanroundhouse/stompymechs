@@ -10,7 +10,7 @@ function startField() {
   $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.sky}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
-  talSortie(c);
+  talSortie(c); kcamEnd(); KCAM.n = 0; KCAM.cool = 0;
   player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; if (!P.dead) stompFoot(player, _v, true, 0, Math.abs(P.v) / (player.stats.speed * RUN)); };   /* and whatever hostile is under that foot takes her weight (165_stomp.js) */
   P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);

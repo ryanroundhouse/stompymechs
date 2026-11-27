@@ -65,6 +65,7 @@ playable page. Never hand-edit it.
   `shockAt`); `160_field_weapons.js` the weapons engine (`emitShot`, `fire`) and
   component damage (`mechZones`, `damage`); `165_stomp.js` what a machine's weight does to whatever
   is under it (`stompFoot`, `stompLand`, `STOMP_K`); `170_units.js` vehicles, `UNIT_POOL`, `spawn`;
+  `185_kill_cam.js` slow motion on the kills that matter (`KCAM`, `kcamKill`, `KCAM_K`);
   `190_mission_engine.js` comms, objectives and the comm camera (`cutWho`); `200_story_kit.js`
   the story helpers, `stLook` and `stRace`/`RACE_K`; `210_missions.js` and `240_ops.js` the
   contract types and twists; `230`/`250` the rival companies; `260_story.js` thread state, the
@@ -93,6 +94,8 @@ playable page. Never hand-edit it.
   unasked either (`INTROV.off`): `debug.html?intro` does. Nor does it ask before being unloaded mid-sortie
   (`SGUARD.ask`), so the drivers can navigate away: `debug.html?guard` does. And it tells the server
   nothing (`NET.off`: the drivers are not players, and what they type is not feedback): `debug.html?net` does.
+  And it never slows down for a kill (`KCAM.off`: the drivers time things, and `__sim` does not go through
+  the frame loop): `debug.html?kcam` does.
   Its two anchors are asserted; if one moves, fix `build.py`.
 - Every build writes `.scratch/check.mjs` (the module script alone). Follow every build with
   `node --check .scratch/check.mjs`: in a module a second top-level declaration of a name is a
@@ -412,6 +415,19 @@ playable page. Never hand-edit it.
   - `pic_flat.js` and `pic_land.js` stage a moment to look at (`c.sh shot out.png` afterwards).
   - `__sim` steps the field and not the page's tweens: a wreck is pressed flat by a `tween`, so a
     driver that wants to see it has to wait in real time.
+- The kill camera, in `.scratch/kcam/` (run with `.scratch/stomp/ev.sh` and `ffev.sh`):
+  - `t_kcam.js` turns it on (`KCAM.off = false`) and watches it in real time, through the page's
+    own frames: a last kill, the kills that are not worth it (somebody else's round, two
+    machines, too soon after the last, an ordinary pilot with others standing, a Derby car, the
+    switch), a named pilot, a capital ship, the comms waiting, the mouse, the player unhurt, a
+    pause, a loss, the lift home, a contract ending under it and three tanks shot with the real
+    weapons. `window.__part` is `last`, `rules`, `named`, `ship` or `real`.
+  - `pic_kcam.js` (`window.__k = 'last' | 'named' | 'ship' | 'stomp' | 'far'`, `window.__ms`)
+    lets one run to a moment and stops the field there, for `c.sh shot`. Look at a named kill
+    at half a second, a second and a half and two and a quarter after changing `KCAM_K`: at
+    one slow speed the whole shot was the flash of the explosion.
+  - Never turn it on under a driver that steps with `__sim`: the comms wait for it in real
+    seconds while `__sim` runs the field on, and a script's lines fall minutes behind.
 - The record, in `.scratch/stats/` (`ev.sh` bodies, each from a freshly loaded debug page, in
   either browser; the last two put back the company they found):
   - `t_stats.js` is the field: fifteen kinds of weapon fired at a dummy and then at the sky
@@ -859,6 +875,28 @@ playable page. Never hand-edit it.
     of tipping it over. A landing also fells the trees round it (`FD.fell`).
   - A company in its first eight contracts that has never trodden on anything is told once a
     sortie, by `chatter`, when a tank is in reach. Not in the first sortie.
+- The kill camera (`src/js/185_kill_cam.js`). `killEnt` asks `kcamKill(e, owner)` as a thing
+  dies, and three kills start it: a hostile pilot with a name (`e.named`, not a Derby car), a
+  capital ship, and the last hostile on the field (structures and anything pacified do not
+  count) when the round was the player's own (`talBy` an item key or `'stomp'`), at least
+  `KCAM_K.min` kills since the field was last clear and `KCAM_K.gap` seconds since the last one.
+  `CFG.kcam` is the switch (SETTINGS · DISPLAY).
+  - The main loop has two clocks while it runs. `rt` is real time and `dt` is what the game
+    gets: `kcamStep(rt)` is the first thing in `frame()` and hands back the rate, which the
+    field, `T` and the tweens all run at (a wreck goes over by a `tween`). The music, the comms'
+    own clock, the comm camera and the record's time are on `rt`. Anything new in `frame()` has
+    to pick one.
+  - It is a speed ramp (`KCAM_K`: seconds, the rate on the blast, the rate it climbs to, seconds
+    held): the blast at a seventh, then up towards three quarters while the wreck goes over.
+  - `updateField` steers the chase camera from where it was and aims along it, so the camera is
+    handed back before every step (`kcamHome`) and taken after it (`kcamShot`); `kcamEnd` puts
+    it back for good. The count is in real seconds and nothing stops it: a pause, the player's
+    loss, the lift home and a change of room all end it. `body.kcam` puts up the bars and hides
+    the HUD (`#kcT`, `#kcB`, `#kcTag`).
+  - While it runs no new line comes up on the comms (`updateComm` waits), the mouse does not
+    turn the torso, and from the frame after the kill nothing hurts the player (`kcamSafe()` in
+    `damage`). `sfx.slow(k)` pitches every effect down and draws it out.
+  - A new kind of death worth watching is a line in `kcamKill` and a row in `KCAM_K`.
 - Every unit's turn in the frame goes through `entTick` (burning, shields, stuns, ejections)
   before its own `update`. A target is one sphere, or a list in `e.hs` (`[x, y, z, r]` in its
   own frame, turned by `e.yaw`): use `entRay`, `entIn` and `entGap` rather than `e.r`.

@@ -346,6 +346,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 /* the comm camera: while the view is away from the cockpit the gunsight goes, the dimmer becomes a vignette and the message drops to the lower third */
 #cutTag{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:32;font:700 12px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.78);border:1px solid rgba(255,178,26,.5);padding:7px 12px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 body.cut #cutTag{opacity:1}
+#kcT,#kcB{position:fixed;left:0;right:0;height:0;background:#030405;overflow:hidden;z-index:29;transition:height .2s ease-out}#kcT{top:0}#kcB{bottom:0}
+body.kcam #kcT,body.kcam #kcB{height:9.5vh}
+#kcTag{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font:700 13px/1 Menlo,Consolas,monospace;letter-spacing:.24em;color:#ffb21a;white-space:nowrap}
+#twist,#obj,#help,#radar,#gauges,#weps,#tutKeys{transition:opacity .2s}
+body.kcam #ret,body.kcam #cock,body.kcam #navs,body.kcam #tgt,body.kcam #twist,body.kcam #obj,body.kcam #help,body.kcam #radar,body.kcam #gauges,body.kcam #weps,body.kcam #tutKeys{opacity:0!important}
 body.cut #ret,body.cut #cock,body.cut #navs,body.cut #tgt,body.cut #msg{opacity:0!important}
 body.cut #commDim{background:radial-gradient(ellipse at center,rgba(4,5,6,0) 38%,rgba(4,5,6,.72))}
 body.cut #comm.hold{top:auto;bottom:3vh;transform:translate(-50%,0)}

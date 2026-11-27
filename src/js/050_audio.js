@@ -1,9 +1,9 @@
 /* ============ AUDIO (tiny procedural synth) ============ */
 const sfx = (() => {
-  let ac, master, on = true, nb, trimK = 1, hushed = false;
+  let ac, master, on = true, nb, trimK = 1, hushed = false, pitchK = 1, longK = 1;
   function init() { if (ac) { if (ac.state === 'suspended') { const p = ac.resume(); if (p && p.catch) p.catch(() => { }); } return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } master = ac.createGain(); master.gain.value = .45 * CFG.vol * CFG.sfx; master.connect(ac.destination); nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; music.boot(ac); vox.boot(ac); sndWait(ac); }
-  function tone(type, f0, f1, dur, vol, delay = 0) { const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .03); }
-  function noise(dur, vol, f0, f1, q = 1, delay = 0) { const t = ac.currentTime + delay, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = nb; s.loop = true; f.type = 'bandpass'; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f).connect(g).connect(master); s.start(t, rand(.5)); s.stop(t + dur + .03); }
+  function tone(type, f0, f1, dur, vol, delay = 0) { f0 *= pitchK; f1 *= pitchK; dur *= longK; delay *= longK; const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .03); }
+  function noise(dur, vol, f0, f1, q = 1, delay = 0) { f0 *= pitchK; f1 *= pitchK; dur *= longK; delay *= longK; const t = ac.currentTime + delay, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = nb; s.loop = true; f.type = 'bandpass'; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f).connect(g).connect(master); s.start(t, rand(.5)); s.stop(t + dur + .03); }
   const lib = {
     step: v => { noise(.25, .5 * v, 140, 40, .7); tone('sine', 70, 30, .3, .55 * v); },
     clang: () => { tone('square', 220, 180, .4, .1); tone('triangle', 523, 500, .7, .14); noise(.2, .4, 2500, 800, 2); },
@@ -32,6 +32,8 @@ const sfx = (() => {
     ui: () => tone('square', 880, 1320, .05, .04), deny: () => tone('square', 200, 140, .15, .07),
     jet: () => noise(.25, .16, 300, 900, .5), steam: () => noise(.8, .12, 4000, 1500, .7),
     door: () => { noise(3, .16, 90, 60, 1); tone('sawtooth', 45, 55, 3, .09); },
+    /* time slowing down and coming back (185_kill_cam.js): a swell that falls away, and one that climbs */
+    slowin: () => { tone('sine', 210, 34, .9, .55); tone('triangle', 420, 60, .5, .12); noise(.7, .28, 2600, 160, .8); }, slowout: () => { noise(.34, .16, 180, 2400, .8); tone('sine', 58, 170, .3, .22); },
     crunch: (v = 1) => { noise(.34, .6 * v, 1100, 140, .9); noise(.12, .3 * v, 3400, 900, 1.4, .03); tone('sine', 82, 30, .32, .5 * v); tone('square', 240, 70, .1, .07 * v); },
     crack: v => noise(.18, .4 * v, 1800, 300, .6), ship: () => { noise(5, .22, 70, 160, .5); tone('sawtooth', 38, 60, 5, .07); },
     comm: () => { tone('square', 1200, 1200, .05, .04); tone('square', 1600, 1600, .06, .04, .07); }, ok: () => { tone('triangle', 660, 660, .1, .1); tone('triangle', 990, 990, .22, .1, .1); },
@@ -40,7 +42,9 @@ const sfx = (() => {
   const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, crunch: .06, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
   return { init, play(n, v = 1) { if (!on || !ac || hushed) return; if (ac.state === 'suspended') ac.resume(); const g = gap[n]; if (g) { if (ac.currentTime - (last[n] || -1) < g) return; last[n] = ac.currentTime; } lib[n] && lib[n](v); }, vol() { if (master) master.gain.setTargetAtTime(.45 * CFG.vol * CFG.sfx * trimK, ac.currentTime, .05); },
     /* for the opening: trim(k) turns the whole bus down under the score (1 puts it back), hush(true) drops every sound asked for while a cut is run forward out of sight */
-    trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; } };
+    trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; },
+    /* slow(k): every sound asked for from now on is pitched by k and drawn out to match, which is what a field running slow sounds like (1 puts it back) */
+    slow(k) { pitchK = k; longK = k < 1 ? Math.pow(1 / k, .8) : 1; } };
 })();
 /* ---- sound from the moment the page opens. The audio is built as the page loads instead of on the first click: where the browser lets a page play unasked (the site has been allowed to, or
    is trusted), the radio is on before anything has been touched. Where it does not, the engine waits suspended, the first click, tap or key anywhere wakes it, and until then a small notice

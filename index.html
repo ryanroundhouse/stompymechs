@@ -353,6 +353,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:18px;background:var(--am);
 /* the comm camera: while the view is away from the cockpit the gunsight goes, the dimmer becomes a vignette and the message drops to the lower third */
 #cutTag{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:32;font:700 12px/1 Menlo,Consolas,monospace;letter-spacing:.16em;color:#ffb21a;background:rgba(7,9,11,.78);border:1px solid rgba(255,178,26,.5);padding:7px 12px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 body.cut #cutTag{opacity:1}
+#kcT,#kcB{position:fixed;left:0;right:0;height:0;background:#030405;overflow:hidden;z-index:29;transition:height .2s ease-out}#kcT{top:0}#kcB{bottom:0}
+body.kcam #kcT,body.kcam #kcB{height:9.5vh}
+#kcTag{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font:700 13px/1 Menlo,Consolas,monospace;letter-spacing:.24em;color:#ffb21a;white-space:nowrap}
+#twist,#obj,#help,#radar,#gauges,#weps,#tutKeys{transition:opacity .2s}
+body.kcam #ret,body.kcam #cock,body.kcam #navs,body.kcam #tgt,body.kcam #twist,body.kcam #obj,body.kcam #help,body.kcam #radar,body.kcam #gauges,body.kcam #weps,body.kcam #tutKeys{opacity:0!important}
 body.cut #ret,body.cut #cock,body.cut #navs,body.cut #tgt,body.cut #msg{opacity:0!important}
 body.cut #commDim{background:radial-gradient(ellipse at center,rgba(4,5,6,0) 38%,rgba(4,5,6,.72))}
 body.cut #comm.hold{top:auto;bottom:3vh;transform:translate(-50%,0)}
@@ -510,6 +515,7 @@ button.wnew::after{content:"NEW";position:absolute;top:-7px;right:5px;font-size:
   <div id="zdoll"><i id="zdHead">CPT</i><i id="zdBack">BACK</i><i id="zdArmL">L ARM</i><i id="zdTorso">HULL</i><i id="zdArmR">R ARM</i><i id="zdLegs">LEGS</i></div>
  </div>
  <div id="weps" class="pn"></div>
+ <div id="kcT"></div><div id="kcB"><b id="kcTag"></b></div>
  <div id="msg"></div>
  <div id="navs"></div>
  <div id="tgt" class="hid"><span id="tgtN"></span><i><b id="tgtB"></b></i><span id="tgtZ"></span><i id="tgtZi"><b id="tgtZb"></b></i></div>
@@ -1048,7 +1054,7 @@ function explode(fx, p, s = 1) {
 const GAME_ID = 'STOMPYMECHS', GAME_NAME = 'StompyMechs', CO_DEF_NAME = 'STOMPY MECHS', GAME_WAS = 'IRONWORKS';
 const lsGet = k => { try { return localStorage.getItem('stompymechs.' + k) ?? localStorage.getItem('ironworks.' + k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem('stompymechs.' + k, v); } catch (e) { } };
-const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true, count: true };
+const CFG_DEF = { vol: .8, sfx: .8, mus: .7, amb: true, radio: true, score: true, jingle: true, track: 0, voice: .8, hold: 2, sens: 1, invY: false, scale: 1, bloom: true, shadow: true, wlight: true, kcam: true, count: true };
 const CFG = { ...CFG_DEF };
 {
   try { const s = JSON.parse(lsGet('cfg') || 'null'); if (s && typeof s === 'object') { for (const k in CFG_DEF) if (typeof s[k] === typeof CFG_DEF[k]) CFG[k] = s[k]; } else if (lsGet('music') === '0') CFG.mus = 0; } catch (e) { }
@@ -1066,6 +1072,11 @@ const scoreFor = biome => CFG.track ? CFG.track - 1 : Math.max(0, SCORES.findInd
    read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
    Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
 const WHATS = [
+  { n: 15, d: '26 NOV 2026', t: 'THE KILLS THAT MATTER, SLOWLY', l: [
+    'Slow motion. When a pilot with a name goes down, or a capital ship, or the last hostile on the field falls to your own round, time slows and the camera leaves your machine to watch it happen, with you in the picture behind it. Then it comes home.',
+    'You cannot be hurt while the view is away, and nobody talks over it: whatever the radio has to say about the kill waits until you have seen it.',
+    'It can be turned off: SETTINGS · DISPLAY, SLOW-MOTION KILL CAMERA.',
+    'One more line in the record: KILLS WATCHED IN SLOW MOTION.' ] },
   { n: 14, d: '26 NOV 2026', t: 'SHE WEIGHS SIXTY TONNES. USE IT', l: [
     'Stomping. Walk onto a hostile tank, hauler or gun mount and the foot that comes down on it does the rest: the heavier the machine and the faster she is going, the less is left. A light mech dents a tank; an assault mech leaves it flat. Tracks grind what they roll over. A hover skirt does not.',
     'Death from above. Come down off the jump jets onto something and it takes the landing, and so does everything round it. Land on another machine and it is the cockpit you land on, though your own legs pay for some of it.',
@@ -1160,10 +1171,10 @@ async function netFlush() {
 function netBoot() { if (NET.off) return; netFlush(); if (CFG.count) netPost('launch', { id: netId(), build: BUILD }); }
 /* ============ AUDIO (tiny procedural synth) ============ */
 const sfx = (() => {
-  let ac, master, on = true, nb, trimK = 1, hushed = false;
+  let ac, master, on = true, nb, trimK = 1, hushed = false, pitchK = 1, longK = 1;
   function init() { if (ac) { if (ac.state === 'suspended') { const p = ac.resume(); if (p && p.catch) p.catch(() => { }); } return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } master = ac.createGain(); master.gain.value = .45 * CFG.vol * CFG.sfx; master.connect(ac.destination); nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; music.boot(ac); vox.boot(ac); sndWait(ac); }
-  function tone(type, f0, f1, dur, vol, delay = 0) { const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .03); }
-  function noise(dur, vol, f0, f1, q = 1, delay = 0) { const t = ac.currentTime + delay, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = nb; s.loop = true; f.type = 'bandpass'; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f).connect(g).connect(master); s.start(t, rand(.5)); s.stop(t + dur + .03); }
+  function tone(type, f0, f1, dur, vol, delay = 0) { f0 *= pitchK; f1 *= pitchK; dur *= longK; delay *= longK; const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g).connect(master); o.start(t); o.stop(t + dur + .03); }
+  function noise(dur, vol, f0, f1, q = 1, delay = 0) { f0 *= pitchK; f1 *= pitchK; dur *= longK; delay *= longK; const t = ac.currentTime + delay, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = nb; s.loop = true; f.type = 'bandpass'; f.Q.value = q; f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); s.connect(f).connect(g).connect(master); s.start(t, rand(.5)); s.stop(t + dur + .03); }
   const lib = {
     step: v => { noise(.25, .5 * v, 140, 40, .7); tone('sine', 70, 30, .3, .55 * v); },
     clang: () => { tone('square', 220, 180, .4, .1); tone('triangle', 523, 500, .7, .14); noise(.2, .4, 2500, 800, 2); },
@@ -1192,6 +1203,8 @@ const sfx = (() => {
     ui: () => tone('square', 880, 1320, .05, .04), deny: () => tone('square', 200, 140, .15, .07),
     jet: () => noise(.25, .16, 300, 900, .5), steam: () => noise(.8, .12, 4000, 1500, .7),
     door: () => { noise(3, .16, 90, 60, 1); tone('sawtooth', 45, 55, 3, .09); },
+    /* time slowing down and coming back (185_kill_cam.js): a swell that falls away, and one that climbs */
+    slowin: () => { tone('sine', 210, 34, .9, .55); tone('triangle', 420, 60, .5, .12); noise(.7, .28, 2600, 160, .8); }, slowout: () => { noise(.34, .16, 180, 2400, .8); tone('sine', 58, 170, .3, .22); },
     crunch: (v = 1) => { noise(.34, .6 * v, 1100, 140, .9); noise(.12, .3 * v, 3400, 900, 1.4, .03); tone('sine', 82, 30, .32, .5 * v); tone('square', 240, 70, .1, .07 * v); },
     crack: v => noise(.18, .4 * v, 1800, 300, .6), ship: () => { noise(5, .22, 70, 160, .5); tone('sawtooth', 38, 60, 5, .07); },
     comm: () => { tone('square', 1200, 1200, .05, .04); tone('square', 1600, 1600, .06, .04, .07); }, ok: () => { tone('triangle', 660, 660, .1, .1); tone('triangle', 990, 990, .22, .1, .1); },
@@ -1200,7 +1213,9 @@ const sfx = (() => {
   const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, crunch: .06, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
   return { init, play(n, v = 1) { if (!on || !ac || hushed) return; if (ac.state === 'suspended') ac.resume(); const g = gap[n]; if (g) { if (ac.currentTime - (last[n] || -1) < g) return; last[n] = ac.currentTime; } lib[n] && lib[n](v); }, vol() { if (master) master.gain.setTargetAtTime(.45 * CFG.vol * CFG.sfx * trimK, ac.currentTime, .05); },
     /* for the opening: trim(k) turns the whole bus down under the score (1 puts it back), hush(true) drops every sound asked for while a cut is run forward out of sight */
-    trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; } };
+    trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; },
+    /* slow(k): every sound asked for from now on is pitched by k and drawn out to match, which is what a field running slow sounds like (1 puts it back) */
+    slow(k) { pitchK = k; longK = k < 1 ? Math.pow(1 / k, .8) : 1; } };
 })();
 /* ---- sound from the moment the page opens. The audio is built as the page loads instead of on the first click: where the browser lets a page play unasked (the site has been allowed to, or
    is trusted), the radio is on before anything has been touched. Where it does not, the engine waits suspended, the first click, tap or key anywhere wakes it, and until then a small notice
@@ -3252,7 +3267,7 @@ const TAL_DEF = [
   ['KILLS', [
     ['k.n', 'KILLS', 'n', 1], ['k.mech', 'MECHS DESTROYED', 'n', 1], ['k.c.LIGHT', 'LIGHT MECHS DESTROYED', 'n'], ['k.c.MEDIUM', 'MEDIUM MECHS DESTROYED', 'n'], ['k.c.HEAVY', 'HEAVY MECHS DESTROYED', 'n'], ['k.c.ASSAULT', 'ASSAULT MECHS DESTROYED', 'n'],
     ['k.tank', 'TANKS AND CRAWLERS BLOWN UP', 'n', 1], ['k.drone', 'AIRCRAFT SHOT DOWN', 'n', 1], ['k.turret', 'TURRETS AND GUN MOUNTS SILENCED', 'n', 1], ['k.struct', 'STRUCTURES LEVELLED', 'n', 1], ['k.ship', 'CAPITAL SHIPS BROUGHT DOWN', 'n'], ['k.truck', 'HAULERS AND LAND TRAINS STOPPED', 'n'],
-    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.stomp', 'VEHICLES STOMPED FLAT', 'n', 1], ['k.dfa', 'KILLS MADE BY LANDING ON THEM', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
+    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.slow', 'KILLS WATCHED IN SLOW MOTION', 'n'], ['k.stomp', 'VEHICLES STOMPED FLAT', 'n', 1], ['k.dfa', 'KILLS MADE BY LANDING ON THEM', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
     ['k.best', 'MOST KILLS IN ONE SORTIE', 'n'], ['k.x2', 'DOUBLE KILLS', 'n'], ['k.x3', 'TRIPLE KILLS', 'n'], ['k.air', 'KILLS MADE IN MID-AIR', 'n'], ['k.hot', 'KILLS MADE ABOVE 80 HEAT', 'n'], ['k.low', 'KILLS ON YOUR LAST FIFTH OF ARMOUR', 'n'],
     [N => (N['k.n'] || 0) / Math.max(1, N['s.n'] || 0) || null, 'KILLS PER SORTIE', 'x1'], ['k.ally', 'KILLS BY YOUR WINGMEN AND ALLIES', 'n'], ['k.riv', 'KILLS BY COMPANIES FLYING WITH YOU', 'n'],
     [N => talSum(N, 'z.') || null, 'COMPONENTS SHOT OFF', 'n'], [N => (N['z.armL'] || 0) + (N['z.armR'] || 0) || null, 'ARMS SHOT OFF', 'n'], ['z.legs', 'LEGS SHOT OUT', 'n'], ['z.head', 'COCKPITS HIT', 'n'], ['z.back', 'BACK UNITS SHOT OFF', 'n'],
@@ -4506,7 +4521,7 @@ function shFlash(e) {
 }
 function damage(e, dmg, at, owner, zone) {
   if (e === PE) {
-    if (P.dead || MS.over) return; let d = dmg * .24;
+    if (P.dead || MS.over || kcamSafe()) return;   /* (nor while the kill camera has the view: 185_kill_cam.js) */ let d = dmg * .24;
     if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); tal('d.sh', a); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
     if (zone && P.zones) d *= zoneTake(PE, zone, d, owner);
     P.armor -= d; tal('d.h'); tal('d.n', d); talMax('d.big', d); P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
@@ -4666,7 +4681,7 @@ function drive(e, want, spd, dt, rad, turnRate) {
   return turn;
 }
 function killEnt(e, owner) {
-  if (e.dead) return; e.dead = true; e.by = owner; talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
+  if (e.dead) return; e.dead = true; e.by = owner; kcamKill(e, owner);   /* is this one worth slowing down for? (185_kill_cam.js) */ talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
   explode(FD.fx, at, big ? 2.4 : 1.2); sfx.play('boom', big ? 1.2 : .7); FD.ents.splice(FD.ents.indexOf(e), 1);
   if (e.blast) { explode(FD.fx, at, 3.4); splash(at, e.blast, 70, 0); splash(at, e.blast, 70, 1); }
   if (e.onKill) e.onKill(e, owner);
@@ -5374,6 +5389,70 @@ function updateField(dt, t) {
 }
 function nearestToAim() { let best = null, bd = .25; for (const e of FD.ents) { if (e.team !== 1) continue; _c.copy(e.pos); _c.y += e.cy; _c.sub(FD.camera.position); const d = _c.length(); if (d > 500) continue; const a = Math.acos(clamp(_c.dot(_f) / d, -1, 1)); if (a < bd) { bd = a; best = e; } } return best; }
 
+/* ============ FIELD: THE KILL CAMERA — SLOW MOTION ON THE KILLS THAT MATTER ============ */
+/* Three kills are worth stopping for: a pilot with a name, a capital ship, and the last hostile on the field when the round that did it was the player's own. For two or three seconds the field
+   runs slow, the view leaves the machine for an arc round whatever is dying (from beyond it, so that the machine that did it is in the picture), and then comes home.
+   · It is a speed ramp, not one slow speed: the blast is seen at a seventh of its pace, and then the field picks up towards three quarters while the wreck goes over. Held at a seventh the
+     whole shot was the flash of the explosion, which lasts a third of a second of the field's time, and nothing of the machine it came out of.
+   · killEnt asks kcamKill(e, owner) as a thing dies. That is the only way in.
+   · The clock is the page's, not the field's: kcamStep(dt) runs first thing in every frame, counts real seconds and hands back the rate the field is to run at. Nothing can leave it standing: the
+     end of the count, the player's death, the lift home and a change of room all end it (kcamEnd), and a pause does not stop it counting.
+   · updateField steers the chase camera from where it was the frame before and aims along it, so the camera is handed back before every step (kcamHome) and taken again after it (kcamShot).
+     The arc turns in real time while the field crawls, which is the point of it.
+   · No new line comes up on the comms while it runs (updateComm waits), so a script's word on the kill follows the picture of it instead of freezing it.
+   · The mouse does not turn the torso while the view is away from it, and nothing that is shot at the player then is felt (damage() asks kcamSafe()): a pilot who has been made to look
+     somewhere else is not hurt for it. That starts with the frame after the kill, so a landing that killed somebody is still paid for in her legs. The keys and the triggers go on working.
+   · A Derby car (e.nz) is nobody to stop a race for.
+   · CFG.kcam is the switch in SETTINGS · DISPLAY. KCAM.off is the debug page's: the drivers time things, and nobody is watching.
+   KCAM_K: [seconds, the rate on the blast, the rate it climbs to, seconds held on the blast] for each kind of kill · in, out: seconds to slow down and to come back up to speed · back: seconds
+   of the camera's way home · turn: how far the arc goes round in all, in radians (much more and the player's machine leaves the picture) · gap: seconds before another last kill is worth it ·
+   min: kills since the field was last clear before a last kill counts (two machines are not a fight) */
+const KCAM = { on: false, off: false, t: 0, dur: 0, slow: .2, fast: .7, hold: .3, rate: 1, e: null, why: '', a: 0, da: 0, d: 30, near: 0, has: false, ran: false, cool: 0, n: 0, at: V3(), p: V3(), q: new THREE.Quaternion(), hp: V3(), hq: new THREE.Quaternion(), mx: new THREE.Matrix4(), up: V3(0, 1, 0) };
+const KCAM_K = { last: [1.9, .15, .7, .3], named: [2.7, .14, .7, .4], ship: [3.8, .3, .8, .5], in: .07, out: .35, back: .32, turn: .34, gap: 14, min: 3 };
+/* is this one worth it? Called by killEnt before the wreck, the blast or the sound of it, so all three are part of the picture */
+function kcamKill(e, owner) {
+  if (mode !== 'field' || e.team !== 1 || e.of) return; KCAM.n++;
+  const left = FD.ents.some(x => x !== e && !x.dead && x.team === 1 && !x.pacify && !x.of && x.kind !== 'struct'), n = KCAM.n; if (!left) KCAM.n = 0;
+  if (!CFG.kcam || KCAM.off || KCAM.on || P.dead || P.leaving || commHold) return;
+  const mine = owner === 0 && !!talBy && talBy !== 'ally', why = e.kind === 'ship' ? 'ship' : e.kind === 'mech' && e.named && !e.nz ? 'named' : mine && !left && n >= KCAM_K.min && KCAM.cool <= 0 ? 'last' : ''; if (!why) return;
+  const K = KCAM_K[why], p = e.pos, ship = why === 'ship', dx = P.pos.x - p.x, dz = P.pos.z - p.z, D = Math.hypot(dx, dz), home = Math.atan2(dx, dz), side = Math.random() < .5 ? 1 : -1, s = Math.max(e.r || 4, (e.cy || 3) * .9, 3.5);
+  Object.assign(KCAM, { on: true, t: 0, dur: K[0], slow: K[1], fast: K[2], hold: K[3], rate: 1, e, why, has: false, ran: false, near: ship ? 0 : clamp(1 - D / 45, 0, 1) });
+  /* a ship is seen from abeam, on the side the player is standing; anything else from beyond it, a little to one side, so that the player's machine stands behind what she has just killed */
+  if (ship) { KCAM.a = e.yaw + (angDiff(e.yaw, home) < 0 ? -1 : 1) * 1.1; KCAM.da = side * .05; KCAM.d = 96; }
+  else { KCAM.a = home + PI + side * .3; KCAM.da = side * KCAM_K.turn / K[0]; KCAM.d = clamp(s * 3.6 + 14, 18, 70) + KCAM.near * 3; }
+  $('kcTag').textContent = `◉ ${why === 'last' ? 'LAST CONTACT DOWN · ' : ''}${coTxt(e.name || 'CONTACT').toUpperCase()}${why === 'ship' ? ' · GOING DOWN' : why === 'named' ? ' · DOWN' : ''} · ${D.toFixed(0)} M`;
+  document.body.classList.add('kcam'); tal('k.slow'); sfx.play('slowin'); sfx.slow(.5);
+}
+const kcamSafe = () => KCAM.on && KCAM.t > 0;
+/* first thing in a frame, in real seconds: the rate the field runs at this frame (1 when nothing is happening) */
+function kcamStep(dt) {
+  if (!KCAM.on) { if (KCAM.cool > 0) KCAM.cool -= dt; return 1; }
+  if (mode !== 'field' || P.dead || P.leaving || (KCAM.t += dt) >= KCAM.dur) { kcamEnd(); return 1; }
+  const t = KCAM.t, body = lerp(KCAM.slow, KCAM.fast, smooth(clamp((t - KCAM.hold) / Math.max(.01, KCAM.dur - KCAM_K.out - KCAM.hold), 0, 1)));
+  return KCAM.rate = lerp(1, body, Math.min(smooth(clamp(t / KCAM_K.in, 0, 1)), smooth(clamp((KCAM.dur - t) / KCAM_K.out, 0, 1))));
+}
+/* before updateField: the camera goes back to where the last step left it */
+function kcamHome() { if (!KCAM.on) return; if (KCAM.has) { FD.camera.position.copy(KCAM.hp); FD.camera.quaternion.copy(KCAM.hq); } KCAM.ran = true; }
+/* after it (and in a frame the field did not step at all): the shot, and over the last third of a second the way back from it */
+function kcamShot() {
+  if (!KCAM.on) return; const cam = FD.camera, e = KCAM.e, p = e.pos, q = KCAM.p, at = KCAM.at, ship = KCAM.why === 'ship';
+  if (KCAM.ran || !KCAM.has) { KCAM.hp.copy(cam.position); KCAM.hq.copy(cam.quaternion); KCAM.has = true; KCAM.ran = false; }
+  const a = KCAM.a + KCAM.da * KCAM.t, d = KCAM.d * (1 - .08 * Math.min(1, KCAM.t / KCAM.dur));
+  at.set(p.x, p.y + (ship ? -4 : (e.cy || 2) * .8 + KCAM.near * player.height * .3), p.z); q.set(p.x + Math.sin(a) * d, 0, p.z + Math.cos(a) * d);
+  q.y = heightAt(q.x, q.z) + (ship ? 5 : 2.2 + (e.cy || 2) * .35 + KCAM.near * 2);
+  /* clear of the ground between the lens and what it is looking at, and of anything it would be standing inside */
+  for (let i = 1; i < 6; i++) { const k = i / 6, need = heightAt(lerp(q.x, at.x, k), lerp(q.z, at.z, k)) + 1.5 - lerp(q.y, at.y, k); if (need > 0) q.y += need / (1 - k); }
+  for (let i = 0; i < 6 && inSolid(q); i++) q.y += 6;
+  KCAM.q.setFromRotationMatrix(KCAM.mx.lookAt(q, at, KCAM.up));
+  const k = ease.io(clamp((KCAM.dur - KCAM.t) / KCAM_K.back, 0, 1)); cam.position.lerpVectors(KCAM.hp, q, k); cam.quaternion.slerpQuaternions(KCAM.hq, KCAM.q, k); FD.sky.position.copy(cam.position);
+  FD.sun.position.copy(at).addScaledVector(FD.sunDir, 220); FD.sun.target.position.copy(at);   /* the shadows go where the camera has gone, as they do for the comm camera */
+  if (player.slot.head) player.slot.head.visible = true;   /* (hidden from inside the cockpit, and this is not inside it) */
+}
+function kcamEnd() {
+  if (!KCAM.on) return; KCAM.on = false; KCAM.rate = 1; KCAM.e = null; KCAM.cool = KCAM_K.gap; document.body.classList.remove('kcam'); sfx.slow(1); sfx.play('slowout');
+  if (KCAM.has) { FD.camera.position.copy(KCAM.hp); FD.camera.quaternion.copy(KCAM.hq); FD.sky.position.copy(KCAM.hp); FD.sun.position.copy(P.pos).addScaledVector(FD.sunDir, 220); FD.sun.target.position.copy(P.pos); if (player.slot.head) player.slot.head.visible = P.cam === 0; }
+  KCAM.has = false; POST.kick();
+}
 /* ============ MISSIONS: ENGINE (people, comms, objectives, nav markers, script helpers) ============ */
 const RUN = 2;                                    // field speed multiplier for the player's mech
 const MS = { on: false, k: 0, t: 0, wait: [], navs: [], obj: [], log: [], over: false, v: {}, who: {}, evt: null };
@@ -5436,7 +5515,7 @@ $('commOpts').addEventListener('click', e => { const d = e.target.closest('[data
 $('commOpts').addEventListener('mousemove', e => { const d = e.target.closest('[data-i]'); if (d && commHold && commCur && commCur.opts) commMark(+d.dataset.i); });
 function updateComm(dt) {
   if (!commCur) {
-    if (CUT.live && CUT.back) return; const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
+    if ((CUT.live && CUT.back) || KCAM.on) return;   /* (nor while the kill camera is out: the word on a kill follows the picture of it) */ const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
     c.hold = !c.chat && CFG.hold > (c.opts ? 0 : 1) && MS.on && !MS.over && !P.dead; c.auto = false; c.cut = null; cutPick(c); if (CUT.live && !c.cut) { commQ.unshift(c); return; }   // the camera is out and this line is about something else: bring it home first
     commCur = c; c.t = 0; commSel = -1; commMv = 0; if (!c.chat) tal('c.heard');
     const vd = vox.say(c.who, c.text, 'radio'); c.dur = c.opts ? c.tmo : Math.max(clamp(2.4 + c.text.length * .045, 3.2, 8.5), vd + .7);
@@ -6835,7 +6914,7 @@ function startField() {
   $('pauseTxt').innerHTML = c ? `<b style="color:#fff">OP. ${c.op} — ${BIOMES[c.biome].name} · ${EV.sky}</b><br>${c.brief}` : 'Proving grounds: free skirmish against endless waves.<br>Mouse aims the torso; the legs steer separately.'; $('pauseTxt').innerHTML += barSortie(!!c);
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
-  talSortie(c);
+  talSortie(c); kcamEnd(); KCAM.n = 0; KCAM.cool = 0;
   player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; if (!P.dead) stompFoot(player, _v, true, 0, Math.abs(P.v) / (player.stats.speed * RUN)); };   /* and whatever hostile is under that foot takes her weight (165_stomp.js) */
   P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);
@@ -12452,9 +12531,11 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
   } else if (tab === 'display') {
     B.innerHTML = `<div class="sh">RENDERING</div><div class="sg">${rng('sScale', 'RENDER SCALE', CFG.scale * 100, 50, 150, 10, pc)}${tog('sBloom', 'BLOOM AND GLOW', CFG.bloom)}${tog('sShadow', 'DYNAMIC SHADOWS', CFG.shadow)}${tog('sWlight', 'LIGHT FROM WEAPONS FIRE', CFG.wlight)}</div>
 <p class="snt">If the field runs slowly, drop the render scale first, then shadows. Changes apply at once.</p>
+<div class="sh">IN THE FIELD</div><div class="sg">${tog('sKcam', 'SLOW-MOTION KILL CAMERA', CFG.kcam)}</div>
+<p class="snt">When a pilot with a name or a capital ship goes down, or the last hostile on the field is yours, time slows for a second or two and the camera goes to watch.</p>
 <div class="sh">THE OPENING</div><div class="gm"><button id="sIntro"${fld || mode === 'brief' ? ' disabled' : ''}><b>▶ WATCH IT AGAIN</b><small>${fld || mode === 'brief' ? 'Not in the middle of a sortie or a briefing' : 'Eleven seconds. Any key ends it'}</small></button></div>`;
     $('sIntro').onclick = () => { sfx.play('ui'); settingsClose(); introOpen(); };
-    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply); bindT('sWlight', 'wlight', gfxApply);
+    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply); bindT('sWlight', 'wlight', gfxApply); bindT('sKcam', 'kcam', () => { if (!CFG.kcam) kcamEnd(); });
   } else if (tab === 'company') {
     const L = YARD.logo, ink = (k, label) => `<label>${label}</label><div class="ink" data-k="${k}">${LOGO_INKS.map(c => `<button data-c="${c}" class="${L[k] === c ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>`;
     B.innerHTML = `${F ? `<p class="snt big">The paperwork is filed and the hangar lease is paid through the season. All the outfit needs now is a name and a mark to paint on the door.<br><b>You start with ${fmt(CO.cb)}, one light mech — the KESTREL — a repair kit, a coolant flush, and two empty bays.</b> Everything else you will have to buy, earn, or pull out of a wreck.</p>` : ''}
@@ -12729,7 +12810,7 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
   fieldLock = lock; fieldUnlock = () => { if (soft) { soft = false; setLock(false); } else if (document.pointerLockElement) document.exitPointerLock(); else setLock(false); };
   document.addEventListener('pointerlockchange', () => { const on = document.pointerLockElement === cvs; if (on) lockFail = 0; if (!soft) setLock(on); });
   document.addEventListener('pointerlockerror', lockFailed);
-  addEventListener('mousemove', e => { if (mode !== 'field' || !locked || P.dead) return; if (commHold) return commMouse(e); P.twist -= e.movementX * .0022 * CFG.sens; P.pitch = clamp(P.pitch - e.movementY * .0018 * CFG.sens * (CFG.invY ? -1 : 1), -.38, .5); });
+  addEventListener('mousemove', e => { if (mode !== 'field' || !locked || P.dead || KCAM.on) return; if (commHold) return commMouse(e); P.twist -= e.movementX * .0022 * CFG.sens; P.pitch = clamp(P.pitch - e.movementY * .0018 * CFG.sens * (CFG.invY ? -1 : 1), -.38, .5); });
   addEventListener('mousedown', e => { if (mode === 'field' && locked) { if (commHold) return commClick(e); P.md[e.button] = true; e.preventDefault(); } });
   addEventListener('wheel', e => { if (mode === 'field' && locked && commHold && !uiModal()) commMove(Math.sign(e.deltaY)); }, { passive: true });
   addEventListener('mouseup', e => { P.md[e.button] = false; });
@@ -13183,10 +13264,10 @@ function introBoot() { if (!INTROV.off && !introSeen()) introOpen(); }
 /* ============ MAIN LOOP ============ */
 let last = performance.now();
 function frame(now) {
-  requestAnimationFrame(frame); const dt = clamp((now - last) / 1000, 0, .05); last = now; T += dt; updateTweens(dt); music.update(dt, mode, mode === 'bar' ? BAR.camera : HG.camera, mode === 'bar' ? BAR.jukePos : HG.radioPos, mode === 'field' ? scoreHeat(dt) : 0); if (mode === 'field' && locked) mapTick();
+  requestAnimationFrame(frame); const rt = clamp((now - last) / 1000, 0, .05), dt = rt * kcamStep(rt);   /* rt is real time; dt is what the game gets, which the kill camera slows for a second or two (185_kill_cam.js) */ last = now; T += dt; updateTweens(dt); music.update(rt, mode, mode === 'bar' ? BAR.camera : HG.camera, mode === 'bar' ? BAR.jukePos : HG.radioPos, mode === 'field' ? scoreHeat(rt) : 0); if (mode === 'field' && locked) mapTick();
   if (mode === 'field' && commHold && (P.dead || MS.over || !MS.on)) commFree();
   if (mode === 'intro') introFrame(dt);
-  else if (mode === 'field') { if (commHold) { if (locked) updateComm(dt); } else if (locked || P.dead || MS.over) updateField(dt, T); updateCut(dt); POST.scene = FD.scene; POST.camera = FD.camera; POST.strength = FD.glow; }
+  else if (mode === 'field') { if (commHold) { if (locked) updateComm(rt); } else if (locked || P.dead || MS.over) { kcamHome(); updateField(dt, T); } kcamShot(); updateCut(rt); POST.scene = FD.scene; POST.camera = FD.camera; POST.strength = FD.glow; }
   else {
     if (!dlgCur && mode !== 'aar') tickClock(dt);
     if (mode === 'hangar' && HG.walk) { const r = player.root.position; r.z += HG.walk * dt; r.y = MECH_Y - .6 * smooth(clamp((r.z - 9.6) / 4.6, 0, 1)); orb.look.set(0, player.height * .55, -r.z - 3); }
@@ -13197,7 +13278,7 @@ function frame(now) {
     } else { POST.scene = HG.scene; POST.camera = HG.camera; POST.strength = .5; }
   }
   renderer.toneMappingExposure = mode === 'field' || (mode === 'intro' && POST.scene === FD.scene) ? FD.expo : 1;   /* the field's hour sets the exposure; indoors it is always 1 */
-  if (mode !== 'intro') { tutTick(dt); whatsTick(); talFrame(dt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(dt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !tweens.length);
+  if (mode !== 'intro') { tutTick(rt); whatsTick(); talFrame(rt, mode, mode === 'field' && !locked); talBoards(dt, T); } POST.frame(rt, mode === 'field' && !locked && !P.dead && !MS.over && !CUT.live && !KCAM.on && !tweens.length);
 }
 sfx.init();   /* everything it needs exists by now */
 requestAnimationFrame(frame);

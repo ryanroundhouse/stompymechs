@@ -49,7 +49,7 @@ const STATS = [['TONNAGE', s => s.tons, 110, v => v.toFixed(0) + ' t'], ['ARMOR'
   fieldLock = lock; fieldUnlock = () => { if (soft) { soft = false; setLock(false); } else if (document.pointerLockElement) document.exitPointerLock(); else setLock(false); };
   document.addEventListener('pointerlockchange', () => { const on = document.pointerLockElement === cvs; if (on) lockFail = 0; if (!soft) setLock(on); });
   document.addEventListener('pointerlockerror', lockFailed);
-  addEventListener('mousemove', e => { if (mode !== 'field' || !locked || P.dead) return; if (commHold) return commMouse(e); P.twist -= e.movementX * .0022 * CFG.sens; P.pitch = clamp(P.pitch - e.movementY * .0018 * CFG.sens * (CFG.invY ? -1 : 1), -.38, .5); });
+  addEventListener('mousemove', e => { if (mode !== 'field' || !locked || P.dead || KCAM.on) return; if (commHold) return commMouse(e); P.twist -= e.movementX * .0022 * CFG.sens; P.pitch = clamp(P.pitch - e.movementY * .0018 * CFG.sens * (CFG.invY ? -1 : 1), -.38, .5); });
   addEventListener('mousedown', e => { if (mode === 'field' && locked) { if (commHold) return commClick(e); P.md[e.button] = true; e.preventDefault(); } });
   addEventListener('wheel', e => { if (mode === 'field' && locked && commHold && !uiModal()) commMove(Math.sign(e.deltaY)); }, { passive: true });
   addEventListener('mouseup', e => { P.md[e.button] = false; });

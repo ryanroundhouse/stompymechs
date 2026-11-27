@@ -4,6 +4,11 @@
    read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
    Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
 const WHATS = [
+  { n: 15, d: '26 NOV 2026', t: 'THE KILLS THAT MATTER, SLOWLY', l: [
+    'Slow motion. When a pilot with a name goes down, or a capital ship, or the last hostile on the field falls to your own round, time slows and the camera leaves your machine to watch it happen, with you in the picture behind it. Then it comes home.',
+    'You cannot be hurt while the view is away, and nobody talks over it: whatever the radio has to say about the kill waits until you have seen it.',
+    'It can be turned off: SETTINGS · DISPLAY, SLOW-MOTION KILL CAMERA.',
+    'One more line in the record: KILLS WATCHED IN SLOW MOTION.' ] },
   { n: 14, d: '26 NOV 2026', t: 'SHE WEIGHS SIXTY TONNES. USE IT', l: [
     'Stomping. Walk onto a hostile tank, hauler or gun mount and the foot that comes down on it does the rest: the heavier the machine and the faster she is going, the less is left. A light mech dents a tank; an assault mech leaves it flat. Tracks grind what they roll over. A hover skirt does not.',
     'Death from above. Come down off the jump jets onto something and it takes the landing, and so does everything round it. Land on another machine and it is the cockpit you land on, though your own legs pay for some of it.',

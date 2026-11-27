@@ -77,9 +77,11 @@ ${SCORES.map(([bk, n, d], i) => `<div class="trk${CFG.track === i + 1 ? ' on' : 
   } else if (tab === 'display') {
     B.innerHTML = `<div class="sh">RENDERING</div><div class="sg">${rng('sScale', 'RENDER SCALE', CFG.scale * 100, 50, 150, 10, pc)}${tog('sBloom', 'BLOOM AND GLOW', CFG.bloom)}${tog('sShadow', 'DYNAMIC SHADOWS', CFG.shadow)}${tog('sWlight', 'LIGHT FROM WEAPONS FIRE', CFG.wlight)}</div>
 <p class="snt">If the field runs slowly, drop the render scale first, then shadows. Changes apply at once.</p>
+<div class="sh">IN THE FIELD</div><div class="sg">${tog('sKcam', 'SLOW-MOTION KILL CAMERA', CFG.kcam)}</div>
+<p class="snt">When a pilot with a name or a capital ship goes down, or the last hostile on the field is yours, time slows for a second or two and the camera goes to watch.</p>
 <div class="sh">THE OPENING</div><div class="gm"><button id="sIntro"${fld || mode === 'brief' ? ' disabled' : ''}><b>▶ WATCH IT AGAIN</b><small>${fld || mode === 'brief' ? 'Not in the middle of a sortie or a briefing' : 'Eleven seconds. Any key ends it'}</small></button></div>`;
     $('sIntro').onclick = () => { sfx.play('ui'); settingsClose(); introOpen(); };
-    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply); bindT('sWlight', 'wlight', gfxApply);
+    const e = $('sScale'); e.oninput = () => { e.nextElementSibling.textContent = pc(+e.value); }; e.onchange = () => { CFG.scale = +e.value / 100; cfgSave(); gfxApply(); sfx.play('ui'); }; bindT('sBloom', 'bloom', gfxApply); bindT('sShadow', 'shadow', gfxApply); bindT('sWlight', 'wlight', gfxApply); bindT('sKcam', 'kcam', () => { if (!CFG.kcam) kcamEnd(); });
   } else if (tab === 'company') {
     const L = YARD.logo, ink = (k, label) => `<label>${label}</label><div class="ink" data-k="${k}">${LOGO_INKS.map(c => `<button data-c="${c}" class="${L[k] === c ? 'on' : ''}" style="background:${c}"></button>`).join('')}</div>`;
     B.innerHTML = `${F ? `<p class="snt big">The paperwork is filed and the hangar lease is paid through the season. All the outfit needs now is a name and a mark to paint on the door.<br><b>You start with ${fmt(CO.cb)}, one light mech — the KESTREL — a repair kit, a coolant flush, and two empty bays.</b> Everything else you will have to buy, earn, or pull out of a wreck.</p>` : ''}

@@ -60,7 +60,7 @@ $('commOpts').addEventListener('click', e => { const d = e.target.closest('[data
 $('commOpts').addEventListener('mousemove', e => { const d = e.target.closest('[data-i]'); if (d && commHold && commCur && commCur.opts) commMark(+d.dataset.i); });
 function updateComm(dt) {
   if (!commCur) {
-    if (CUT.live && CUT.back) return; const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
+    if ((CUT.live && CUT.back) || KCAM.on) return;   /* (nor while the kill camera is out: the word on a kill follows the picture of it) */ const c = commQ.shift(); if (!c) { if (commHold && !CUT.live) commFree(); return; }
     c.hold = !c.chat && CFG.hold > (c.opts ? 0 : 1) && MS.on && !MS.over && !P.dead; c.auto = false; c.cut = null; cutPick(c); if (CUT.live && !c.cut) { commQ.unshift(c); return; }   // the camera is out and this line is about something else: bring it home first
     commCur = c; c.t = 0; commSel = -1; commMv = 0; if (!c.chat) tal('c.heard');
     const vd = vox.say(c.who, c.text, 'radio'); c.dur = c.opts ? c.tmo : Math.max(clamp(2.4 + c.text.length * .045, 3.2, 8.5), vd + .7);

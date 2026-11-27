@@ -132,6 +132,8 @@ if (!/[?&]intro\b/.test(location.search)) INTROV.off = true;
 if (!/[?&]net\b/.test(location.search)) NET.off = true;
 /* the sortie guard. A debug page does not ask before it is unloaded mid-sortie (the drivers navigate away from sorties all the time), unless the address ends in ?guard */
 if (!/[?&]guard\b/.test(location.search)) SGUARD.ask = false;
+/* the kill camera. A debug page never slows down for a kill (the drivers time things, and __sim does not go through the frame loop), unless the address ends in ?kcam */
+if (!/[?&]kcam\b/.test(location.search)) KCAM.off = true;
 window.__intro = t => {
   if (t === 'end') introEnd(); else if (t === 'play') { introEnd(); introOpen(); }
   else if (t !== undefined) { introEnd(); introOpen(); Object.assign(INTROV, { st: 2, hold: true, warm: 5, a0: -1 }); $('intro').classList.add('run'); for (let x = 0; x < t; x += 1 / 30) introStep(x, 1 / 30); introStep(t, 0); $('inBlk').style.opacity = INTROV.blk; }

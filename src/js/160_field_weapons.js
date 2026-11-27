@@ -120,7 +120,7 @@ function shFlash(e) {
 }
 function damage(e, dmg, at, owner, zone) {
   if (e === PE) {
-    if (P.dead || MS.over) return; let d = dmg * .24;
+    if (P.dead || MS.over || kcamSafe()) return;   /* (nor while the kill camera has the view: 185_kill_cam.js) */ let d = dmg * .24;
     if (P.sh > 0) { const a = Math.min(P.sh, d); P.sh -= a; d -= a; shFlash(PE); tal('d.sh', a); } P.shT = 5; if (d <= .001) return sfx.play('shield', .6);
     if (zone && P.zones) d *= zoneTake(PE, zone, d, owner);
     P.armor -= d; tal('d.h'); tal('d.n', d); talMax('d.big', d); P.shake = Math.min(1.5, P.shake + dmg * .03); $('dmg').style.opacity = .7; sfx.play('hit'); if (P.armor <= 0) playerLost(); return;
@@ -280,7 +280,7 @@ function drive(e, want, spd, dt, rad, turnRate) {
   return turn;
 }
 function killEnt(e, owner) {
-  if (e.dead) return; e.dead = true; e.by = owner; talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
+  if (e.dead) return; e.dead = true; e.by = owner; kcamKill(e, owner);   /* is this one worth slowing down for? (185_kill_cam.js) */ talKill(e, owner); if (e.mech) e.mech.off = true; if (e.team === 1 && owner === 0) { P.kills++; YARD.loot.push({ kind: e.kind, sk: e.sk, vk: e.vk, cfg: e.mech && e.mech.cfg }); } else if (e.team === 1 && owner === 4 && MS.on) MS.v.rvk = (MS.v.rvk || 0) + 1; const at = e.pos.clone(), big = e.kind === 'mech' || e.kind === 'struct' || e.big; at.y += e.cy; if (e.onDead) e.onDead();
   explode(FD.fx, at, big ? 2.4 : 1.2); sfx.play('boom', big ? 1.2 : .7); FD.ents.splice(FD.ents.indexOf(e), 1);
   if (e.blast) { explode(FD.fx, at, 3.4); splash(at, e.blast, 70, 0); splash(at, e.blast, 70, 1); }
   if (e.onKill) e.onKill(e, owner);
