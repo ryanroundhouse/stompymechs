@@ -500,7 +500,7 @@ button.wnew::after{content:"NEW";position:absolute;top:-7px;right:5px;font-size:
  <div id="ret"><i></i><i></i><i></i><i></i><b></b></div>
  <div id="twist"><b id="hdg">000</b><i id="twI"></i></div>
  <div id="obj" class="pn"><div id="objW">HOSTILES <b id="hCnt">0</b>KILLS <b id="kCnt">0</b>WAVE <b id="wCnt">1</b></div><div id="objM" class="hid"><h2><span id="msTitle">CONTRACT</span><small id="msClock"></small></h2><div id="objList"></div></div></div>
- <div id="help" class="pn"><b>W/S</b> throttle · <b>A/D</b> turn legs<br><b>MOUSE</b> torso twist / aim<br><b>LMB</b> left arm · <b>RMB</b> right arm<br><b>F</b> back unit · <b>SPACE</b> jump jets<br><b>SHIFT</b> sprint, which builds heat<br><b>C</b> camera · <b>X</b> center legs<br><b>R</b> repair kit · <b>V</b> coolant flush<br><span id="helpB" class="hid"><b>B</b> sky lance, on the reticle<br></span>Aim at an arm or the legs to shoot them off<br><b>M</b> tactical map · <b>1-3</b> answer comms<br><b>SPACE</b> carry on after a message<br><b>H H</b> withdraw to base · <b>ESC</b> pause</div>
+ <div id="help" class="pn"><b>W/S</b> throttle · <b>A/D</b> turn legs<br><b>MOUSE</b> torso twist / aim<br><b>LMB</b> left arm · <b>RMB</b> right arm<br><b>F</b> back unit · <b>SPACE</b> jump jets<br><b>SHIFT</b> sprint, which builds heat<br><b>C</b> camera · <b>X</b> center legs<br><b>R</b> repair kit · <b>V</b> coolant flush<br><span id="helpB" class="hid"><b>B</b> sky lance, on the reticle<br></span>Aim at an arm or the legs to shoot them off<br>Walk over a vehicle to crush it, or land on it<br><b>M</b> tactical map · <b>1-3</b> answer comms<br><b>SPACE</b> carry on after a message<br><b>H H</b> withdraw to base · <b>ESC</b> pause</div>
  <canvas id="radar" width="190" height="190"></canvas>
  <div id="gauges" class="pn">
   <div class="st" id="gArm"><span>ARMOR</span><i><b></b></i><em></em></div>
@@ -1066,6 +1066,11 @@ const scoreFor = biome => CFG.track ? CFG.track - 1 : Math.max(0, SCORES.findInd
    read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
    Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
 const WHATS = [
+  { n: 14, d: '26 NOV 2026', t: 'SHE WEIGHS SIXTY TONNES. USE IT', l: [
+    'Stomping. Walk onto a hostile tank, hauler or gun mount and the foot that comes down on it does the rest: the heavier the machine and the faster she is going, the less is left. A light mech dents a tank; an assault mech leaves it flat. Tracks grind what they roll over. A hover skirt does not.',
+    'Death from above. Come down off the jump jets onto something and it takes the landing, and so does everything round it. Land on another machine and it is the cockpit you land on, though your own legs pay for some of it.',
+    'Your wingman and anybody flying on your side tread on things too. Nobody treads on anything of yours.',
+    'Four new lines in the record, starting with VEHICLES STOMPED FLAT.'] },
   { n: 13, d: '23 NOV 2026', t: 'THE DEBRIEF, ONE VOICE AT A TIME', l: [
     'In the debriefing room the crew now have their say one at a time, at the top left: a head comes up, says its piece and fades for the next, instead of a column of them down each side. Rest the pointer on one to keep it there; click it to move on.',
     'CLAIM THE SALVAGE is a button of its own at the foot of the room, above the lifts, where it cannot be missed. It goes once the salvage is tagged. SEE THE MARKET is there with it when the market has turned over.'] },
@@ -1187,11 +1192,12 @@ const sfx = (() => {
     ui: () => tone('square', 880, 1320, .05, .04), deny: () => tone('square', 200, 140, .15, .07),
     jet: () => noise(.25, .16, 300, 900, .5), steam: () => noise(.8, .12, 4000, 1500, .7),
     door: () => { noise(3, .16, 90, 60, 1); tone('sawtooth', 45, 55, 3, .09); },
+    crunch: (v = 1) => { noise(.34, .6 * v, 1100, 140, .9); noise(.12, .3 * v, 3400, 900, 1.4, .03); tone('sine', 82, 30, .32, .5 * v); tone('square', 240, 70, .1, .07 * v); },
     crack: v => noise(.18, .4 * v, 1800, 300, .6), ship: () => { noise(5, .22, 70, 160, .5); tone('sawtooth', 38, 60, 5, .07); },
     comm: () => { tone('square', 1200, 1200, .05, .04); tone('square', 1600, 1600, .06, .04, .07); }, ok: () => { tone('triangle', 660, 660, .1, .1); tone('triangle', 990, 990, .22, .1, .1); },
     glass: (v = 1) => { tone('sine', 2300 + rand(700), 2250, .22, .03 * v); tone('sine', 3700 + rand(500), 3600, .15, .016 * v, .012); noise(.03, .07 * v, 5200, 3000, 2); }, gulp: (v = 1) => { tone('sine', 190, 85, .11, .16 * v); tone('sine', 170, 80, .11, .16 * v, .2); }, thud: (v = 1) => { noise(.14, .45 * v, 220, 60, .7); tone('sine', 110, 45, .22, .35 * v); },
   };
-  const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
+  const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, crunch: .06, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
   return { init, play(n, v = 1) { if (!on || !ac || hushed) return; if (ac.state === 'suspended') ac.resume(); const g = gap[n]; if (g) { if (ac.currentTime - (last[n] || -1) < g) return; last[n] = ac.currentTime; } lib[n] && lib[n](v); }, vol() { if (master) master.gain.setTargetAtTime(.45 * CFG.vol * CFG.sfx * trimK, ac.currentTime, .05); },
     /* for the opening: trim(k) turns the whole bus down under the score (1 puts it back), hush(true) drops every sound asked for while a cut is run forward out of sight */
     trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; } };
@@ -3241,12 +3247,12 @@ const TAL_DEF = [
   ['PROVING GROUND', [['pg.n', 'PROVING GROUND SESSIONS', 'n'], ['pg.w', 'PROVING GROUND WAVES CLEARED', 'n'], ['pg.best', 'HIGHEST PROVING GROUND WAVE', 'n'], ['pg.t', 'TIME ON THE PROVING GROUND', 't']]],
   ['GUNNERY', [
     ['g.p', 'TRIGGER PULLS', 'n', 1], ['g.s', 'ROUNDS FIRED', 'n', 1], ['g.h', 'ROUNDS ON TARGET', 'n', 1], [talRate('g.h', 'g.s'), 'ACCURACY, ALL WEAPONS', 'p'],
-    ['g.d', 'DAMAGE DEALT', 'd', 1], [talRate('g.d', 'g.h'), 'DAMAGE PER ROUND THAT LANDED', 'x1'], ['g.big', 'HARDEST SINGLE HIT LANDED', 'd'], ['g.burn', 'DAMAGE DONE BY FIRES YOU STARTED', 'd'], ['g.sh', 'DAMAGE SOAKED UP BY ENEMY SHIELDS', 'd'], ['k.far', 'LONGEST KILL', 'm'],
+    ['g.d', 'DAMAGE DEALT', 'd', 1], [talRate('g.d', 'g.h'), 'DAMAGE PER ROUND THAT LANDED', 'x1'], ['g.big', 'HARDEST SINGLE HIT LANDED', 'd'], ['g.burn', 'DAMAGE DONE BY FIRES YOU STARTED', 'd'], ['g.stomp', 'DAMAGE DONE UNDERFOOT', 'd'], ['g.sh', 'DAMAGE SOAKED UP BY ENEMY SHIELDS', 'd'], ['k.far', 'LONGEST KILL', 'm'],
   ]],
   ['KILLS', [
     ['k.n', 'KILLS', 'n', 1], ['k.mech', 'MECHS DESTROYED', 'n', 1], ['k.c.LIGHT', 'LIGHT MECHS DESTROYED', 'n'], ['k.c.MEDIUM', 'MEDIUM MECHS DESTROYED', 'n'], ['k.c.HEAVY', 'HEAVY MECHS DESTROYED', 'n'], ['k.c.ASSAULT', 'ASSAULT MECHS DESTROYED', 'n'],
     ['k.tank', 'TANKS AND CRAWLERS BLOWN UP', 'n', 1], ['k.drone', 'AIRCRAFT SHOT DOWN', 'n', 1], ['k.turret', 'TURRETS AND GUN MOUNTS SILENCED', 'n', 1], ['k.struct', 'STRUCTURES LEVELLED', 'n', 1], ['k.ship', 'CAPITAL SHIPS BROUGHT DOWN', 'n'], ['k.truck', 'HAULERS AND LAND TRAINS STOPPED', 'n'],
-    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
+    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.stomp', 'VEHICLES STOMPED FLAT', 'n', 1], ['k.dfa', 'KILLS MADE BY LANDING ON THEM', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
     ['k.best', 'MOST KILLS IN ONE SORTIE', 'n'], ['k.x2', 'DOUBLE KILLS', 'n'], ['k.x3', 'TRIPLE KILLS', 'n'], ['k.air', 'KILLS MADE IN MID-AIR', 'n'], ['k.hot', 'KILLS MADE ABOVE 80 HEAT', 'n'], ['k.low', 'KILLS ON YOUR LAST FIFTH OF ARMOUR', 'n'],
     [N => (N['k.n'] || 0) / Math.max(1, N['s.n'] || 0) || null, 'KILLS PER SORTIE', 'x1'], ['k.ally', 'KILLS BY YOUR WINGMEN AND ALLIES', 'n'], ['k.riv', 'KILLS BY COMPANIES FLYING WITH YOU', 'n'],
     [N => talSum(N, 'z.') || null, 'COMPONENTS SHOT OFF', 'n'], [N => (N['z.armL'] || 0) + (N['z.armR'] || 0) || null, 'ARMS SHOT OFF', 'n'], ['z.legs', 'LEGS SHOT OUT', 'n'], ['z.head', 'COCKPITS HIT', 'n'], ['z.back', 'BACK UNITS SHOT OFF', 'n'],
@@ -3259,7 +3265,7 @@ const TAL_DEF = [
   ]],
   ['MOVEMENT', [
     ['m.step', 'STEPS TAKEN', 'n', 1], ['m.dist', 'DISTANCE COVERED ON THE GROUND', 'm', 1], [N => (N['m.step'] || 0) > 0 ? Math.max(0, (N['m.dist'] || 0) - (N['m.l.trk'] || 0) - (N['m.l.hov'] || 0)) / N['m.step'] : null, 'AVERAGE STRIDE', 'x'], ['m.spr', 'DISTANCE SPRINTED', 'm'], ['m.back', 'DISTANCE WALKED BACKWARDS', 'm'], ['m.fly', 'DISTANCE FLOWN', 'm'],
-    ['m.sprT', 'TIME SPRINTING', 't'], ['m.jump', 'JUMPS', 'n', 1], ['m.airT', 'TIME IN THE AIR', 't'], ['m.jetT', 'TIME ON THE JETS', 't'], ['m.high', 'HIGHEST JUMP', 'x'], ['m.land', 'HARD LANDINGS', 'n'], ['m.top', 'TOP SPEED', 's'],
+    ['m.sprT', 'TIME SPRINTING', 't'], ['m.jump', 'JUMPS', 'n', 1], ['m.airT', 'TIME IN THE AIR', 't'], ['m.jetT', 'TIME ON THE JETS', 't'], ['m.high', 'HIGHEST JUMP', 'x'], ['m.land', 'HARD LANDINGS', 'n'], ['m.dfa', 'LANDINGS THAT CAME DOWN ON SOMEBODY', 'n'], ['m.top', 'TOP SPEED', 's'],
     ['m.twist', 'TORSO TWISTED', 'r'], ['m.turn', 'LEGS TURNED', 'r'], ['m.wade', 'TIME WADING', 't'], ['m.lava', 'TIME STANDING IN LAVA', 't'],
   ]],
   ['HEAT', [
@@ -3833,7 +3839,7 @@ function updateHangar(dt, t) {
 orb.cPos.set(34, 16, 52); orb.cLook.set(0, 8, 0);
 
 /* ============ FIELD: ENVIRONMENT (biomes, baked heightmap, colliders, weather) ============ */
-const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null, lit: 1, expo: 1, glow: .42 };
+const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], fell: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null, lit: 1, expo: 1, glow: .42 };
 FD.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, .5, 1600);
 FD.env = grp(FD.scene);
 FD.fx = { spark: new Particles(FD.scene, 4200, true), smoke: new Particles(FD.scene, 2400, false), wx: new Particles(FD.scene, 3000, false) };
@@ -4191,7 +4197,7 @@ function weatherShift(fk, sk, wx, dur = 9) { const f0 = FD.fogK, s0 = FD.sunK; r
 function clearEnv() {
   const keep = new Set([UB, ...Object.values(geoC), ...Object.values(GEO)]);
   FD.env.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && !keep.has(o.geometry)) o.geometry.dispose(); });
-  FD.env.clear(); FD.cols.length = 0; CG.clear(); FD.emit.length = 0; FD.blips.length = 0; FD.beacon = null; FD.trees.length = 0; FD.falling.length = 0; FD.tgrid.clear();
+  FD.env.clear(); FD.cols.length = 0; CG.clear(); FD.emit.length = 0; FD.blips.length = 0; FD.beacon = null; FD.trees.length = 0; FD.falling.length = 0; FD.fell.length = 0; FD.tgrid.clear();
 }
 function buildEnv(key, seed, o = {}) {
   clearEnv(); const B = BIOMES[key], R = mulberry(seed * 7919 + 13);
@@ -4245,6 +4251,7 @@ function updateEnvFx(dt, t) {
       }
     };
     if (!P.air) hit(P.pos.x, P.pos.z, player.radius * .55 + 1);
+    for (const q of FD.fell) hit(q[0], q[1], q[2]); FD.fell.length = 0;   /* and whatever a landing knocked flat round it (stompLand: [x, z, r], r no more than a cell of the grid) */
     for (const e of FD.ents) if (e.kind === 'mech' || e.kind === 'tank' || e.kind === 'truck') hit(e.pos.x, e.pos.z, e.r * .6 + .8);
     for (let i = FD.falling.length - 1; i >= 0; i--) { const it = FD.falling[i]; it.f += dt * 1.5; const m = treeMx(it), s = it.set; s.a.setMatrixAt(it.i, m); s.b.setMatrixAt(it.i, m); s.a.instanceMatrix.needsUpdate = s.b.instanceMatrix.needsUpdate = true; if (it.f >= 1) FD.falling.splice(i, 1); }
   }
@@ -4665,8 +4672,10 @@ function killEnt(e, owner) {
   if (e.onKill) e.onKill(e, owner);
   if (e.kind === 'drone' || e.nw) { if (e.crash) e.crash(owner); else FD.scene.remove(e.obj); return; }
   e.obj.traverse(c => { if (c.material && c.material.emissive && !c.userData.dk) { c.material = c.material.clone(); c.material.color.multiplyScalar(.3); c.material.emissiveIntensity = 0; c.userData.dk = 1; } });
-  const r0 = e.obj.rotation.x, y0 = e.obj.position.y, dir = Math.random() < .5 ? 1 : -1, fall = e.kind === 'mech' ? 1.35 : e.kind === 'struct' ? .05 : .25, dy = e.kind === 'mech' ? 1.8 : e.kind === 'struct' ? -e.cy * .7 : 0;
+  /* (a vehicle that was trodden on does not keel over: it is pressed flat where it stood. 165_stomp.js) */
+  const r0 = e.obj.rotation.x, y0 = e.obj.position.y, dir = Math.random() < .5 ? 1 : -1, fall = e.squash ? 0 : e.kind === 'mech' ? 1.35 : e.kind === 'struct' ? .05 : .25, dy = e.kind === 'mech' ? 1.8 : e.kind === 'struct' ? -e.cy * .7 : 0;
   tween(1.5, k => { e.obj.rotation.x = r0 + dir * fall * k; e.obj.position.y = y0 + dy * k; if (k > .95 && !e.thud) { e.thud = 1; puff(FD.fx, e.pos, 14, 4, .5, .4, 2, 6); sfx.play('step', 1.4); } }, ease.in);
+  if (e.squash) { const s = e.obj.scale.clone(); tween(.2, k => e.obj.scale.set(s.x * (1 + .16 * k), s.y * (1 - .68 * k), s.z * (1 + .16 * k)), ease.out); }
   const em = { p: at, kind: 'smoke', life: 40 }; FD.emit.push(em); FD.wrecks.push({ obj: e.obj, em, col: e.col });
   if (FD.wrecks.length > 9) { const w = FD.wrecks.shift(); FD.scene.remove(w.obj); w.em.life = 0; delCol(w.col); }
 }
@@ -4676,6 +4685,71 @@ function fireFrom(o, aim, w, e) {
   for (let i = 0; i < (w.salvo || 1); i++) { const D = D0.clone(); if (sp) D.add(_v.set(rand(-sp, sp), rand(-sp, sp), rand(-sp, sp))).normalize(); emitShot(O, D, w, owner, e.tgt || null, e.team === 1 ? 0xff3a2a : 0x7fe7ff, A); }
   talBy = null;
   if (o.distanceTo(P.pos) < 220) sfx.play(w.snd || SND[w.type] || 'laser', .3);
+}
+/* ============ FIELD: STOMPING — WHAT A MACHINE'S WEIGHT DOES TO WHATEVER IS UNDER IT ============ */
+/* A machine on legs comes down on one foot at a time, and a hostile vehicle or gun mount within that foot's reach takes the machine's weight: all of it at a walk, more at a
+   sprint, half of it when she is barely moving (stompFoot, called from the footfall itself: player.onStep in startField, m.onStep in mkMech for a machine on our side).
+   Tracks grind what they roll over instead, a few times a second (stompTick); a hover skirt weighs on nothing. A machine that comes down off its jets lands on everything
+   round it (stompLand, from the landing in updateField): hardest on whatever is right under it, which on a mech is the cockpit, and at a price to the legs that did it.
+   What can be trodden on is a hostile on the ground that the machine stands well over: tanks, haulers, a crawler's segments, and the squat gun mounts, which have a collider,
+   so that one is a kick. Never anything on our side or neutral: a commander who walks through the convoy they are escorting has done nothing wrong. A structure feels a
+   landing and nothing else, or every reactor in the sector could be walked to death.
+   Whose kill it is travels as talBy the way a round's does: 'stomp' for the player, 'ally' for anybody else. It is no weapon, so the damage is counted here (g.stomp)
+   and the kill goes down as one made without a weapon (k.oth) and as k.stomp or k.dfa. A vehicle killed this way is left flat (e.squash, which killEnt reads).
+   foot: damage per tonne from one footfall at a walk · tick: how often tracks bite · land: damage per tonne for each metre a second she lands at · min: the slowest landing
+   that hurts anybody · under: what is right under her takes that much more · edge: the share that reaches the rim of the landing · beside: the share of it that a machine standing in the
+   ring takes in the legs, being mostly above it · self: what her own legs take of a
+   landing on another machine */
+const STOMP_K = { foot: 2, tick: .4, land: .1, min: 12, under: 1.35, edge: .25, beside: .6, self: .2 };
+const STOMP_KIND = { tank: 1, truck: 1, turret: 1 }, _sf = V3(), _sh = V3();
+/* how far one foot reaches, by weight: a light machine's is two metres across, an assault machine's three and a half */
+const stompR = tons => 1.4 + tons * .02;
+/* one thing takes one blow. mine: the player's doing (counted, and said on the screen) · owner: 0 ours, 4 a company flying beside us */
+function stompHit(e, dmg, mine, owner, how, zone) {
+  const at = _sh.copy(e.pos), was = e.hp; at.y += e.cy * .6;
+  e.squash = !!STOMP_KIND[e.kind]; talBy = mine ? 'stomp' : 'ally'; damage(e, dmg, at, owner, zone); talBy = null; if (!e.dead) e.squash = false;
+  sparks(FD.fx, at, 16, 9); puff(FD.fx, e.pos, 5, 2.6, .5, .35, 2, 4);
+  if (!mine) { if (e.pos.distanceTo(P.pos) < 160) sfx.play('crunch', .35); return; }
+  tal('g.stomp', Math.max(0, was - Math.max(0, e.hp))); P.shake = Math.min(1.5, P.shake + .22); sfx.play('crunch', e.dead ? 1 : .6);
+  if (e.dead) { tal(how === 'land' ? 'k.dfa' : 'k.stomp'); msg(`${e.name} — ${how === 'land' ? 'DEATH FROM ABOVE' : e.kind === 'turret' ? 'KICKED FLAT' : 'STOMPED FLAT'}`, 2.4); }
+}
+/* a foot comes down at `at`. k is how hard the machine is going against its top speed (a walk is 1, a sprint more); r is the footprint, where it is not a foot.
+   Returns how many things were under it */
+function stompFoot(mech, at, mine, owner, k = 1, r) {
+  const tons = mech.stats.tons; if (mode !== 'field' || mech.off || !tons) return 0;
+  /* (four legs carry her on twice as many feet as two do, and come down twice as often: each foot has its share) */
+  const fr = r || stompR(tons), dmg = tons * STOMP_K.foot * (.5 + .5 * clamp(k, 0, 1.5)) * 2 / Math.max(2, mech.legU.legs.length), y = mech.root.position.y, top = mech.height * .7; let n = 0; _sf.copy(at);
+  for (const e of [...FD.ents]) {
+    if (e.dead || e.team !== 1 || !STOMP_KIND[e.kind] || e.inv || e.of || e.cy * 2 > top || Math.abs(e.pos.y - y) > 4) continue;
+    if (Math.hypot(e.pos.x - _sf.x, e.pos.z - _sf.z) > fr + (e.col && e.col.r !== undefined ? e.col.r + 1.2 : e.r * .7)) continue;
+    stompHit(e, dmg, mine, owner, 'foot'); n++;
+  }
+  return n;
+}
+/* the player has come down at `imp` metres a second: a ring on the ground, the trees round her over, and everything hostile inside it hit */
+function stompLand(imp) {
+  const tons = player.stats.tons; if (mode !== 'field' || P.dead || imp < STOMP_K.min || !tons) return;
+  const R = 5 + tons * .09, pw = tons * imp * STOMP_K.land, y = P.pos.y, big = clamp(tons * imp / 1500, .5, 1.7); let n = 0, on = null;
+  _sf.copy(P.pos); _sf.y += 1; shockAt(_sf, big); scarAt(_sf, 2.2 + tons * .03, 0); P.shake = Math.min(1.6, P.shake + big * .5); sfx.play('boom', .5 * big); if (FD.trees.length) FD.fell.push([P.pos.x, P.pos.z, Math.min(15, R)]);
+  for (const e of [...FD.ents]) {
+    if (e.dead || e.team !== 1 || e.inv || e.of || e.kind === 'drone' || e.kind === 'ship' || Math.abs(e.pos.y - y) > 6) continue;
+    const d = Math.hypot(e.pos.x - P.pos.x, e.pos.z - P.pos.z), gap = Math.max(0, d - e.r * .6); if (gap > R) continue;
+    const under = d < e.r * .6 + 1.5, dmg = pw * (under ? STOMP_K.under : (1 - (1 - STOMP_K.edge) * gap / R) * (e.kind === 'mech' ? STOMP_K.beside : 1)) * (e.kind === 'struct' ? .5 : 1), was = e.hp;
+    stompHit(e, dmg, true, 0, 'land', e.kind === 'mech' ? (under ? 'head' : 'legs') : undefined); n++;
+    if (under && e.kind === 'mech' && !on) on = [e, was - Math.max(0, e.hp)];
+  }
+  if (!n) return; tal('m.dfa');
+  /* coming down on another machine is paid for in her own legs, and more the heavier the machine she landed on */
+  if (on) { const [e, dealt] = on, d = dealt * STOMP_K.self * clamp(mechStats(e.mech.cfg).tons / tons, .5, 2); if (d > 1) { if (!e.dead) msg(`LANDED ON ${e.name} — HER LEGS TOOK SOME OF IT`, 2.6); damage(PE, d / .24, null, 1, 'legs'); } }
+}
+/* once a frame from updateField: the tracks' bite, and the one time somebody mentions that any of this can be done */
+function stompTick(dt) {
+  const st = player.stats, legs = PARTS.legs[player.cfg.legs], hover = !!(legs && legs.hover);
+  if (legs && legs.tracked && !hover && !P.air && !P.dead && Math.abs(P.v) > 1.5 && (P.stT = (P.stT || 0) - dt) <= 0) { P.stT = STOMP_K.tick; stompFoot(player, P.pos, true, 0, Math.abs(P.v) / (st.speed * RUN), 4.2); }
+  /* a company in its first few contracts that has never trodden on anything is told once a sortie, when there is something in reach to tread on */
+  if (!MS.on || MS.over || MS.v.stTip || hover || talN('g.stomp') || talN('s.n') > 8 || (MS.c.story && STORY[MS.c.story].first) || (MS.v.stT = (MS.v.stT || 0) - dt) > 0) return; MS.v.stT = 1;
+  const e = FD.ents.find(e => !e.dead && e.team === 1 && e.kind === 'tank' && !e.inv && Math.hypot(e.pos.x - P.pos.x, e.pos.z - P.pos.z) < 55); if (!e) return;
+  MS.v.stTip = 1; chatter(MS.ops, `Commander, a word from the chief. That is a ${e.name.toLowerCase()}, and you are sitting in ${Math.round(st.tons)} tonnes of machine. You do not have to shoot it. ${legs.tracked ? 'Drive over it.' : 'Walk on it.'}`);
 }
 /* ============ EVERYTHING THAT IS NOT A MECH: FIVE THINGS THAT FLY, SIX THAT DRIVE, FOUR THAT SIT STILL AND SHOOT ============
    Each kind keeps the entry it always had (mkDrone, mkTank, mkTurret) and takes a variant; with none given it builds what it built before, which is what the story chapters ask for by name */
@@ -4960,7 +5034,8 @@ function mkMech(x, z, cfg, team = 1, o = {}) {
   const e = { kind: 'mech', team, name: o.name || cfg.name, mech: m, obj: m.root, pos: m.root.position, cy: m.chestY, r: m.radius * .75 + 1.5, hp: st.armor * .75 * (o.hpK || 1), yaw: o.yaw ?? rand(TAU), v: 0, cd: { armL: rand(2), armR: rand(2), back: rand(3, 6) }, strafe: pick([-1, 1]), flipT: rand(4, 9), ai: o.ai || 'hunt', home: V3(x, 0, z), skill: o.skill || 1, lead: o.lead || PE, dest: o.dest || null };
   e.max = e.hp; m.root.rotation.y = e.yaw; e.zones = zonesFor(m, e.hp); e.hs = mechHs(m, e.cy, e.r); e.named = !!o.name; e.nz = !!o.nz; e.rng = mechRng(e);
   if (st.fx === 'shield') e.sh = e.shMax = e.hp * .25; if (st.fx === 'ecm') e.ecm = true;
-  m.onStep = L => { if (e.pos.distanceTo(P.pos) < 140) { L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 2, 1.6, .5, .25); sfx.play('step', .25); } };
+  /* (a machine on our side treads on hostile vehicles as the player's does: 165_stomp.js. The other side's do not: a convoy would never get home) */
+  m.onStep = L => { const by = e.pos.distanceTo(P.pos) < 140, ours = e.team === 0 && !e.pacify && !e.dead; if (by || ours) L.ankP.getWorldPosition(_v); if (by) { puff(FD.fx, _v, 2, 1.6, .5, .25); sfx.play('step', .25); } if (ours) stompFoot(m, _v, false, e.rv ? 4 : 0, Math.abs(e.v) / (st.speed * ERUN)); };
   e.update = dt => {
     const tg = seek(e, dt), top = e.legless ? 0 : st.speed * ERUN * (e.vk || 1); let d = 1e9, to = e.yaw, want = e.yaw, spd = 0;
     if (tg) { const dx = tg.pos.x - e.pos.x, dz = tg.pos.z - e.pos.z; d = Math.hypot(dx, dz); to = Math.atan2(dx, dz); }
@@ -5245,8 +5320,9 @@ function updateField(dt, t) {
     jet = true; P.vy = Math.min(P.vy + 46 * dt, 14); P.fuel -= dt * .4; P.air = true; P.heat += 5 * dt; P.stepT -= dt; if (P.stepT < 0) { sfx.play('jet'); P.stepT = .16; }
     for (const f of player.slot.back.userData.flames) { f.getWorldPosition(_v); FD.fx.spark.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(-14, -8), rand(-1, 1), rand(.15, .35), rand(.7, 1.3), 1.2, 2.6, 5, .7, 0, 1); }
   } else P.fuel = Math.min(1, P.fuel + dt * (P.air ? .04 : .2));
-  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
+  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); stompLand(imp); } } }
   else P.pos.y = damp(P.pos.y, ground, 14, dt);
+  stompTick(dt);
   /* heat + shutdown */
   P.heat = Math.max(0, P.heat - st.cool * FD.coolK * (P.coolK || 1) * dt * (P.shut > 0 ? 2 : sprint ? SPRINT_K.shed : 1));
   if (P.buzz && !P.dead) { P.twist += (Math.sin(t * .83) + Math.sin(t * 1.37 + 1)) * .055 * P.buzz * dt; P.pitch = clamp(P.pitch + Math.sin(t * 1.1 + 2) * .04 * P.buzz * dt, -.38, .5); }
@@ -6760,7 +6836,7 @@ function startField() {
   PE.cy = player.chestY; PE.r = player.radius * .7 + 1.5; PE.hs = mechHs(player, PE.cy, PE.r); PE.ecm = player.stats.fx === 'ecm'; PE.shF = 0;
   P.lost = {}; P.zones = zonesFor(player, P.max, 1.45); P.sh = P.shMax = player.stats.fx === 'shield' ? P.max * .3 : 0; P.shT = 0; P.burnT = 0; P.burnD = 0; player.gait.sag = 0; player.off = false;
   talSortie(c);
-  player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; };
+  player.onStep = L => { tal('m.step'); L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 4, 2, .55, .3, 1.2, 2.5); sfx.play('step', .8); P.shake += .06 * player.stats.tons / 60; if (!P.dead) stompFoot(player, _v, true, 0, Math.abs(P.v) / (player.stats.speed * RUN)); };   /* and whatever hostile is under that foot takes her weight (165_stomp.js) */
   P.lance = sunKey() ? 1 : 0; buildWepHud(); sunHud(); $('hangarUI').classList.add('hid'); $('fieldUI').classList.remove('hid'); $('pause').classList.remove('hid');
   $('pause').querySelector('h2').firstChild.textContent = 'SORTIE READY '; $('btnResume').textContent = 'ENGAGE'; updateField(.016, T);
 }

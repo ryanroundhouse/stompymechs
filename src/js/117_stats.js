@@ -117,12 +117,12 @@ const TAL_DEF = [
   ['PROVING GROUND', [['pg.n', 'PROVING GROUND SESSIONS', 'n'], ['pg.w', 'PROVING GROUND WAVES CLEARED', 'n'], ['pg.best', 'HIGHEST PROVING GROUND WAVE', 'n'], ['pg.t', 'TIME ON THE PROVING GROUND', 't']]],
   ['GUNNERY', [
     ['g.p', 'TRIGGER PULLS', 'n', 1], ['g.s', 'ROUNDS FIRED', 'n', 1], ['g.h', 'ROUNDS ON TARGET', 'n', 1], [talRate('g.h', 'g.s'), 'ACCURACY, ALL WEAPONS', 'p'],
-    ['g.d', 'DAMAGE DEALT', 'd', 1], [talRate('g.d', 'g.h'), 'DAMAGE PER ROUND THAT LANDED', 'x1'], ['g.big', 'HARDEST SINGLE HIT LANDED', 'd'], ['g.burn', 'DAMAGE DONE BY FIRES YOU STARTED', 'd'], ['g.sh', 'DAMAGE SOAKED UP BY ENEMY SHIELDS', 'd'], ['k.far', 'LONGEST KILL', 'm'],
+    ['g.d', 'DAMAGE DEALT', 'd', 1], [talRate('g.d', 'g.h'), 'DAMAGE PER ROUND THAT LANDED', 'x1'], ['g.big', 'HARDEST SINGLE HIT LANDED', 'd'], ['g.burn', 'DAMAGE DONE BY FIRES YOU STARTED', 'd'], ['g.stomp', 'DAMAGE DONE UNDERFOOT', 'd'], ['g.sh', 'DAMAGE SOAKED UP BY ENEMY SHIELDS', 'd'], ['k.far', 'LONGEST KILL', 'm'],
   ]],
   ['KILLS', [
     ['k.n', 'KILLS', 'n', 1], ['k.mech', 'MECHS DESTROYED', 'n', 1], ['k.c.LIGHT', 'LIGHT MECHS DESTROYED', 'n'], ['k.c.MEDIUM', 'MEDIUM MECHS DESTROYED', 'n'], ['k.c.HEAVY', 'HEAVY MECHS DESTROYED', 'n'], ['k.c.ASSAULT', 'ASSAULT MECHS DESTROYED', 'n'],
     ['k.tank', 'TANKS AND CRAWLERS BLOWN UP', 'n', 1], ['k.drone', 'AIRCRAFT SHOT DOWN', 'n', 1], ['k.turret', 'TURRETS AND GUN MOUNTS SILENCED', 'n', 1], ['k.struct', 'STRUCTURES LEVELLED', 'n', 1], ['k.ship', 'CAPITAL SHIPS BROUGHT DOWN', 'n'], ['k.truck', 'HAULERS AND LAND TRAINS STOPPED', 'n'],
-    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
+    ['k.named', 'NAMED PILOTS BEATEN', 'n'], ['k.ej', 'PILOTS WHO EJECTED WITH NOTHING LEFT TO FIRE', 'n'], ['k.burn', 'ENEMIES BURNED OUT', 'n'], ['k.stomp', 'VEHICLES STOMPED FLAT', 'n', 1], ['k.dfa', 'KILLS MADE BY LANDING ON THEM', 'n'], ['k.oth', 'KILLS WITHOUT A WEAPON OF YOUR OWN', 'n'], ['k.neut', 'BYSTANDERS KILLED', 'n'],
     ['k.best', 'MOST KILLS IN ONE SORTIE', 'n'], ['k.x2', 'DOUBLE KILLS', 'n'], ['k.x3', 'TRIPLE KILLS', 'n'], ['k.air', 'KILLS MADE IN MID-AIR', 'n'], ['k.hot', 'KILLS MADE ABOVE 80 HEAT', 'n'], ['k.low', 'KILLS ON YOUR LAST FIFTH OF ARMOUR', 'n'],
     [N => (N['k.n'] || 0) / Math.max(1, N['s.n'] || 0) || null, 'KILLS PER SORTIE', 'x1'], ['k.ally', 'KILLS BY YOUR WINGMEN AND ALLIES', 'n'], ['k.riv', 'KILLS BY COMPANIES FLYING WITH YOU', 'n'],
     [N => talSum(N, 'z.') || null, 'COMPONENTS SHOT OFF', 'n'], [N => (N['z.armL'] || 0) + (N['z.armR'] || 0) || null, 'ARMS SHOT OFF', 'n'], ['z.legs', 'LEGS SHOT OUT', 'n'], ['z.head', 'COCKPITS HIT', 'n'], ['z.back', 'BACK UNITS SHOT OFF', 'n'],
@@ -135,7 +135,7 @@ const TAL_DEF = [
   ]],
   ['MOVEMENT', [
     ['m.step', 'STEPS TAKEN', 'n', 1], ['m.dist', 'DISTANCE COVERED ON THE GROUND', 'm', 1], [N => (N['m.step'] || 0) > 0 ? Math.max(0, (N['m.dist'] || 0) - (N['m.l.trk'] || 0) - (N['m.l.hov'] || 0)) / N['m.step'] : null, 'AVERAGE STRIDE', 'x'], ['m.spr', 'DISTANCE SPRINTED', 'm'], ['m.back', 'DISTANCE WALKED BACKWARDS', 'm'], ['m.fly', 'DISTANCE FLOWN', 'm'],
-    ['m.sprT', 'TIME SPRINTING', 't'], ['m.jump', 'JUMPS', 'n', 1], ['m.airT', 'TIME IN THE AIR', 't'], ['m.jetT', 'TIME ON THE JETS', 't'], ['m.high', 'HIGHEST JUMP', 'x'], ['m.land', 'HARD LANDINGS', 'n'], ['m.top', 'TOP SPEED', 's'],
+    ['m.sprT', 'TIME SPRINTING', 't'], ['m.jump', 'JUMPS', 'n', 1], ['m.airT', 'TIME IN THE AIR', 't'], ['m.jetT', 'TIME ON THE JETS', 't'], ['m.high', 'HIGHEST JUMP', 'x'], ['m.land', 'HARD LANDINGS', 'n'], ['m.dfa', 'LANDINGS THAT CAME DOWN ON SOMEBODY', 'n'], ['m.top', 'TOP SPEED', 's'],
     ['m.twist', 'TORSO TWISTED', 'r'], ['m.turn', 'LEGS TURNED', 'r'], ['m.wade', 'TIME WADING', 't'], ['m.lava', 'TIME STANDING IN LAVA', 't'],
   ]],
   ['HEAT', [

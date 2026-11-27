@@ -4,6 +4,11 @@
    read): whatsFresh() is what is newer than that, and it is what puts the NEW marker on every SETTINGS button and the chip at the top of the page (425_feedback.js draws both).
    Somebody opening the game for the first time has nothing to catch up on; somebody with a company from before any of this was kept is shown the newest entry. */
 const WHATS = [
+  { n: 14, d: '26 NOV 2026', t: 'SHE WEIGHS SIXTY TONNES. USE IT', l: [
+    'Stomping. Walk onto a hostile tank, hauler or gun mount and the foot that comes down on it does the rest: the heavier the machine and the faster she is going, the less is left. A light mech dents a tank; an assault mech leaves it flat. Tracks grind what they roll over. A hover skirt does not.',
+    'Death from above. Come down off the jump jets onto something and it takes the landing, and so does everything round it. Land on another machine and it is the cockpit you land on, though your own legs pay for some of it.',
+    'Your wingman and anybody flying on your side tread on things too. Nobody treads on anything of yours.',
+    'Four new lines in the record, starting with VEHICLES STOMPED FLAT.'] },
   { n: 13, d: '23 NOV 2026', t: 'THE DEBRIEF, ONE VOICE AT A TIME', l: [
     'In the debriefing room the crew now have their say one at a time, at the top left: a head comes up, says its piece and fades for the next, instead of a column of them down each side. Rest the pointer on one to keep it there; click it to move on.',
     'CLAIM THE SALVAGE is a button of its own at the foot of the room, above the lifts, where it cannot be missed. It goes once the salvage is tagged. SEE THE MARKET is there with it when the market has turned over.'] },

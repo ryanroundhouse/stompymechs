@@ -281,7 +281,8 @@ function mkMech(x, z, cfg, team = 1, o = {}) {
   const e = { kind: 'mech', team, name: o.name || cfg.name, mech: m, obj: m.root, pos: m.root.position, cy: m.chestY, r: m.radius * .75 + 1.5, hp: st.armor * .75 * (o.hpK || 1), yaw: o.yaw ?? rand(TAU), v: 0, cd: { armL: rand(2), armR: rand(2), back: rand(3, 6) }, strafe: pick([-1, 1]), flipT: rand(4, 9), ai: o.ai || 'hunt', home: V3(x, 0, z), skill: o.skill || 1, lead: o.lead || PE, dest: o.dest || null };
   e.max = e.hp; m.root.rotation.y = e.yaw; e.zones = zonesFor(m, e.hp); e.hs = mechHs(m, e.cy, e.r); e.named = !!o.name; e.nz = !!o.nz; e.rng = mechRng(e);
   if (st.fx === 'shield') e.sh = e.shMax = e.hp * .25; if (st.fx === 'ecm') e.ecm = true;
-  m.onStep = L => { if (e.pos.distanceTo(P.pos) < 140) { L.ankP.getWorldPosition(_v); puff(FD.fx, _v, 2, 1.6, .5, .25); sfx.play('step', .25); } };
+  /* (a machine on our side treads on hostile vehicles as the player's does: 165_stomp.js. The other side's do not: a convoy would never get home) */
+  m.onStep = L => { const by = e.pos.distanceTo(P.pos) < 140, ours = e.team === 0 && !e.pacify && !e.dead; if (by || ours) L.ankP.getWorldPosition(_v); if (by) { puff(FD.fx, _v, 2, 1.6, .5, .25); sfx.play('step', .25); } if (ours) stompFoot(m, _v, false, e.rv ? 4 : 0, Math.abs(e.v) / (st.speed * ERUN)); };
   e.update = dt => {
     const tg = seek(e, dt), top = e.legless ? 0 : st.speed * ERUN * (e.vk || 1); let d = 1e9, to = e.yaw, want = e.yaw, spd = 0;
     if (tg) { const dx = tg.pos.x - e.pos.x, dz = tg.pos.z - e.pos.z; d = Math.hypot(dx, dz); to = Math.atan2(dx, dz); }

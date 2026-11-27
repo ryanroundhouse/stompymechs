@@ -58,8 +58,9 @@ function updateField(dt, t) {
     jet = true; P.vy = Math.min(P.vy + 46 * dt, 14); P.fuel -= dt * .4; P.air = true; P.heat += 5 * dt; P.stepT -= dt; if (P.stepT < 0) { sfx.play('jet'); P.stepT = .16; }
     for (const f of player.slot.back.userData.flames) { f.getWorldPosition(_v); FD.fx.spark.emit(_v.x, _v.y, _v.z, rand(-1, 1), rand(-14, -8), rand(-1, 1), rand(.15, .35), rand(.7, 1.3), 1.2, 2.6, 5, .7, 0, 1); }
   } else P.fuel = Math.min(1, P.fuel + dt * (P.air ? .04 : .2));
-  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); } } }
+  if (P.air) { P.vy -= FD.grav * dt; P.pos.y += P.vy * dt; if (P.pos.y <= ground) { const imp = -P.vy; P.pos.y = ground; P.air = false; P.vy = 0; if (imp > 5) { tal('m.land'); sfx.play('step', 1.6); P.shake += imp * .05; puff(FD.fx, P.pos, 16, 4, .55, .4, 2, 7); stompLand(imp); } } }
   else P.pos.y = damp(P.pos.y, ground, 14, dt);
+  stompTick(dt);
   /* heat + shutdown */
   P.heat = Math.max(0, P.heat - st.cool * FD.coolK * (P.coolK || 1) * dt * (P.shut > 0 ? 2 : sprint ? SPRINT_K.shed : 1));
   if (P.buzz && !P.dead) { P.twist += (Math.sin(t * .83) + Math.sin(t * 1.37 + 1)) * .055 * P.buzz * dt; P.pitch = clamp(P.pitch + Math.sin(t * 1.1 + 2) * .04 * P.buzz * dt, -.38, .5); }

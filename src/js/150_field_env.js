@@ -1,5 +1,5 @@
 /* ============ FIELD: ENVIRONMENT (biomes, baked heightmap, colliders, weather) ============ */
-const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null, lit: 1, expo: 1, glow: .42 };
+const FD = { scene: new THREE.Scene(), size: 1000, k: 1, cols: [], ents: [], shots: [], beams: [], emit: [], wrecks: [], blips: [], t0: [], t1: [], tick: [], misc: [], trees: [], falling: [], fell: [], tgrid: new Map(), grav: 24, coolK: 1, fogK: 1, sunK: 1, wx: null, lit: 1, expo: 1, glow: .42 };
 FD.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, .5, 1600);
 FD.env = grp(FD.scene);
 FD.fx = { spark: new Particles(FD.scene, 4200, true), smoke: new Particles(FD.scene, 2400, false), wx: new Particles(FD.scene, 3000, false) };
@@ -357,7 +357,7 @@ function weatherShift(fk, sk, wx, dur = 9) { const f0 = FD.fogK, s0 = FD.sunK; r
 function clearEnv() {
   const keep = new Set([UB, ...Object.values(geoC), ...Object.values(GEO)]);
   FD.env.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry && !keep.has(o.geometry)) o.geometry.dispose(); });
-  FD.env.clear(); FD.cols.length = 0; CG.clear(); FD.emit.length = 0; FD.blips.length = 0; FD.beacon = null; FD.trees.length = 0; FD.falling.length = 0; FD.tgrid.clear();
+  FD.env.clear(); FD.cols.length = 0; CG.clear(); FD.emit.length = 0; FD.blips.length = 0; FD.beacon = null; FD.trees.length = 0; FD.falling.length = 0; FD.fell.length = 0; FD.tgrid.clear();
 }
 function buildEnv(key, seed, o = {}) {
   clearEnv(); const B = BIOMES[key], R = mulberry(seed * 7919 + 13);
@@ -411,6 +411,7 @@ function updateEnvFx(dt, t) {
       }
     };
     if (!P.air) hit(P.pos.x, P.pos.z, player.radius * .55 + 1);
+    for (const q of FD.fell) hit(q[0], q[1], q[2]); FD.fell.length = 0;   /* and whatever a landing knocked flat round it (stompLand: [x, z, r], r no more than a cell of the grid) */
     for (const e of FD.ents) if (e.kind === 'mech' || e.kind === 'tank' || e.kind === 'truck') hit(e.pos.x, e.pos.z, e.r * .6 + .8);
     for (let i = FD.falling.length - 1; i >= 0; i--) { const it = FD.falling[i]; it.f += dt * 1.5; const m = treeMx(it), s = it.set; s.a.setMatrixAt(it.i, m); s.b.setMatrixAt(it.i, m); s.a.instanceMatrix.needsUpdate = s.b.instanceMatrix.needsUpdate = true; if (it.f >= 1) FD.falling.splice(i, 1); }
   }

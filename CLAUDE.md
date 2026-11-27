@@ -63,7 +63,8 @@ playable page. Never hand-edit it.
   terrain, `fieldScale`, the sky and the hour (`TOD`, `todKey`, `todShift`, `groundTex`);
   `155_field_glow.js` everything that glows out there (`glowM`, `flashAt`, `scarAt`,
   `shockAt`); `160_field_weapons.js` the weapons engine (`emitShot`, `fire`) and
-  component damage (`mechZones`, `damage`); `170_units.js` vehicles, `UNIT_POOL`, `spawn`;
+  component damage (`mechZones`, `damage`); `165_stomp.js` what a machine's weight does to whatever
+  is under it (`stompFoot`, `stompLand`, `STOMP_K`); `170_units.js` vehicles, `UNIT_POOL`, `spawn`;
   `190_mission_engine.js` comms, objectives and the comm camera (`cutWho`); `200_story_kit.js`
   the story helpers, `stLook` and `stRace`/`RACE_K`; `210_missions.js` and `240_ops.js` the
   contract types and twists; `230`/`250` the rival companies; `260_story.js` thread state, the
@@ -398,6 +399,19 @@ playable page. Never hand-edit it.
     the board's weights at each stage of a company's life, `t_real.js` and `t_int.js` contracts
     flown with the real weapons and the real legs (`ab.sh` flies them on the last commit's build
     as well, `debug_base.html`, for a before and after), `t_w.js` a table of every weapon.
+- Stomping, in `.scratch/stomp/`. `ev.sh file.js ['prelude']` loads a fresh debug page and runs an
+  `ev.sh` body, `ffev.sh` is the same in Firefox, and `c.sh` is `cdp.mjs` from anywhere; all three
+  go to this project's own Chrome (`CDP_PORT`, 9340 unless it is set: another project's headless
+  Chrome has been found on 9222, and every older driver goes there unless `CDP_PORT` says otherwise).
+  - `t_stomp.js` walks a striker flat in four weights of machine through the real keys (the
+    footfalls it took, the record, the wreck left flat), a mammoth, a sprint, tracks, a hover
+    skirt, a kick at a gun mount and a prism tower too tall to kick, everything that must never
+    be trodden on, a wingman's feet and the other side's, and landings: on a vehicle, on a
+    machine, beside one, by a structure, and a hop too small to count. `window.__part` is
+    `feet`, `never`, `land` or `rec`. `t_tip.js` is the one line that says it can be done.
+  - `pic_flat.js` and `pic_land.js` stage a moment to look at (`c.sh shot out.png` afterwards).
+  - `__sim` steps the field and not the page's tweens: a wreck is pressed flat by a `tween`, so a
+    driver that wants to see it has to wait in real time.
 - The record, in `.scratch/stats/` (`ev.sh` bodies, each from a freshly loaded debug page, in
   either browser; the last two put back the company they found):
   - `t_stats.js` is the field: fifteen kinds of weapon fired at a dummy and then at the sky
@@ -825,6 +839,26 @@ playable page. Never hand-edit it.
   its jets, shield, ECM or cooling. An ordinary pilot with no weapons left ejects (`e.ej`)
   and the kill is credited; one with a name (`e.named`) fights on. The R kit brings the
   player's wrecked parts back at half (`zoneMend`), and `settle()` charges 15% of each.
+- Stomping (`src/js/165_stomp.js`). A footfall is `stompFoot(mech, at, mine, owner, k)`: every
+  hostile vehicle within that foot's reach takes `tons * STOMP_K.foot`, scaled from a half at a
+  standstill to more than all of it at a sprint, and shared out between the feet of a machine
+  with more than two. It is called from the step itself (`player.onStep` in `startField`,
+  `m.onStep` in `mkMech` for a machine on our side); tracks bite a few times a second instead
+  (`stompTick`) and a hover skirt not at all. `stompLand(imp)` is a landing, called where
+  `updateField` puts the player back on the ground: everything hostile in a ring takes
+  `tons * imp * STOMP_K.land`, most of all whatever is right under her, which on a mech is the
+  cockpit (and her own legs pay `STOMP_K.self` of it).
+  - What can be trodden on is `STOMP_KIND` (tanks, haulers, gun mounts), hostile (team 1), on
+    the ground, not `inv`, and no taller than the machine's hips. Never anything on our side or
+    neutral, and never by the other side: escorts and bystanders are walked through as they
+    always were. A structure feels a landing and no footfall. Something that must not be
+    stomped by a script's lights wants `inv`, or a team other than 1.
+  - It is nobody's weapon: `talBy` is `'stomp'` (the player) or `'ally'`, the damage is counted
+    as `g.stomp`, the kill as `k.stomp` or `k.dfa` (and `k.oth`), a landing that hit as `m.dfa`.
+  - A vehicle killed this way has `e.squash` set, and `killEnt` presses the wreck flat instead
+    of tipping it over. A landing also fells the trees round it (`FD.fell`).
+  - A company in its first eight contracts that has never trodden on anything is told once a
+    sortie, by `chatter`, when a tank is in reach. Not in the first sortie.
 - Every unit's turn in the frame goes through `entTick` (burning, shields, stuns, ejections)
   before its own `update`. A target is one sphere, or a list in `e.hs` (`[x, y, z, r]` in its
   own frame, turned by `e.yaw`): use `entRay`, `entIn` and `entGap` rather than `e.r`.

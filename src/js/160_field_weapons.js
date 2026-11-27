@@ -286,8 +286,10 @@ function killEnt(e, owner) {
   if (e.onKill) e.onKill(e, owner);
   if (e.kind === 'drone' || e.nw) { if (e.crash) e.crash(owner); else FD.scene.remove(e.obj); return; }
   e.obj.traverse(c => { if (c.material && c.material.emissive && !c.userData.dk) { c.material = c.material.clone(); c.material.color.multiplyScalar(.3); c.material.emissiveIntensity = 0; c.userData.dk = 1; } });
-  const r0 = e.obj.rotation.x, y0 = e.obj.position.y, dir = Math.random() < .5 ? 1 : -1, fall = e.kind === 'mech' ? 1.35 : e.kind === 'struct' ? .05 : .25, dy = e.kind === 'mech' ? 1.8 : e.kind === 'struct' ? -e.cy * .7 : 0;
+  /* (a vehicle that was trodden on does not keel over: it is pressed flat where it stood. 165_stomp.js) */
+  const r0 = e.obj.rotation.x, y0 = e.obj.position.y, dir = Math.random() < .5 ? 1 : -1, fall = e.squash ? 0 : e.kind === 'mech' ? 1.35 : e.kind === 'struct' ? .05 : .25, dy = e.kind === 'mech' ? 1.8 : e.kind === 'struct' ? -e.cy * .7 : 0;
   tween(1.5, k => { e.obj.rotation.x = r0 + dir * fall * k; e.obj.position.y = y0 + dy * k; if (k > .95 && !e.thud) { e.thud = 1; puff(FD.fx, e.pos, 14, 4, .5, .4, 2, 6); sfx.play('step', 1.4); } }, ease.in);
+  if (e.squash) { const s = e.obj.scale.clone(); tween(.2, k => e.obj.scale.set(s.x * (1 + .16 * k), s.y * (1 - .68 * k), s.z * (1 + .16 * k)), ease.out); }
   const em = { p: at, kind: 'smoke', life: 40 }; FD.emit.push(em); FD.wrecks.push({ obj: e.obj, em, col: e.col });
   if (FD.wrecks.length > 9) { const w = FD.wrecks.shift(); FD.scene.remove(w.obj); w.em.life = 0; delCol(w.col); }
 }

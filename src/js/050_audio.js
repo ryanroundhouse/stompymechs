@@ -32,11 +32,12 @@ const sfx = (() => {
     ui: () => tone('square', 880, 1320, .05, .04), deny: () => tone('square', 200, 140, .15, .07),
     jet: () => noise(.25, .16, 300, 900, .5), steam: () => noise(.8, .12, 4000, 1500, .7),
     door: () => { noise(3, .16, 90, 60, 1); tone('sawtooth', 45, 55, 3, .09); },
+    crunch: (v = 1) => { noise(.34, .6 * v, 1100, 140, .9); noise(.12, .3 * v, 3400, 900, 1.4, .03); tone('sine', 82, 30, .32, .5 * v); tone('square', 240, 70, .1, .07 * v); },
     crack: v => noise(.18, .4 * v, 1800, 300, .6), ship: () => { noise(5, .22, 70, 160, .5); tone('sawtooth', 38, 60, 5, .07); },
     comm: () => { tone('square', 1200, 1200, .05, .04); tone('square', 1600, 1600, .06, .04, .07); }, ok: () => { tone('triangle', 660, 660, .1, .1); tone('triangle', 990, 990, .22, .1, .1); },
     glass: (v = 1) => { tone('sine', 2300 + rand(700), 2250, .22, .03 * v); tone('sine', 3700 + rand(500), 3600, .15, .016 * v, .012); noise(.03, .07 * v, 5200, 3000, 2); }, gulp: (v = 1) => { tone('sine', 190, 85, .11, .16 * v); tone('sine', 170, 80, .11, .16 * v, .2); }, thud: (v = 1) => { noise(.14, .45 * v, 220, 60, .7); tone('sine', 110, 45, .22, .35 * v); },
   };
-  const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
+  const gap = { mg: .055, beam: .1, flame: .13, saw: .1, hit: .04, crunch: .06, shield: .12, cannon: .05, laser: .05, zap: .08 }, last = {};
   return { init, play(n, v = 1) { if (!on || !ac || hushed) return; if (ac.state === 'suspended') ac.resume(); const g = gap[n]; if (g) { if (ac.currentTime - (last[n] || -1) < g) return; last[n] = ac.currentTime; } lib[n] && lib[n](v); }, vol() { if (master) master.gain.setTargetAtTime(.45 * CFG.vol * CFG.sfx * trimK, ac.currentTime, .05); },
     /* for the opening: trim(k) turns the whole bus down under the score (1 puts it back), hush(true) drops every sound asked for while a cut is run forward out of sight */
     trim(k) { trimK = k; this.vol(); }, hush(b) { hushed = !!b; } };
